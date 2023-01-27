@@ -1,0 +1,92 @@
+---
+title: "Reproducible data documentation for the study on geospatial relationship between plasma Se concetration in WRA & maize grain Se concentration in Malawi"
+format: html
+editor: visual
+---
+
+# Intro
+
+The objectives of these exploratory analysis are:
+
+1)  to calculate the mean/median wealth and education level for each EA in Malawi, and to see if there are differences
+
+2)  to start evaluating how to calculate the mean/median maize Se concentration at different level of spatial aggregation (i.e., from 5km radius up to regional averages).
+
+## Dataset & Variables
+
+1.  Malawi maize grain and soil Se concentration dataset. It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
+
+File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
+
+**Variables**:
+
+-   Latitude/ Longitude
+-   Crop
+-   Se_triplequad
+-   Zn
+-   pH_Wa (pH in water)
+-   N_pct
+-   Org_pct
+-   BIO1
+-   BIO12
+-   TIM
+
+2.  Malawi DHS -- MNS 2015-2016. Access need to be requested to DHS data\[Add link\]().
+
+**File of interest & variables**:
+
+a. Micronutrient survey data (MW_WRA). This dataset provided information on biomarker data and other biological data for women of reproductive age in Malawi. 
+
+-   mregion (region)
+-   m04  (gender)
+-   mcluster
+-   mnumber
+-   m01 (line number - individual ID within HH)
+-   m07 (age)
+-   m435 (weight)
+-   m436 (height)
+-   sel (Plasma Se ())
+
+
+b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
+
+Variables of interest:
+
+-   v101/V024 (De facto region of residence)
+
+-   v005 (Woman's sample weights, divide it by 1000000 before applying the weighting factor)
+
+-   v106 (Highest educational level)
+
+-   v155 (Literacy)
+
+-   v190 (Wealth index)
+
+-   v002 (Household number)
+
+-   v001 (Cluster number)
+
+b.  MWGE7AFL (geographic data)  Variable: DHSCLUST (to be used w/ V001).
+
+
+3.  Malawi boundaries
+
+-   folder name (gadm40_MWI_shp)
+
+
+# Exploratory analysis
+
+1) Micronutrient survey data (MW_WRA)
+
+-  There are some observation (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
+- There is one entry labelled as "male" while the dataset should only contain women.  
+-  There are outliers in height which are higher than 2m, some are coded as 999, we can assume those are NA. There is also one observation with a recorded height of 100.2.  
+-  There are some outliers in weight as well of higher than expented, on the lower bound seems plausible given age and height.
+-  We generated BMI variable which also has some outliers due to the high weight of some WRA. 
+
+1) 
+
+
+After merging the datasets, some Wealth quintile were missing, hence following recomendations form F.S we used the household wealth quintile  for those available to impute it. This was available for 17 of the 39 observation with missing values.
+
+
