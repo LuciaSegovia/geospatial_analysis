@@ -49,6 +49,7 @@ a. Micronutrient survey data (MW_WRA). This dataset provided information on biom
 
 
 b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
+#TODO: Checking if these variables are at HH level or at indiviual level.
 
 Variables of interest:
 
@@ -66,7 +67,11 @@ Variables of interest:
 
 -   v001 (Cluster number)
 
-b.  MWGE7AFL (geographic data)  Variable: DHSCLUST (to be used w/ V001).
+b.  MWGE7AFL (geographic data)  Variable: DHSCLUST (to be used w/ V001). 
+
+HH displacement within district. 
+
+#TODO: Check README and recommended readings to understand displacement and what it is possible and not possible for analysis. 
 
 
 3.  Malawi boundaries
@@ -78,13 +83,37 @@ b.  MWGE7AFL (geographic data)  Variable: DHSCLUST (to be used w/ V001).
 
 1) Micronutrient survey data (MW_WRA)
 
+There are `r sum(!is.na(EligibleDHS$selenium))` entries for plasma Se in the dataset.
+
 -  There are some observation (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
 - There is one entry labelled as "male" while the dataset should only contain women.  
 -  There are outliers in height which are higher than 2m, some are coded as 999, we can assume those are NA. There is also one observation with a recorded height of 100.2.  
 -  There are some outliers in weight as well of higher than expented, on the lower bound seems plausible given age and height.
 -  We generated BMI variable which also has some outliers due to the high weight of some WRA. 
 
-1) 
+2) Socio-Economic data (DHSDATA)
+
+When plotting wealth quintiles we can see that were more HH on the highest wealth Q. 
+
+When plotting wealth and education, we can see that lowest wealth Q has no women with high education. 
+
+Similarly, we can see that `r sum(DHSDATA$education_level >1 & DHSDATA$Literacy == 0)` women reported no literacy (0), but secondaty education (2).
+
+All education and wealth level have representation in all three regions. Again, when looking at the data we could see that there is a slight "over-reporting" of the wealthiest Quintiles. 
+
+## Plasma Se & covariates
+
+### Wealth
+Plasma Se values were similar across wealth Q, with higher variability in the two lowest Q. 
+
+### Education level
+Plasma Se values were slightly higher in the highest education level, with lower variablity, while the opposite was treu for the primary education level. 
+
+### Smoking
+Only 3 respondent reported smoking cigarettes, if we want to include this varable, we may need to combine with other smoking variables (including the other variables), although I believe that women who smoke in this context it may be very low.
+#TODO: Check smoking incidence in WRA in Malawi.
+
+
 
 
 After merging the datasets, some Wealth quintile were missing, hence following recomendations form F.S we used the household wealth quintile  for those available to impute it. This was available for 17 of the 39 observation with missing values.

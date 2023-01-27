@@ -2,11 +2,13 @@
 
 # Loading libraries, data and functions
 library(tidyverse)
+library(sf)
 
 #dhs.df<-read.table("MWIR7AFL.dat", header=T)
 dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) #survey data
 Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data
-GPS<-read.csv(here::here("data", "MalawiGPS.csv")) #GPS location 
+#GPS <-read.csv(here::here("data", "MalawiGPS.csv")) #GPS location 
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp"))
 source(here::here("CEPHaStat_3.R"))
 
 # Import checks
@@ -134,7 +136,7 @@ DHSDATA<- dhs.df %>% rename(
 )
 
 
-# Data checks:
+# Socio-economic data exploration:
 
 # wealth quintile poorest-richest == 1-5
 hist(DHSDATA$wealth_quintile)
@@ -166,13 +168,16 @@ plot(DHSDATA$education_level, DHSDATA$region,
      main="Education vs Region",
      xlab="Education", ylab="Region", pch=19)
 
+DHSDATA %>% group_by (region) %>% count(wealth_quintile)
+
+
 # Merging with DHS dataset to obtain Wealth index and other variables 
 
 EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% rename(
   #person_id=WomenID,
   survey_weight="mweight",
   is_lactating= "v404", #breastfeeding yes=1, no=0
-  is_smoker= "v463a", #Only cover cigarettes (other smoking variables)
+  is_smoker= "v463a", # Only cover cigarettes (other smoking variables)
   survey_strata= "v022", 
   had_fever='m416',
   had_diarrhea= 'm419',
@@ -215,6 +220,7 @@ boxplot(selenium ~ education_level, data = EligibleDHS,
         main="Plasma Selenium by Education level",
         xlab="Education level", ylab="plasma Se (ng/ml)", pch=19)
 
+
 #Literacy
 unique(EligibleDHS$Literacy)
 sum(is.na(EligibleDHS$Literacy)) #29 observations are missing Educ. 
@@ -231,10 +237,10 @@ boxplot(selenium ~ region , data = EligibleDHS,
         main="Plasma Selenium by Education level",
         xlab="Region", ylab="plasma Se (ng/ml)", pch=19)
 
-#Smoking
+# Smoking
 unique(EligibleDHS$is_smoker)
 sum(is.na(EligibleDHS$is_smoker)) #29 observations are missing smoking status
-
+sum(EligibleDHS$is_smoker == 1 & !is.na(EligibleDHS$is_smoker))
 boxplot(selenium ~ is_smoker , data = EligibleDHS, 
         main="Plasma Selenium by Smoking status",
         xlab="Smoking", ylab="plasma Se (ng/ml)", pch=19)
@@ -294,19 +300,27 @@ EligibleDHS$wealth_quintile[
     EligibleDHS$household_id1 %in% Wealth$household_id1[10]]
 
 
-## TO-DO: Defining Se deficiency
+# TODO: Defining Se deficiency
 EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
 EligibleDHS$LOW_SEL_IDI <- ifelse(EligibleDHS$selenium<64.8,1,0)
 EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 
 
-# TO-DO: add GPS values
+# add GPS values
+# TODO: Add Malawi boundaries
 
-GPS<-rename(GPS, survey_cluster='DHSCLUST')
+GPS<-rename(GPS, survey_cluster1='DHSCLUST')
 
-EligibleDHS<- merge(EligibleDHS, GPS, by='survey_cluster' )
+GPS_Se <- merge(EligibleDHS[, c("survey_cluster1", "selenium")], GPS, by='survey_cluster1')
+
+EligibleDHS <- merge(EligibleDHS, GPS, by='survey_cluster1')
 
 EligibleDHS<-rename(EligibleDHS, latitude='LATNUM')
 EligibleDHS<-rename(EligibleDHS, longitude='LONGNUM')
 EligibleDHS<-rename(EligibleDHS, altitude_in_metres='ALT_GPS')
+
+GPS_Se  %>% 
+ st_as_sf(., coords = c('LONGNUM', 'LATNUM'))  %>% 
+ggplot() + 
+  geom_sf(aes(color = selenium))
 
