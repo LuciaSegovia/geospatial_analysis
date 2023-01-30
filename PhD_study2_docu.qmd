@@ -37,15 +37,17 @@ File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
 
 a. Micronutrient survey data (MW_WRA). This dataset provided information on biomarker data and other biological data for women of reproductive age in Malawi. 
 
--   mregion (region)
+-   mregion (region) [1-3 = N->S]
+-   mtype (urban/rural) [U-R = 1-2] 
 -   m04  (gender)
--   mcluster
+-   mcluster (PSU?)
 -   mnumber
+-   mweight (survey weight)
 -   m01 (line number - individual ID within HH)
 -   m07 (age)
 -   m435 (weight)
 -   m436 (height)
--   sel (Plasma Se ())
+-   sel (Plasma Se (ng/ml))
 
 
 b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
@@ -54,7 +56,8 @@ b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomi
 Variables of interest:
 
 -   v101/V024 (De facto region of residence)
-
+-   sdist - (district). 
+-   v022 (survey strata). Note that v022 & v023 are strata Urban/rural district.
 -   v005 (Woman's sample weights, divide it by 1000000 before applying the weighting factor)
 
 -   v106 (Highest educational level)
@@ -85,13 +88,31 @@ HH displacement within district.
 
 There are `r sum(!is.na(EligibleDHS$selenium))` entries for plasma Se in the dataset.
 
+# Age
 -  There are some observation (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
+In addition, mean (and median) were higher in the northern region compared with southern and center. Whereas, mean/median age were higher in rural areas. We applied survey weights when calculating them. 
+
 - There is one entry labelled as "male" while the dataset should only contain women.  
--  There are outliers in height which are higher than 2m, some are coded as 999, we can assume those are NA. There is also one observation with a recorded height of 100.2.  
+-  There are outliers in height which are higher than 2m, some are coded as 999, we can assume those are missing values (NA) according to the coding standards reported in (ICF. 2018. Demographic and Health Surveys Standard Recode Manual for DHS7. The Demographic
+and Health Surveys Program. Rockville, Maryland, U.S.A.: ICF). There is also one observation with a recorded height of 100.2.  
 -  There are some outliers in weight as well of higher than expented, on the lower bound seems plausible given age and height.
 -  We generated BMI variable which also has some outliers due to the high weight of some WRA. 
 
+# Selenium
+
+Se median (and mean) values were higher in urban settings than in rural, and the highest in the southern region. Then, the median dissagregated by region and urbanity showed that northern and southern urban population had the highest Plasma Se median, while the centre region were the lowest, particuarly for rural WRA. 
+
+What it is interesting is that while the Northern-urban WRA had higher Se, than their southern counterpart, the Southern-rural WRA had higher plasma Se than their northern counterparts. In addition, wRA who live in urban setting of the centre region had similar plasma Se median concentration as women in the northern region in rural settings. 
+
 2) Socio-Economic data (DHSDATA)
+
+We extracted the socio-economic information from the DHS survey, however, we are only interested in the data that has Plasma Se values. 
+
+According to the NSO (2017) report: Malawi Micronutrient Survey 2015-2016. There were significative differences between the number of indiviudals in each wealth quintile when disaggregated by rural/urban residency. 
+#TODO: Would that impact our results? Probably yes. Check what that would mean for our analysis. 
+
+In the same report, inflamation was reported around 12% but it was consistent across age groups, residency, and wealth Q. However, malaria prevalence was higher in rural areas and for the different wealth Q, w/ lowest WQ being 6-times higher than the highes WQ. Since, these two variables seemed to be also related to Plasma Se status. Can we identify if malaria is influencing Se status?
+#TODO: Check correlation btween malaria and Se status. 
 
 When plotting wealth quintiles we can see that were more HH on the highest wealth Q. 
 
@@ -103,11 +124,26 @@ All education and wealth level have representation in all three regions. Again, 
 
 ## Plasma Se & covariates
 
+According to Phiri et al (2019), the influencing factors for Plasma Se (for WRA) in Malawi were soil type and proximity to Lake Malawi. 
+
+In addition, other authors have reported that socio-economic characteristics may influence Se status. 
+
+Here we are exploring the variabilty of Plasma Se according to those variables. First within the same dataset.
+
+
 ### Wealth
 Plasma Se values were similar across wealth Q, with higher variability in the two lowest Q. 
 
 ### Education level
-Plasma Se values were slightly higher in the highest education level, with lower variablity, while the opposite was treu for the primary education level. 
+Plasma Se values were slightly higher in the highest education level, with lower variablity, while the opposite was true for the primary education level. 
+
+### Place of residency
+
+Plasma Se values were similar when aggregated by region, whereas we can start seeing some differences when we are plotting the results by district. Also notice, that the number of observations per district is 1) much smaller and 2) much diverse (from `r min(table(EligibleDHS$sdist))` to `r max(table(EligibleDHS$sdist))`). 
+
+#TODO: Check weighting and how to apply them to the survey, including to plotting the data.
+
+#TODO: Generate a dataset with districs and soil type, and proximity to the Lake Malawi (from the "centre of the district" to the lake) - Ask Liberty/ Louise whether that have been created previosly. 
 
 ### Smoking
 Only 3 respondent reported smoking cigarettes, if we want to include this varable, we may need to combine with other smoking variables (including the other variables), although I believe that women who smoke in this context it may be very low.

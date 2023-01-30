@@ -1,7 +1,10 @@
 
 
 # Loading libraries, data and functions
-library(tidyverse)
+library(dplyr)
+library(plyr)
+library(ggplot)
+library(survey)
 library(sf)
 
 #dhs.df<-read.table("MWIR7AFL.dat", header=T)
@@ -34,6 +37,7 @@ Malawi_WRA<-Malawi_WRA %>% rename(
   MRDR='mrdr_ratio',
   survey_cluster1='mcluster',
   household_id1='mnumber',
+  survey_weight="mweight",
   LINENUMBER='m01',
   AGE_IN_YEARS='m07',
   SALT_PRESENT='m12',
@@ -66,24 +70,43 @@ Malawi_WRA<-Malawi_WRA %>% rename(
   vitamin_b12_gr='vitb12', 
  time_of_day_sampled2= "m430h")
 
+#Checking survey weight & generating the variable
+# Weight survey
+unique(Malawi_WRA$survey_weight)
+sum(is.na(Malawi_WRA$survey_weight)) #All observations have weight
+sum(Malawi_WRA$survey_weight==0) #All observations have weight > 0
+Malawi_WRA$wt  <- Malawi_WRA$survey_weight/1000000
 
 
-#description of the sample
+# Description of the sample
 
-# looking at variables of interest: summary stats + histogram
+# Looking at variables of interest: summary stats + histogram
 
 #Age - Women of reproductive age (15-49 years)
+sum(!is.na(Malawi_WRA$AGE_IN_YEARS)) #no missing values
 hist(Malawi_WRA$AGE_IN_YEARS)
 summary(Malawi_WRA$AGE_IN_YEARS)
 sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49) #8 younger than range
+subset(Malawi_WRA, AGE_IN_YEARS<15 | AGE_IN_YEARS>49,
+select = c(region, urbanity, selenium)) #8 younger than range
 
-#Sex - Female == 2
+# Age Weighted mean by region/urbanity
+ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(AGE_IN_YEARS, wt,na.rm = T))
+ddply(Malawi_WRA,~urbanity,summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
+
+#Sex - Female == 2 & pregnancy
 unique(Malawi_WRA$sex)
 which(Malawi_WRA$sex==1) #Label as male
+unique(Malawi_WRA$is_pregnant)
+which(Malawi_WRA$is_pregnant==1) #Label as pregnant
+length(which(Malawi_WRA$is_pregnant==1)) #Label as pregnant
+subset(Malawi_WRA, is_pregnant==1, 
+select = c(region, urbanity, selenium))
 
 #Checking numeric variables
 #selenium, HEIGHT, WEIGHT
-var <- "HEIGHT"
+var <- "selenium"
 x <- pull(Malawi_WRA[, var])
 
 hist(x, main = paste("Histogram of",  tolower(var)) , xlab = var)
@@ -92,20 +115,44 @@ summary(x)
 summa(x)
 summaplot(x)
 
+#Selenium
+sum(!is.na(Malawi_WRA$selenium)) # Checking NA
+# Se Weighted mean by region/urbanity
+ddply(Malawi_WRA,~region,summarise,mean=weighted.mean(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+boxplot(selenium ~ urbanity*region, data = Malawi_WRA,
+        col = c("white", "steelblue"), frame = FALSE)
+
 #Height - ouliers (converting 999 to NA)
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >200]
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >999] <- NA
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT <130] 
 Malawi_WRA$AGE_IN_YEARS[Malawi_WRA$HEIGHT <120] 
+# height Weighted mean by region
+ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(HEIGHT, wt,na.rm = T))
+
+Malawi_WRA$urbanity  <- as.factor(Malawi_WRA$urbanity)
+class(Malawi_WRA$region)
+ggplot(Malawi_WRA, aes(x = as.factor(region), y = selenium)) +   
+geom_boxplot()
 
 #Weight - ouliers (converting 999 to NA)
+hist(Malawi_WRA$WEIGHT)
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >200]
+Malawi_WRA$region[Malawi_WRA$WEIGHT >999] # Checking if this "missing values" are affecting more to a particular region
+Malawi_WRA$urbanity[Malawi_WRA$WEIGHT >999] # Same but for urbanity
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >999] <- NA
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >80] 
 Malawi_WRA$HEIGHT[Malawi_WRA$WEIGHT >80] 
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT <40] 
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT <40 & Malawi_WRA$AGE_IN_YEARS >15] 
 Malawi_WRA$HEIGHT[Malawi_WRA$WEIGHT <40 & Malawi_WRA$AGE_IN_YEARS >15] 
+
+# weight Weighted mean by region/ urbanity
+ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(WEIGHT, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(WEIGHT, wt,na.rm = T))
+ddply(Malawi_WRA,.(urbanity), summarise,median=matrixStats::weightedMedian(WEIGHT, wt,na.rm = T))
+
 
 #creating BMI variable
 Malawi_WRA$BMI<- Malawi_WRA$WEIGHT/(Malawi_WRA$HEIGHT/100)^2
@@ -175,7 +222,6 @@ DHSDATA %>% group_by (region) %>% count(wealth_quintile)
 
 EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% rename(
   #person_id=WomenID,
-  survey_weight="mweight",
   is_lactating= "v404", #breastfeeding yes=1, no=0
   is_smoker= "v463a", # Only cover cigarettes (other smoking variables)
   survey_strata= "v022", 
@@ -187,12 +233,8 @@ EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% rename(
 #Checking if intoducing duplicates
 n01 == dim(EligibleDHS)[1]
 
-# Data checks (non-weigheted)
 
-#Weight survey
-unique(EligibleDHS$survey_weight)
-sum(is.na(EligibleDHS$survey_weight)) #All observations have weight
-sum(EligibleDHS$survey_weight==0) #All observations have weight > 0
+# Data checks (non-weigheted)
 
 #Cluster survey
 unique(EligibleDHS$survey_cluster1)
@@ -232,10 +274,30 @@ boxplot(selenium ~ Literacy, data = EligibleDHS,
 #Region
 unique(EligibleDHS$region)
 sum(is.na(EligibleDHS$region)) #All observations have region 
+table(EligibleDHS$region)
 
 boxplot(selenium ~ region , data = EligibleDHS, 
-        main="Plasma Selenium by Education level",
+        main="Plasma Selenium by Region",
         xlab="Region", ylab="plasma Se (ng/ml)", pch=19)
+
+# District
+unique(EligibleDHS$sdist)
+sum(is.na(EligibleDHS$sdist)) #29 observations are missing
+table(EligibleDHS$sdist)
+
+boxplot(selenium ~ sdist , data = EligibleDHS, 
+        main="Plasma Selenium by District",
+        xlab="District", ylab="plasma Se (ng/ml)", pch=19)
+
+# Residency (Rural urban)
+unique(EligibleDHS$sdist)
+sum(is.na(EligibleDHS$sdist)) #29 observations are missing
+table(EligibleDHS$sdist)
+
+boxplot(selenium ~ sdist , data = EligibleDHS, 
+        main="Plasma Selenium by District",
+        xlab="District", ylab="plasma Se (ng/ml)", pch=19)
+
 
 # Smoking
 unique(EligibleDHS$is_smoker)
@@ -324,3 +386,14 @@ GPS_Se  %>%
 ggplot() + 
   geom_sf(aes(color = selenium))
 
+# Applying survey weight
+
+# Complex sample design parameters
+
+DHSdesign<-svydesign(id=EligibleDHS$survey_cluster1, strata=EligibleDHS$survey_strata, weights=EligibleDHS$swt, data=EligibleDHS)
+
+ 
+
+# tabulate indicator by region
+
+svyby(~selenium, ~wealth_quintile, DHSdesign, svymean, vartype=c("se","ci"))
