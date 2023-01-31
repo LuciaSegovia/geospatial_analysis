@@ -51,7 +51,8 @@ a. Micronutrient survey data (MW_WRA). This dataset provided information on biom
 
 
 b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
-#TODO: Checking if these variables are at HH level or at indiviual level.
+
+These variables provide information at indiviual level.
 
 Variables of interest:
 
@@ -72,7 +73,7 @@ Variables of interest:
 
 b.  MWGE7AFL (geographic data)  Variable: DHSCLUST (to be used w/ V001). 
 
-HH displacement within district. 
+GPS displacement within district. 
 
 #TODO: Check README and recommended readings to understand displacement and what it is possible and not possible for analysis. 
 

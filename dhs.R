@@ -3,7 +3,7 @@
 # Loading libraries, data and functions
 library(dplyr)
 library(plyr)
-library(ggplot)
+library(ggplot2)
 library(survey)
 library(sf)
 
@@ -13,16 +13,19 @@ Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data
 #GPS <-read.csv(here::here("data", "MalawiGPS.csv")) #GPS location 
 GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp"))
 source(here::here("CEPHaStat_3.R"))
+b_admin2  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_2.shp"))
+b_admin1  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_1.shp"))
 
 # Import checks
 n01 <-  dim(Malawi_WRA)[1]
 names(Malawi_WRA)
 dim(dhs.df)
-names(dhs.df)
-
+View(Malawi_WRA)
+head(dhs.df)
+plot(b_admin2)
 # Renaming variables 
 
-Malawi_WRA<-Malawi_WRA %>% rename(
+Malawi_WRA<-Malawi_WRA %>% dplyr::rename(
   ferritin='fer',
   region='mregion',
   sex = "m04", 
@@ -169,10 +172,9 @@ Malawi_WRA[298, "WEIGHT" ] #Weight & BMI outlier
 # Checking DHS survey data (Wealth index and other variables)
 
 dim(dhs.df)
-names(dhs.df)
 
 
-DHSDATA<- dhs.df %>% rename(
+DHSDATA<- dhs.df %>% dplyr::rename( 
   survey_cluster1='v001',
   household_id1='v002',
   LINENUMBER='v003', 
@@ -220,7 +222,7 @@ DHSDATA %>% group_by (region) %>% count(wealth_quintile)
 
 # Merging with DHS dataset to obtain Wealth index and other variables 
 
-EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% rename(
+EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% dplyr::rename(
   #person_id=WomenID,
   is_lactating= "v404", #breastfeeding yes=1, no=0
   is_smoker= "v463a", # Only cover cigarettes (other smoking variables)
@@ -268,7 +270,7 @@ unique(EligibleDHS$Literacy)
 sum(is.na(EligibleDHS$Literacy)) #29 observations are missing Educ. 
 
 boxplot(selenium ~ Literacy, data = EligibleDHS, 
-        main="Plasma Selenium by Literacy level",
+        main="Plasma Selenium by Literacy level", # nolint
         xlab="Literacy level", ylab="plasma Se (ng/ml)", pch=19)
 
 #Region
@@ -361,6 +363,8 @@ EligibleDHS$wealth_quintile[
   EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[10] &
     EligibleDHS$household_id1 %in% Wealth$household_id1[10]]
 
+subset(EligibleDHS, !is.na(selenium), 
+select = c(v005, survey_weight))
 
 # TODO: Defining Se deficiency
 EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
@@ -371,7 +375,7 @@ EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 # add GPS values
 # TODO: Add Malawi boundaries
 
-GPS<-rename(GPS, survey_cluster1='DHSCLUST')
+GPS<-dplyr::rename(GPS, survey_cluster1='DHSCLUST')
 
 GPS_Se <- merge(EligibleDHS[, c("survey_cluster1", "selenium")], GPS, by='survey_cluster1')
 
