@@ -395,7 +395,7 @@ ggplot() +
 tm_shape(b_admin1) +
   tm_polygons() +
   tm_shape(GPS_Se) + 
-  tm_dots(col = "selenium") 
+  tm_symbols(col = "black", size = "selenium")
 
 # Applying survey weight
 

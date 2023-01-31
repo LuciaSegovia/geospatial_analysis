@@ -18,3 +18,5 @@ x  <- over(data.df, b_admin1_sp)
 x  <- cbind(b_admin1_sp, over( b_admin1_sp, data.df))  
 
 plot(x)
+
+
