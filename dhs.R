@@ -6,6 +6,7 @@ library(plyr)
 library(ggplot2)
 library(survey)
 library(sf)
+library(tmap) 
 
 #dhs.df<-read.table("MWIR7AFL.dat", header=T)
 dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) #survey data
@@ -335,7 +336,7 @@ EligibleDHS$LINENUMBER[#is.na(EligibleDHS$wealth_quintile) &
                               EligibleDHS$household_id1 %in% Wealth$household_id1[1]]
 
 #Generate a loop to assign Wealth Q from other member of the HH to non-reported people in biomarker survey data
-for(i in 1:length(Wealth$household_id1)){
+for(i in seq_along(Wealth$household_id1)){
   
 EligibleDHS$wealth_quintile[EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[i] &
                               EligibleDHS$household_id1 %in% Wealth$household_id1[i]] <- Wealth$wealth_quintile[i]
@@ -378,6 +379,7 @@ EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 GPS<-dplyr::rename(GPS, survey_cluster1='DHSCLUST')
 
 GPS_Se <- merge(EligibleDHS[, c("survey_cluster1", "selenium")], GPS, by='survey_cluster1')
+GPS_Se  <- st_as_sf(GPS_Se, crs = "4326", coords = c('LONGNUM', 'LATNUM'))
 
 EligibleDHS <- merge(EligibleDHS, GPS, by='survey_cluster1')
 
@@ -389,6 +391,11 @@ GPS_Se  %>%
  st_as_sf(., coords = c('LONGNUM', 'LATNUM'))  %>% 
 ggplot() + 
   geom_sf(aes(color = selenium))
+
+tm_shape(b_admin1) +
+  tm_polygons() +
+  tm_shape(GPS_Se) + 
+  tm_dots(col = "selenium") 
 
 # Applying survey weight
 
