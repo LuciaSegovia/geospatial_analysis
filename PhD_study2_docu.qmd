@@ -85,11 +85,11 @@ GPS displacement within district.
 
 # Exploratory analysis
 
-1) Micronutrient survey data (MW_WRA)
+## 1) Micronutrient survey data (MW_WRA)
 
 There are `r sum(!is.na(EligibleDHS$selenium))` entries for plasma Se in the dataset.
 
-# Age
+### Age
 -  There are some observation (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
 In addition, mean (and median) were higher in the northern region compared with southern and center. Whereas, mean/median age were higher in rural areas. We applied survey weights when calculating them. 
 
@@ -99,13 +99,13 @@ and Health Surveys Program. Rockville, Maryland, U.S.A.: ICF). There is also one
 -  There are some outliers in weight as well of higher than expented, on the lower bound seems plausible given age and height.
 -  We generated BMI variable which also has some outliers due to the high weight of some WRA. 
 
-# Selenium
+### Selenium
 
 Se median (and mean) values were higher in urban settings than in rural, and the highest in the southern region. Then, the median dissagregated by region and urbanity showed that northern and southern urban population had the highest Plasma Se median, while the centre region were the lowest, particuarly for rural WRA. 
 
 What it is interesting is that while the Northern-urban WRA had higher Se, than their southern counterpart, the Southern-rural WRA had higher plasma Se than their northern counterparts. In addition, wRA who live in urban setting of the centre region had similar plasma Se median concentration as women in the northern region in rural settings. 
 
-2) Socio-Economic data (DHSDATA)
+## 2) Socio-Economic data (DHSDATA)
 
 We extracted the socio-economic information from the DHS survey, however, we are only interested in the data that has Plasma Se values. 
 
@@ -123,7 +123,7 @@ Similarly, we can see that `r sum(DHSDATA$education_level >1 & DHSDATA$Literacy 
 
 All education and wealth level have representation in all three regions. Again, when looking at the data we could see that there is a slight "over-reporting" of the wealthiest Quintiles. 
 
-## Plasma Se & covariates
+## 3) Combining DHS datasets: Plasma Se & covariates
 
 According to Phiri et al (2019), the influencing factors for Plasma Se (for WRA) in Malawi were soil type and proximity to Lake Malawi. 
 
@@ -155,4 +155,9 @@ Only 3 respondent reported smoking cigarettes, if we want to include this varabl
 
 After merging the datasets, some Wealth quintile were missing, hence following recomendations form F.S we used the household wealth quintile  for those available to impute it. This was available for 17 of the 39 observation with missing values.
 
+## 4) Maize Se concentration in Malawi
 
+We extracted the variables of interest from the dataset, then we are doing some data operations, for instance, removing NAs, and transforming Se in dry weight (mcg/kg DW) to Se in fresh weght (mcg/100g FW EP). 
+
+#REVIEW: Moisture assumptions
+Because, moisture content was not estimated, we are assuming same moisture content as the one measuere in the study of Hwang et al., (2016) for white maize. This is one of the assumptions that should be listed and tested, as for that study we have some data with their respective GPS, hence some extra analysis could be performed
