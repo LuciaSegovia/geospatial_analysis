@@ -11,11 +11,12 @@ b_admin1  <- st_read(here::here("..", "PhD_geospatial-modelling","data",
 b_admin3  <- st_read(here::here("..", "PhD_geospatial-modelling","data",
  "mwi-boundaries", "gadm40_MWI_3.shp"))
 
-#Checking boundaries
+#Checking boundaries - it's commented bc it often crashes the laptop
+#TODO: removing Lake Malawi (and other water-bodies) from geometry
 
-admin = st_intersection(b_admin1, b_admin3) #This one kept the lake
-admin = st_intersection(b_admin3, b_admin1)
-plot(admin)
+#admin = st_intersection(b_admin1, b_admin3) #This one kept the lake
+#admin = st_intersection(b_admin3, b_admin1)
+#plot(admin)
 
 grain  <- readxl::read_excel(here::here("..", "GeoNutrition","Geostatistics_and_mapping", "Malawi_Grain.xlsx"))
 
@@ -23,6 +24,7 @@ names(b_admin3)
 names(grain)
 #plot(b_admin3)
 unique(b_admin3$ID_3)
+length(unique(b_admin3$ID_3))
 
 # Maize Se conc. - data manipulation ----
 
@@ -44,19 +46,39 @@ names(se.df)
 #converting the dataset into spatial object (sf) 
 se  <- subset(se.df, !is.na(Se_triplequad))  %>% 
 st_as_sf(., coords =c("Longitude", "Latitude"), crs = "EPSG:4326")
-
 plot(se)
 
-# Getting info on the admin boudaries (district level)
+# Getting info on the admin boudaries (EA/district level)
 #We changed from name to ID to avoid duplicates
 name_var  <- paste0("ID_", bn)
 admin  <- b_admin3[, c("NAME_1", name_var, "geometry")]
-sum(diplicated(admin$ID_3))
+sum(duplicated(admin$ID_3))
 unique(admin$NAME_1)
 plot(admin)
 
-# Allocating maize Se values to each district
+# Allocating maize Se values to each admin unit
 se_admin = st_intersection(se, admin)
+tes1  <- st_intersection(st_geometry(se), st_geometry(admin))
+nrow(se) == nrow(se_admin)
+sum(duplicated(admin$ID_3))
+
+
+#Checking the results of the interesection
+se_check <- se[st_within(se, admin) %>% lengths > 0,]
+se_check <- se[st_intersects(se, admin) %>% lengths > 0,]
+
+nrow(se) == nrow(se_check)
+
+# Are there more than one sample for certain admin units?
+sum(duplicated(se_admin$ID_3))
+
+# Are all admin units included?
+length(admin$ID_3) == length(se_admin$ID_3)
+length(setdiff(admin$ID_3, se_admin$ID_3))
+
+length(se_admin$ID_3[!is.na(se_admin$Se_mcg)])
+se_admin$ID_3[se_admin$Se_mcg < 0]
+
 unique(se_admin$NAME_1)
 
 subset(se_admin, NAME_1 == "Balaka")
@@ -69,7 +91,8 @@ subset(se_admin, NAME_1 == unique(se_admin$NAME_1)[2], Se_triplequad)
 var1  <- unique(se_admin$NAME_1)[3]
 boxplot(Se_mcg ~ ID_3, data = subset(se_admin, NAME_1 %in% var1), 
         main="Maize Selenium by district",
-        xlab=paste0("EAs in ", var1, " distric"), ylab="Se (mcg/100g FW-EP)", pch=19)
+        xlab=paste0("EAs in ", var1, " distric"), 
+        ylab="Se (mcg/100g FW-EP)", pch=19)
 
 # Plotting values (e.g., median Se values) per geographic unit
 se_admin  %>% st_drop_geometry()  %>% 

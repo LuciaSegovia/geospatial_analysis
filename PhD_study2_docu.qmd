@@ -161,3 +161,16 @@ We extracted the variables of interest from the dataset, then we are doing some 
 
 #REVIEW: Moisture assumptions
 Because, moisture content was not estimated, we are assuming same moisture content as the one measuere in the study of Hwang et al., (2016) for white maize. This is one of the assumptions that should be listed and tested, as for that study we have some data with their respective GPS, hence some extra analysis could be performed
+
+
+There is a missmatch between the EAs and the maize Se conc. sampling. Resulting in 2200 () EAs without a maize Se conc. value. There are two potentital reasons for this to happen:
+
+1) The boundaries are not equivalent with the coordinates. Making for the points to not be well nested or allocated to the correct EA. We have checked the method and it seemed that there is no issue with some points being either omitted. However, I believe that the values have been aggregated because there is no dupplicated ID_3.
+
+Also there are 3 rows lost, which are also lost when subsetting using either st_within or st_intersect. This maybe due to 3 points being outside the boudaries used. 
+
+#TODO: Check if the same is happening with district level boundaries (as they are more official)
+
+2) No actual samples were collected for certain EAs.
+
+It could be also a combination of both. 
