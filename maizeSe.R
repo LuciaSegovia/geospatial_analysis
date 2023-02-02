@@ -3,12 +3,16 @@ library(sf)
 library(dplyr)
 library(ggplot2)
 
+# Loading the data
+grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
+"Geostatistics_and_mapping", "Malawi_Grain.xlsx"))
+
 bn  <- 3
 
-b_admin1  <- st_read(here::here("..", "PhD_geospatial-modelling","data",
+b_admin1  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "gadm40_MWI_1.shp"))
 
-b_admin3  <- st_read(here::here("..", "PhD_geospatial-modelling","data",
+b_admin3  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "gadm40_MWI_3.shp"))
 
 #Checking boundaries - it's commented bc it often crashes the laptop
@@ -18,11 +22,23 @@ b_admin3  <- st_read(here::here("..", "PhD_geospatial-modelling","data",
 #admin = st_intersection(b_admin3, b_admin1)
 #plot(admin)
 
-grain  <- readxl::read_excel(here::here("..", "GeoNutrition","Geostatistics_and_mapping", "Malawi_Grain.xlsx"))
+# Trying to simplify the boundaries
+b_admin3_simp  <- st_simplify(b_admin3, preserveTopology = TRUE, dTolerance = 1000)
+
+dev.off()
+plot(b_admin3_simp)
+
+plot_map(b_admin3, graticules = TRUE, strokecolor = '#097FB3',
+         fillcolor = '#AED3E4')
+
+
+dim(grain)
 
 names(b_admin3)
 names(grain)
+
 #plot(b_admin3)
+
 unique(b_admin3$ID_3)
 length(unique(b_admin3$ID_3))
 
@@ -30,9 +46,12 @@ length(unique(b_admin3$ID_3))
 
 # 1) Subsetting variables of interest: only maize and Se.
 se.df <- subset(grain, Crop == "Maize", select = c(Latitude, Longitude, Se_triplequad)) 
+dim(se.df)
+sum(is.na(se.df$Se_triplequad))
 
 # 2) Checking data distribution and re-coding NAs
 hist(se.df$Se_triplequad)
+length(se.df$Se_triplequad[se.df$Se_triplequad > 200]) #408
 se.df$Se_triplequad[se.df$Se_triplequad > 200]  <- NA
 
 # 3) Transforming Se variable (mcg/kg DW) into mcg/100g FW EP for maize
@@ -47,6 +66,7 @@ names(se.df)
 se  <- subset(se.df, !is.na(Se_triplequad))  %>% 
 st_as_sf(., coords =c("Longitude", "Latitude"), crs = "EPSG:4326")
 plot(se)
+dim(se)
 
 # Getting info on the admin boudaries (EA/district level)
 #We changed from name to ID to avoid duplicates

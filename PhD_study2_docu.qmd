@@ -93,7 +93,10 @@ There are `r sum(!is.na(EligibleDHS$selenium))` entries for plasma Se in the dat
 -  There are some observation (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
 In addition, mean (and median) were higher in the northern region compared with southern and center. Whereas, mean/median age were higher in rural areas. We applied survey weights when calculating them. 
 
+### Gender & Pregnancy
 - There is one entry labelled as "male" while the dataset should only contain women.  
+
+### Height & Weight
 -  There are outliers in height which are higher than 2m, some are coded as 999, we can assume those are missing values (NA) according to the coding standards reported in (ICF. 2018. Demographic and Health Surveys Standard Recode Manual for DHS7. The Demographic
 and Health Surveys Program. Rockville, Maryland, U.S.A.: ICF). There is also one observation with a recorded height of 100.2.  
 -  There are some outliers in weight as well of higher than expented, on the lower bound seems plausible given age and height.
@@ -174,3 +177,5 @@ Also there are 3 rows lost, which are also lost when subsetting using either st_
 2) No actual samples were collected for certain EAs.
 
 It could be also a combination of both. 
+
+## 5) Malawi GPS data & country boundaries 

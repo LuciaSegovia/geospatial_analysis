@@ -24,8 +24,8 @@ dim(dhs.df)
 View(Malawi_WRA)
 head(dhs.df)
 plot(b_admin2)
-# Renaming variables 
 
+# Renaming variables 
 Malawi_WRA<-Malawi_WRA %>% dplyr::rename(
   ferritin='fer',
   region='mregion',
@@ -82,11 +82,12 @@ sum(Malawi_WRA$survey_weight==0) #All observations have weight > 0
 Malawi_WRA$wt  <- Malawi_WRA$survey_weight/1000000
 
 
-# Description of the sample
+# Description of the sample ----
 
 # Looking at variables of interest: summary stats + histogram
 
 #Age - Women of reproductive age (15-49 years)
+# REVIEW: Not excluding outside WRA age range
 sum(!is.na(Malawi_WRA$AGE_IN_YEARS)) #no missing values
 hist(Malawi_WRA$AGE_IN_YEARS)
 summary(Malawi_WRA$AGE_IN_YEARS)
@@ -100,32 +101,21 @@ ddply(Malawi_WRA,~urbanity,summarise,median=matrixStats::weightedMedian(AGE_IN_Y
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
 
 #Sex - Female == 2 & pregnancy
+# REVIEW: Changing coded "men" to "women"
 unique(Malawi_WRA$sex)
 which(Malawi_WRA$sex==1) #Label as male
+Malawi_WRA$sex[Malawi_WRA$sex==1]  <- 2 #converting into women
+
+# REVIEW: Removing the pregnant women
+dim(Malawi_WRA)
 unique(Malawi_WRA$is_pregnant)
 which(Malawi_WRA$is_pregnant==1) #Label as pregnant
 length(which(Malawi_WRA$is_pregnant==1)) #Label as pregnant
 subset(Malawi_WRA, is_pregnant==1, 
-select = c(region, urbanity, selenium))
-
-#Checking numeric variables
-#selenium, HEIGHT, WEIGHT
-var <- "selenium"
-x <- pull(Malawi_WRA[, var])
-
-hist(x, main = paste("Histogram of",  tolower(var)) , xlab = var)
-summary(x)
-#Skewness
-summa(x)
-summaplot(x)
-
-#Selenium
-sum(!is.na(Malawi_WRA$selenium)) # Checking NA
-# Se Weighted mean by region/urbanity
-ddply(Malawi_WRA,~region,summarise,mean=weighted.mean(selenium, wt,na.rm = T))
-ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
-boxplot(selenium ~ urbanity*region, data = Malawi_WRA,
-        col = c("white", "steelblue"), frame = FALSE)
+select = c(region, urbanity #, selenium
+))  %>%  count()
+subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant))  %>% dim()
+Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant)) 
 
 #Height - ouliers (converting 999 to NA)
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >200]
@@ -170,10 +160,34 @@ Malawi_WRA$BMI[which(Malawi_WRA$BMI>40)]
 sum(Malawi_WRA$BMI[Malawi_WRA$BMI>40])
 Malawi_WRA[298, "WEIGHT" ] #Weight & BMI outlier
 
-# Checking DHS survey data (Wealth index and other variables)
+# Selenium
+sum(is.na(Malawi_WRA$selenium)) # Checking NA
 
+# WRA location
+sum(is.na(Malawi_WRA$region)) # Checking NA
+sum(is.na(Malawi_WRA$urbanity)) # Checking NA
+
+#Checking numeric variables
+#selenium, HEIGHT, WEIGHT
+var <- "selenium"
+x <- pull(Malawi_WRA[, var])
+
+hist(x, main = paste("Histogram of",  tolower(var)) , xlab = var)
+summary(x)
+#Skewness
+summa(x)
+summaplot(x)
+
+# Se Weighted mean/median by region/urbanity
+ddply(Malawi_WRA,~region,summarise,mean=weighted.mean(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+#Boxplot Se ~ U/R and Region
+boxplot(selenium ~ urbanity*region, data = Malawi_WRA,
+        col = c("white", "steelblue"), frame = FALSE)
+
+# Checking DHS survey data  ------
+# (Wealth index and other variables)
 dim(dhs.df)
-
 
 DHSDATA<- dhs.df %>% dplyr::rename( 
   survey_cluster1='v001',
@@ -184,7 +198,6 @@ DHSDATA<- dhs.df %>% dplyr::rename(
   Literacy= "v155",
   education_level= "v106"
 )
-
 
 # Socio-economic data exploration:
 
@@ -257,6 +270,10 @@ boxplot(selenium ~ wealth_quintile, data = EligibleDHS,
      main="Plasma Selenium by Wealth Quintile",
      xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
 
+boxplot(selenium ~ urbanity*wealth_quintile, data = EligibleDHS, 
+     main="Plasma Selenium by Wealth Quintile",
+     xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
+
 #Education level
 unique(EligibleDHS$education_level)
 sum(is.na(EligibleDHS$education_level)) #29 observations are missing Educ. 
@@ -264,7 +281,6 @@ sum(is.na(EligibleDHS$education_level)) #29 observations are missing Educ.
 boxplot(selenium ~ education_level, data = EligibleDHS, 
         main="Plasma Selenium by Education level",
         xlab="Education level", ylab="plasma Se (ng/ml)", pch=19)
-
 
 #Literacy
 unique(EligibleDHS$Literacy)
@@ -397,6 +413,7 @@ tm_shape(b_admin1) +
   tm_shape(GPS_Se) + 
   tm_symbols(col = "black", size = "selenium")
 
+dim(se.df)
 # Applying survey weight
 
 # Complex sample design parameters
