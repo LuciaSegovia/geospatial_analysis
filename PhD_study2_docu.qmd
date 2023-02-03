@@ -40,15 +40,15 @@ a. Micronutrient survey data (MW_WRA). This dataset provided information on biom
 -   mregion (region) [1-3 = N->S]
 -   mtype (urban/rural) [U-R = 1-2] 
 -   m04  (gender)
--   mcluster (PSU?)
--   mnumber
--   mweight (survey weight)
+-   mcluster (cluster number - PSU?)
+-   mnumber (husehold number)
+-   mweight (Micro nutrient survey household weight (6 decimals))
 -   m01 (line number - individual ID within HH)
 -   m07 (age)
 -   m435 (weight)
 -   m436 (height)
 -   sel (Plasma Se (ng/ml))
-
+-   m415 (Took any kind of vitamin or mineral tablet/syrup/powder)
 
 b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
 
