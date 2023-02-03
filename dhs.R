@@ -26,7 +26,7 @@ head(dhs.df)
 plot(b_admin2)
 
 # Renaming variables 
-Malawi_WRA<-Malawi_WRA %>% dplyr::rename(
+Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
   ferritin='fer',
   region='mregion',
   sex = "m04", 
@@ -72,10 +72,12 @@ Malawi_WRA<-Malawi_WRA %>% dplyr::rename(
   iodine='iod',
   selenium='sel',
   vitamin_b12_gr='vitb12', 
- time_of_day_sampled2= "m430h")
+  time_of_day_sampled2= "m430h",
+  supple = "m415"
+ )
 
 #Checking survey weight & generating the variable
-# Weight survey
+# MNS Weight survey
 unique(Malawi_WRA$survey_weight)
 sum(is.na(Malawi_WRA$survey_weight)) #All observations have weight
 sum(Malawi_WRA$survey_weight==0) #All observations have weight > 0
@@ -231,7 +233,7 @@ plot(DHSDATA$education_level, DHSDATA$region,
      main="Education vs Region",
      xlab="Education", ylab="Region", pch=19)
 
-DHSDATA %>% group_by (region) %>% count(wealth_quintile)
+DHSDATA %>% group_by (region) %>% dplyr::count(wealth_quintile)
 
 
 # Merging with DHS dataset to obtain Wealth index and other variables 
@@ -247,7 +249,8 @@ EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% dplyr::rename(
 
 
 #Checking if intoducing duplicates
-n01 == dim(EligibleDHS)[1]
+n01 == dim(EligibleDHS)[1] # need to be minus pregnant
+dim(Malawi_WRA)[1] == dim(EligibleDHS)[1] 
 
 
 # Data checks (non-weigheted)
@@ -329,7 +332,7 @@ boxplot(selenium ~ is_smoker , data = EligibleDHS,
 #Identifying HH ID & cluster of missing socio-eco info
 subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
        select = c("household_id1","survey_cluster1")) %>% left_join(.,DHSDATA) %>% 
-  group_by(survey_cluster1, household_id1) %>% count(wealth_quintile) %>% 
+  group_by(survey_cluster1, household_id1) %>% dplyr::count(wealth_quintile) %>% 
   filter(!is.na(wealth_quintile)) %>% 
   View()
 
