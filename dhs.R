@@ -1,6 +1,7 @@
 
 
 # Loading libraries, data and functions
+
 library(dplyr)
 library(plyr)
 library(ggplot2)
@@ -23,7 +24,7 @@ names(Malawi_WRA)
 dim(dhs.df)
 View(Malawi_WRA)
 head(dhs.df)
-plot(b_admin2)
+#plot(b_admin2)
 
 # Renaming variables 
 Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
@@ -90,6 +91,8 @@ Malawi_WRA$wt  <- Malawi_WRA$survey_weight/1000000
 
 #Age - Women of reproductive age (15-49 years)
 # REVIEW: Not excluding outside WRA age range
+# Note: That in the histogram women = 15yo are counted in the first
+# bar (that's why the freq. is over 50)
 sum(!is.na(Malawi_WRA$AGE_IN_YEARS)) #no missing values
 hist(Malawi_WRA$AGE_IN_YEARS)
 summary(Malawi_WRA$AGE_IN_YEARS)
@@ -311,16 +314,6 @@ boxplot(selenium ~ sdist , data = EligibleDHS,
         main="Plasma Selenium by District",
         xlab="District", ylab="plasma Se (ng/ml)", pch=19)
 
-# Residency (Rural urban)
-unique(EligibleDHS$sdist)
-sum(is.na(EligibleDHS$sdist)) #29 observations are missing
-table(EligibleDHS$sdist)
-
-boxplot(selenium ~ sdist , data = EligibleDHS, 
-        main="Plasma Selenium by District",
-        xlab="District", ylab="plasma Se (ng/ml)", pch=19)
-
-
 # Smoking
 unique(EligibleDHS$is_smoker)
 sum(is.na(EligibleDHS$is_smoker)) #29 observations are missing smoking status
@@ -421,10 +414,11 @@ dim(se.df)
 
 # Complex sample design parameters
 
-DHSdesign<-svydesign(id=EligibleDHS$survey_cluster1, strata=EligibleDHS$survey_strata, weights=EligibleDHS$swt, data=EligibleDHS)
+DHSdesign<-svydesign(id=EligibleDHS$survey_cluster1, 
+strata=EligibleDHS$survey_strata, #This strata
+ weights=EligibleDHS$survey_weight, data=EligibleDHS)
 
- 
 
 # tabulate indicator by region
 
-svyby(~selenium, ~wealth_quintile, DHSdesign, svymean, vartype=c("se","ci"))
+svyby(~selenium, ~urbanity,  DHSdesign, svymean, vartype=c("se","ci"))

@@ -51,3 +51,8 @@ rsconnect/
 
 #Data file
 data/
+
+# produced presentations
+presentation/*.html
+presentation/*.pdf
+presentation/*/

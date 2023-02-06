@@ -58,8 +58,8 @@ Variables of interest:
 
 -   v101/V024 (De facto region of residence)
 -   sdist - (district). 
--   v022 (survey strata). Note that v022 & v023 are strata Urban/rural district.
--   v005 (Woman's sample weights, divide it by 1000000 before applying the weighting factor)
+-   v022 (survey strata). Note that v022 & v023 are strata Urban/rural district. This shouldn't be used for MNS because the representativeness (and strata in MNS are region+rural/urban.
+-   v005 (Woman's sample weights, divide it by 1000000 before applying the weighting factor). Not to be used for MNS, as MNS is a subset and has its own survey weights. 
 
 -   v106 (Highest educational level)
 

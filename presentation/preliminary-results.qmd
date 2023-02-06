@@ -1,7 +1,7 @@
 ---
 title: "Preliminary results"
 author: "Lucia Segovia de la Revilla"
-date: Sys.Date()
+date: ""
 format: 
   html:
     fig-width: 8
@@ -9,19 +9,79 @@ format:
     code-fold: true
 ---
 
-## Air Quality
 
-@fig-airquality further explores the impact of temperature on ozone level.
+```{r, message = FALSE}
+
+library(dplyr)
+
+Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data
+ 
+Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
+  ferritin='fer',
+  region='mregion',
+  sex = "m04", 
+ # rbp='RBP', #correctly labelled
+#  crp='CRP', #correctly labelled
+ # agp='AGP', #correctly labelled
+#  stfr='sTfR',
+  zinc='zn_gdl',
+  dretinol='incap_dr',
+  retinol='incap_retinol',
+  urbanity='mtype',
+  MRDR='mrdr_ratio',
+  survey_cluster1='mcluster',
+  household_id1='mnumber',
+  survey_weight="mweight",
+  LINENUMBER='m01',
+  AGE_IN_YEARS='m07',
+  SALT_PRESENT='m12',
+  SALT_LABEL_IODIZED='m104',
+  OIL_PRESENT='m110',
+  OIL_FORTIFIED='m112',
+  IRON_LWEEK='m414',
+  ANY_IRON='m415',
+  FEVER24='m417',
+  HEMOGLOBIN_LAB='m432',
+  Malaria_test_result='m431',
+  WEIGHT='m435',
+  HEIGHT='m436',
+  is_pregnant='preg',
+  agp_HIGH='agp_c1',
+  crp_HIGH='crp_c1',
+  ANY_INFLAMMATION='agp_crp_c1',
+  ANEMIA_ADJUSTED='anemia',
+  SFER_microg_L_ADJUSTED_INTERNAL='sf_reg',
+  LOW_SFER_microg_L_UNADJUSTED='sf_c2',
+  LOW_SFER_microg_L_ADJUSTED='sf_c1',
+  VITA_CONTENT_OIL='oil_vita',
+  VITA_CONTENT_SUGAR='sugar_vita',
+  IODINE_SALT='salt',
+  was_fasting='fast',
+  ps_folate='fol',
+  rbc_folate='rbcf',
+  iodine='iod',
+  selenium='sel',
+  vitamin_b12_gr='vitb12', 
+  time_of_day_sampled2= "m430h",
+  supple = "m415"
+ )
+
+```
+
+## Checking MNS data
+
+@fig-age shows that within the MNS survey, we have women who are below the standard WRA age range. Partiularly, we found `r sum(Malawi_WRA$AGE_IN_YEARS<15)` who were younger than the expected age (15-49yo).
+
+
 
 ```{r}
-#| label: fig-airquality
-#| fig-cap: Temperature and ozone level.
+#| label: fig-age
+#| fig-cap: Histogram of the age of the WRA
 #| warning: false
+#| 
 
-library(ggplot2)
+hist(Malawi_WRA$AGE_IN_YEARS)
+abline(v =15, col="red")
+#abline(v =49, col="red")
 
-ggplot(airquality, aes(Temp, Ozone)) + 
-  geom_point() + 
-  geom_smooth(method = "loess"
-)
 ```
