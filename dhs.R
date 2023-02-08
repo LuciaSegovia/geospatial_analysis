@@ -89,6 +89,11 @@ Malawi_WRA$survey_weight[Malawi_WRA$survey_weight>5000000]
 Malawi_WRA$selenium[Malawi_WRA$survey_weight>5000000]
 
 summaplot(Malawi_WRA$wt)
+table(Malawi_WRA$wt)
+
+# Perc. difference with population (WRA)
+(n01-sum(Malawi_WRA$wt))/n01*100
+
 
 # Description of the sample ----
 
