@@ -83,7 +83,12 @@ unique(Malawi_WRA$survey_weight)
 sum(is.na(Malawi_WRA$survey_weight)) #All observations have weight
 sum(Malawi_WRA$survey_weight==0) #All observations have weight > 0
 Malawi_WRA$wt  <- Malawi_WRA$survey_weight/1000000
+hist(Malawi_WRA$survey_weight)
 
+Malawi_WRA$survey_weight[Malawi_WRA$survey_weight>5000000]
+Malawi_WRA$selenium[Malawi_WRA$survey_weight>5000000]
+
+summaplot(Malawi_WRA$wt)
 
 # Description of the sample ----
 
@@ -184,7 +189,7 @@ summa(x)
 summaplot(x)
 
 # Se Weighted mean/median by region/urbanity
-ddply(Malawi_WRA,~region,summarise,mean=weighted.mean(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,~region, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
 #Boxplot Se ~ U/R and Region
 boxplot(selenium ~ urbanity*region, data = Malawi_WRA,
