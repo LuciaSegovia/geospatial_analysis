@@ -117,8 +117,6 @@ subset(se_admin, NAME_1 == "Balaka")
 subset(se_admin, NAME_1 == unique(se_admin$NAME_1)[2], Se_triplequad)
 
 
-model<-lme(Se_triplequad~1, random=~1|ID_1, data=se_admin)
-
 # Boxplot of the maize Se values per geographic unit
 #TODO: A loop with boxplot for all EAs in each district
 var1  <- unique(se_admin$NAME_1)[3]
@@ -172,7 +170,7 @@ full_join(., admin)  %>% st_as_sf()
 
 
 # loop through the sample points and calculate the pairwise variograms in parallel
-results <- foreach(i = 1:nrow(test.df), .combine = rbind) %dopar% {
+ results <- foreach(i = 1:nrow(test.df), .combine = rbind) %dopar% {
     result_list <- list()
  for (j in 1:nrow(test.df)) {
        result  <- plot(test.df[j, 2]) 
@@ -185,3 +183,11 @@ results <- foreach(i = 1:nrow(test.df), .combine = rbind) %dopar% {
 
 # stop the cluster and deregister the parallel backend
 stopCluster(cl)
+
+
+summary(se_district$Se_median)
+summary(re$se_mean)
+
+plot(se_district$Se_median, re$se_mean,  
+     main="",
+     xlab="", ylab="", pch=19)

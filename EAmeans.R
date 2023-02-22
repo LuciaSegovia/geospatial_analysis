@@ -31,7 +31,7 @@ str(boundaries)
 data.df  <- readxl::read_excel(here::here("..", "GeoNutrition",
 "Geostatistics_and_mapping", "Malawi_Grain.xlsx"))
 
-data.df<-read.csv("data/Malawi_Grain.csv",header=T,stringsAsFactors = T)
+#data.df<-read.csv("data/Malawi_Grain.csv",header=T,stringsAsFactors = T)
 data.df<-data.df[which(data.df$Crop=="Maize"),]
 dim(data.df)
 # converting to coordinates
@@ -114,6 +114,7 @@ re  <- tibble::rownames_to_column(re, var = "ID_1")
 head(re)
 
 hist(re$se_mean)
+
 re  %>% full_join(., admin)  %>% st_as_sf()  %>% 
 ggplot() + 
   geom_sf(aes(fill = se_mean)) +
