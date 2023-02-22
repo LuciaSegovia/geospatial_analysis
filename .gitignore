@@ -56,3 +56,6 @@ data/
 presentation/*.html
 presentation/*.pdf
 presentation/*/
+
+#outputs
+*.pdf

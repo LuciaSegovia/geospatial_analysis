@@ -175,6 +175,8 @@ Malawi_WRA$BMI[which(Malawi_WRA$BMI>40)]
 sum(Malawi_WRA$BMI[Malawi_WRA$BMI>40])
 Malawi_WRA[298, "WEIGHT" ] #Weight & BMI outlier
 
+ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+
 # Selenium
 sum(is.na(Malawi_WRA$selenium)) # Checking NA
 
@@ -264,6 +266,8 @@ EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% dplyr::rename(
 #Checking if intoducing duplicates
 n01 == dim(EligibleDHS)[1] # need to be minus pregnant
 dim(Malawi_WRA)[1] == dim(EligibleDHS)[1] 
+
+ddply(EligibleDHS, ~wealth_quintile, summarise,median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
 
 
 # Data checks (non-weigheted)
