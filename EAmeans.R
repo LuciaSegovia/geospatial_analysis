@@ -104,18 +104,21 @@ summaplot(residuals(model,level=0))
 summary(model)
 fixef(model) # fixed effects
 n  <- fixef(model) # fixed effects
-re<-ranef(model) # random effects
+re <-ranef(model) # random effects
 
 names(re)[1]  <- "intercept"
-re$mean_ea  <- exp(re$intercept-n)
-re$mean_ea  <- re$intercept-n
+re$se_mean  <- exp(re$intercept+n)
+
 
 re  <- tibble::rownames_to_column(re, var = "ID_1")
 head(re)
 
+hist(re$se_mean)
 re  %>% full_join(., admin)  %>% st_as_sf()  %>% 
 ggplot() + 
-  geom_sf(aes(fill = mean_ea))
+  geom_sf(aes(fill = se_mean)) +
+  scale_fill_gradientn(colours=topo.colors(7),
+    limits=c(0.009, 0.17))
 
 write.csv(re, "re.csv") # save output 
 

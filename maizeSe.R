@@ -127,14 +127,22 @@ boxplot(Se_mcg ~ ID_3, data = subset(se_admin, NAME_1 %in% var1),
         xlab=paste0("EAs in ", var1, " distric"), 
         ylab="Se (mcg/100g FW-EP)", pch=19)
 
-# Plotting values (e.g., median Se values) per geographic unit
-se_admin  %>% st_drop_geometry()  %>% 
+se_district  <- se_admin  %>% st_drop_geometry()  %>% 
 group_by(ID_1)  %>% 
-summarise(Se_median = median(Se_triplequad))   %>% 
+summarise(Se_median = median(Se_triplequad))
+
+# Plotting values (e.g., median Se values) per geographic unit
+
+hist(se_district$Se_median)  
+
+se_district %>% 
 left_join(., admin)  %>% st_as_sf()  %>% 
 #plot()
 ggplot() + 
-  geom_sf(aes(fill = Se_median))
+  geom_sf(aes(fill = Se_median)) +
+  scale_fill_gradientn(colours=topo.colors(7),
+    limits=c(0.009, 0.17))
+
 
 # Plotting Se median (mcg/100g FW-EP) per geographic unit
 se_admin  %>% st_drop_geometry()  %>% 
@@ -144,7 +152,8 @@ summarise(Se_median = median(Se_mcg, na.rm = T))   %>%
 full_join(., admin)  %>% st_as_sf()  %>% 
 #.[1,]  %>% 
 ggplot() + 
-  geom_sf(aes(fill = Se_median))
+  geom_sf(aes(fill = Se_median)) 
+  
 
 
 # Trying out the paralellisation ------
