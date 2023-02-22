@@ -14,10 +14,10 @@ grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
 
 # Selecting the boundaries (1-3; district to EA)
 
-n  <- 1
+bn  <- 3
 
 boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", paste0("gadm40_MWI_", n, ".shp")))
+ "mwi-boundaries", paste0("gadm40_MWI_", bn, ".shp")))
 
 b_admin1  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "gadm40_MWI_1.shp"))
@@ -80,7 +80,7 @@ dim(se)
 
 # Getting info on the admin boudaries (EA/district level)
 #We changed from name to ID to avoid duplicates
-name_var  <- paste0("ID_", n)
+name_var  <- paste0("ID_", bn)
 admin  <- boundaries[, c("NAME_1", name_var, "geometry")]
 sum(duplicated(admin$ID_3))
 unique(admin$NAME_1)
@@ -129,17 +129,24 @@ se_district  <- se_admin  %>% st_drop_geometry()  %>%
 group_by(ID_1)  %>% 
 summarise(Se_median = median(Se_triplequad))
 
+se_ea  <- se_admin  %>% st_drop_geometry()  %>% 
+group_by(ID_3)  %>% 
+summarise(Se_median = median(Se_triplequad), 
+          Se_mean = mean(Se_triplequad))
+
 # Plotting values (e.g., median Se values) per geographic unit
 
-hist(se_district$Se_median)  
+hist(se_ea$Se_median)  
+hist(se_ea$Se_mean)  
 
-se_district %>% 
-left_join(., admin)  %>% st_as_sf()  %>% 
+# se_district 
+se_ea %>% 
+full_join(., admin)  %>% st_as_sf()  %>% 
 #plot()
 ggplot() + 
-  geom_sf(aes(fill = Se_median)) +
-  scale_fill_gradientn(colours=topo.colors(7),
-    limits=c(0.009, 0.17))
+  geom_sf(aes(fill = Se_median)) #+
+ # scale_fill_gradientn(colours=topo.colors(7),
+  #  limits=c(0.009, 0.17))
 
 
 # Plotting Se median (mcg/100g FW-EP) per geographic unit
@@ -188,6 +195,6 @@ stopCluster(cl)
 summary(se_district$Se_median)
 summary(re$se_mean)
 
-plot(se_district$Se_median, re$se_mean,  
+plot(se_ea$Se_median, re$se_mean,  
      main="",
      xlab="", ylab="", pch=19)

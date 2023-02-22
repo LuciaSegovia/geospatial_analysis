@@ -40,7 +40,6 @@ UTM36S="+init=epsg:32736"
 sp::CRS(SRS_string = "EPSG:4326")
 sp::CRS(SRS_string = "EPSG:32736")
 
-# REVIEW: The sp transformation is not working with our dataset
 locs<-cbind(data.df$Longitude,data.df$Latitude)
 loc_sp<-SpatialPoints(locs, proj4string=CRS("+proj=longlat +datum=WGS84"))
 # loc_UTM <- spTransform(loc_sp, sp::CRS(SRS_string = "EPSG:32736"))
@@ -94,7 +93,10 @@ se_admin$selog  <- log(se_admin$Se_triplequad)
 # fit model to transformed data
 
 model<-lme(selog~1, random=~1|EA, data=data.df)
+
 model<-lme(selog~1, random=~1|ID_1, data=se_admin)
+#Fit model to ea
+model<-lme(selog~1, random=~1|ID_3, data=se_admin)
 
 # check distribution of residuals
 histplot(residuals(model,level=0))
@@ -104,22 +106,22 @@ summaplot(residuals(model,level=0))
 summary(model)
 fixef(model) # fixed effects
 n  <- fixef(model) # fixed effects
-re <-ranef(model) # random effects
+re <- ranef(model) # random effects
 
 names(re)[1]  <- "intercept"
 re$se_mean  <- exp(re$intercept+n)
 
 
-re  <- tibble::rownames_to_column(re, var = "ID_1")
+re  <- tibble::rownames_to_column(re, var = paste0("ID_", bn))
 head(re)
 
 hist(re$se_mean)
 
 re  %>% full_join(., admin)  %>% st_as_sf()  %>% 
 ggplot() + 
-  geom_sf(aes(fill = se_mean)) +
-  scale_fill_gradientn(colours=topo.colors(7),
-    limits=c(0.009, 0.17))
+  geom_sf(aes(fill = se_mean)) #+
+  # scale_fill_gradientn(colours=topo.colors(7),
+    # limits=c(0.009, 0.17))
 
 write.csv(re, "re.csv") # save output 
 
