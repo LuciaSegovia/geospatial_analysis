@@ -28,59 +28,9 @@ boundaries   <- rgdal::readOGR(here::here("..", "PhD_geospatial-modelling", "dat
 str(boundaries)
 
 # Loading biomarkers Se data
-
 dhs_se  <- readRDS(here::here("data","inter-output",
 "dhs_se.rds"))
 
-# maize data
-data.df  <- readxl::read_excel(here::here("..", "GeoNutrition",
-"Geostatistics_and_mapping", "Malawi_Grain.xlsx"))
-
-#data.df<-read.csv("data/Malawi_Grain.csv",header=T,stringsAsFactors = T)
-data.df<-data.df[which(data.df$Crop=="Maize"),]
-dim(data.df)
-# converting to coordinates
-UTM36S="+init=epsg:32736"
-
-sp::CRS(SRS_string = "EPSG:4326")
-sp::CRS(SRS_string = "EPSG:32736")
-
-locs<-cbind(data.df$Longitude,data.df$Latitude)
-loc_sp<-SpatialPoints(locs, proj4string=CRS("+proj=longlat +datum=WGS84"))
-# loc_UTM <- spTransform(loc_sp, sp::CRS(SRS_string = "EPSG:32736"))
-loc_UTM<- spTransform(loc_sp, sp::CRS(UTM36S))
-
-data.df<-data.frame(cbind(loc_UTM@coords,data.df$Crop,data.df$Se_triplequad))
-names(data.df)[names(data.df) == "coords.x1"] <- "Easting"
-names(data.df)[names(data.df) == "coords.x2"] <- "Northing"
-names(data.df)[names(data.df) == "V3"] <- "crop"
-names(data.df)[names(data.df) == "V4"] <- "Sel_trp"
-#names(data.df)[names(data.df) == "V5"] <- "Fe"
-#names(data.df)[names(data.df) == "V6"] <- "Zn"
-#names(data.df)[names(data.df) == "V7"] <- "Se_trp"
-#write.csv(data.df,"maize.csv")
-
-# data.df<-read.csv("maize.csv",header=T,stringsAsFactors = T)
-data.df<-na.omit(data.df)
-data.df$Sel_trp  <- as.numeric(data.df$Sel_trp)
-
-summa(data.df$Sel_trp)
-summaplot(data.df$Sel_trp)
-max(data.df$Sel_trp)
-
-data.df$Sel_trp[data.df$Sel_trp ==88888] <- NA
-data.df$Sel_trp[data.df$Sel_trp ==77777] <- NA
-data.df$Sel_trp[data.df$Sel_trp ==99999] <- NA
-
-data.df<-na.omit(data.df)
-names(data.df)
-
-# preliminary data analysis
-
-summa(data.df$Sel_trp)
-summaplot(data.df$Sel_trp)
-
-names(data.df)
 
 # Allocating Se values to each admin unit
 
@@ -93,20 +43,45 @@ unique(admin$NAME_1)
 plot(admin)
 
 # Allocating plasma Se values to each admin unit
-plasma_admin = st_intersection(GPS_Se, admin)
+plasma_admin = st_intersection(dhs_se, admin)
 
+names(plasma_admin)
+dim(plasma_admin)
+subset(plasma_admin, NAME_1 == "Balaka") 
 
+# Calculating mean/median plasma Se by admin unit
+plasma_mean   <- plasma_admin  %>% st_drop_geometry()  %>% 
+dplyr::group_by(ID_3)  %>% 
+dplyr::summarise(Se_median = median(selenium, na.rm = TRUE), 
+          Se_mean = mean(selenium, na.rm = TRUE)) 
 
-# fit the model
+# Checkin the mean     
+hist(plasma_mean$Se_mean)          
+           
+# Plotting the plasma Se median by admin unit
+ plasma_mean   %>% 
+full_join(., admin)  %>% st_as_sf()  %>% 
+#plot()
+ggplot() + 
+  geom_sf(aes(fill = Se_median))
 
-model<-lme(Sel_trp~1, random=~1|EA, data=data.df)
+# Checking plasma values for the model
+summaplot(plasma_admin$selenium)
+sum(is.na(plasma_admin$selenium))
+plasma_admin  <- subset(plasma_admin, !is.na(selenium)) # removing NA
+plasma_admin$sel_log<-log(plasma_admin$selenium)
+summaplot(plasma_admin$sel_log)
+
+# fit the model: Plasma Se
+model<-lme(sel_log~1, random=~1|ID_3, data=plasma_admin)
+
 
 # check distribution of residuals
 histplot(residuals(model,level=0))
 summaplot(residuals(model,level=0))
 
+
 # log transformation
-data.df$selog<-log(data.df$Sel_trp)
 se_admin$selog  <- log(se_admin$Se_triplequad)
 
 
@@ -142,6 +117,7 @@ ggplot() +
   geom_sf(aes(fill = se_mean)) #+
   # scale_fill_gradientn(colours=topo.colors(7),
     # limits=c(0.009, 0.17))
+
 
 write.csv(re, "re.csv") # save output 
 
