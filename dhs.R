@@ -1,22 +1,21 @@
 
 
-# Loading libraries, data and functions
+# Loading libraries and functions
 
-library(dplyr)
-library(plyr)
-library(ggplot2)
-library(survey)
-library(sf)
-library(tmap) 
+library(dplyr) # data wrangling 
+library(plyr) # weighted data analysis
+library(ggplot2) # visualisation
+library(survey) # survey design
+library(sf) #spatial data manipulation
+library(tmap)  #spatial data manipulation and visualisation
+source(here::here("CEPHaStat_3.R")) #stat functions
 
-#dhs.df<-read.table("MWIR7AFL.dat", header=T)
-dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) #survey data
-Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data
-#GPS <-read.csv(here::here("data", "MalawiGPS.csv")) #GPS location 
-GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp"))
-source(here::here("CEPHaStat_3.R"))
-b_admin2  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_2.shp"))
-b_admin1  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_1.shp"))
+# Loading the datat
+dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) #survey data DHS
+Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data DHS
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) #GPS location DHS
+b_admin3  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_3.shp")) #EA boundaries
+b_admin1  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_1.shp")) #District boundaries
 
 # Import checks
 n01 <-  dim(Malawi_WRA)[1]
@@ -24,7 +23,7 @@ names(Malawi_WRA)
 dim(dhs.df)
 View(Malawi_WRA)
 head(dhs.df)
-#plot(b_admin2)
+#plot(b_admin1[,1])
 
 # Renaming variables 
 Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
