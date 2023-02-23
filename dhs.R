@@ -21,7 +21,7 @@ b_admin1  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_1.shp")) #
 n01 <-  dim(Malawi_WRA)[1]
 names(Malawi_WRA)
 dim(dhs.df)
-View(Malawi_WRA)
+#View(Malawi_WRA)
 head(dhs.df)
 #plot(b_admin1[,1])
 
@@ -84,12 +84,14 @@ sum(Malawi_WRA$survey_weight==0) #All observations have weight > 0
 Malawi_WRA$wt  <- Malawi_WRA$survey_weight/1000000
 hist(Malawi_WRA$survey_weight)
 
+#Checking high weights & Se values for those high weights
 Malawi_WRA$survey_weight[Malawi_WRA$survey_weight>5000000]
 Malawi_WRA$selenium[Malawi_WRA$survey_weight>5000000]
 
 summaplot(Malawi_WRA$wt)
 table(Malawi_WRA$wt)
 
+#Checking that survey weight are representative of pop. (WRA)
 # Perc. difference with population (WRA)
 (n01-sum(Malawi_WRA$wt))/n01*100
 
@@ -115,12 +117,12 @@ ddply(Malawi_WRA,~urbanity,summarise,median=matrixStats::weightedMedian(AGE_IN_Y
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
 
 #Sex - Female == 2 & pregnancy
-# REVIEW: Changing coded "men" to "women"
 unique(Malawi_WRA$sex)
 which(Malawi_WRA$sex==1) #Label as male
+# REVIEW: Changing coded "men" to "women"
 Malawi_WRA$sex[Malawi_WRA$sex==1]  <- 2 #converting into women
 
-# REVIEW: Removing the pregnant women
+# Pregnancy
 dim(Malawi_WRA)
 unique(Malawi_WRA$is_pregnant)
 which(Malawi_WRA$is_pregnant==1) #Label as pregnant
@@ -129,6 +131,7 @@ subset(Malawi_WRA, is_pregnant==1,
 select = c(region, urbanity #, selenium
 ))  %>%  count()
 subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant))  %>% dim()
+# REVIEW: Removing the pregnant women
 Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant)) 
 
 #Height - ouliers (converting 999 to NA)
@@ -266,7 +269,7 @@ EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% dplyr::rename(
 n01 == dim(EligibleDHS)[1] # need to be minus pregnant
 dim(Malawi_WRA)[1] == dim(EligibleDHS)[1] 
 
-ddply(EligibleDHS, ~wealth_quintile, summarise,median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+ddply(EligibleDHS, ~wealth_quintile, summarise,medianBMI=matrixStats::weightedMedian(BMI, wt,na.rm = T))
 
 
 # Data checks (non-weigheted)
@@ -397,15 +400,26 @@ EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
 EligibleDHS$LOW_SEL_IDI <- ifelse(EligibleDHS$selenium<64.8,1,0)
 EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 
+# Saving Se dataset into R object
+saveRDS(EligibleDHS, 
+ file=here::here("data", "inter-output","dhs.rds"))
 
 # add GPS values
 # TODO: Add Malawi boundaries
 
 GPS<-dplyr::rename(GPS, survey_cluster1='DHSCLUST')
 
-GPS_Se <- merge(EligibleDHS[, c("survey_cluster1", "selenium")], GPS, by='survey_cluster1')
-GPS_Se  <- st_as_sf(GPS_Se, crs = "4326", coords = c('LONGNUM', 'LATNUM'))
 
+# Only for Se in the dataset
+GPS_Se <- merge(EligibleDHS[, c("survey_cluster1", "selenium")], GPS, by='survey_cluster1')
+GPS_Se  <- st_as_sf(GPS_Se, crs = st_crs(4326), coords = c('LONGNUM', 'LATNUM'))
+
+ # Saving Se dataset into R object
+saveRDS(GPS_Se[,c("survey_cluster1", "selenium", "ADM1NAME", "geometry")], 
+ file=here::here("data", "inter-output","dhs_se.rds"))
+
+
+# TODO: for the whole dataset
 EligibleDHS <- merge(EligibleDHS, GPS, by='survey_cluster1')
 
 EligibleDHS<-rename(EligibleDHS, latitude='LATNUM')
@@ -413,7 +427,7 @@ EligibleDHS<-rename(EligibleDHS, longitude='LONGNUM')
 EligibleDHS<-rename(EligibleDHS, altitude_in_metres='ALT_GPS')
 
 GPS_Se  %>% 
- st_as_sf(., coords = c('LONGNUM', 'LATNUM'))  %>% 
+# st_as_sf(., coords = c('LONGNUM', 'LATNUM'))  %>% 
 ggplot() + 
   geom_sf(aes(color = selenium))
 
@@ -422,7 +436,7 @@ tm_shape(b_admin1) +
   tm_shape(GPS_Se) + 
   tm_symbols(col = "black", size = "selenium")
 
-dim(se.df)
+
 # Applying survey weight
 
 # Complex sample design parameters
