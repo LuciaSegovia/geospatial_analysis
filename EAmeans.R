@@ -17,15 +17,20 @@ library(geoR)
 
 
 # Selecting the boundaries (1-3; district to EA)
-n  <- 3
+bn  <- 3
 
 boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", paste0("gadm40_MWI_", n, ".shp")))
+ "mwi-boundaries", paste0("gadm40_MWI_", bn, ".shp")))
 class(boundaries)
 
 boundaries   <- rgdal::readOGR(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", paste0("gadm40_MWI_", n, ".shp")))
 str(boundaries)
+
+# Loading biomarkers Se data
+
+dhs_se  <- readRDS(here::here("data","inter-output",
+"dhs_se.rds"))
 
 # maize data
 data.df  <- readxl::read_excel(here::here("..", "GeoNutrition",
@@ -76,6 +81,21 @@ summa(data.df$Sel_trp)
 summaplot(data.df$Sel_trp)
 
 names(data.df)
+
+# Allocating Se values to each admin unit
+
+# Getting info on the admin boudaries (EA/district level)
+#We changed from name to ID to avoid duplicates
+name_var  <- paste0("ID_", bn)
+admin  <- boundaries[, c("NAME_1", name_var, "geometry")]
+sum(duplicated(admin$ID_3))
+unique(admin$NAME_1)
+plot(admin)
+
+# Allocating plasma Se values to each admin unit
+plasma_admin = st_intersection(GPS_Se, admin)
+
+
 
 # fit the model
 
