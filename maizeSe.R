@@ -78,6 +78,8 @@ st_as_sf(., coords =c("Longitude", "Latitude"), crs = "EPSG:4326")
 plot(se)
 dim(se)
 
+saveRDS(se, here::here("data", "inter-output", "maize_se.rds"))
+
 # Getting info on the admin boudaries (EA/district level)
 #We changed from name to ID to avoid duplicates
 name_var  <- paste0("ID_", bn)
@@ -192,9 +194,32 @@ full_join(., admin)  %>% st_as_sf()
 stopCluster(cl)
 
 
+summary(plasma_admin$Se_median)
+summary(se_ea$Se_median)
 summary(se_district$Se_median)
 summary(re$se_mean)
 
 plot(se_ea$Se_median, re$se_mean,  
      main="",
      xlab="", ylab="", pch=19)
+
+plot(test$selenium, test$Se_triplequad, 
+     main="",
+     xlab="", ylab="", pch=19)
+
+test  <- plasma_admin  %>% left_join(se_ea, 
+by = "ID_3")
+
+sum(is.na(plasma_admin$ID_3))
+count(plasma_admin$ID_3)
+sum(is.na(plasma_admin$selenium))
+
+sum(is.na(se_admin$Se_triplequad))
+count(se_admin$ID_3)
+
+
+test  <-  plasma_admin   %>% st_drop_geometry()  %>%
+left_join(., se_admin  %>%  st_drop_geometry(), 
+by = "ID_3")
+
+test  <- plasma_admin  %>% st_join(se_admin) 
