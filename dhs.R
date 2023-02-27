@@ -76,7 +76,19 @@ Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
   supple = "m415"
  )
 
-#Checking survey weight & generating the variable
+#Checking variables
+dim(Malawi_WRA)
+sum(duplicated(Malawi_WRA$survey_cluster1))
+sum(duplicated(Malawi_WRA$LINENUMBER))
+table(Malawi_WRA$LINENUMBER)
+
+Malawi_WRA$unique_id  <- paste0(Malawi_WRA$survey_cluster1,
+                        Malawi_WRA$household_id1, Malawi_WRA$LINENUMBER)
+
+# Creating a unique id for each WRA
+sum(duplicated(Malawi_WRA$unique_id))
+
+# Checking survey weight & generating the variable
 # MNS Weight survey
 unique(Malawi_WRA$survey_weight)
 sum(is.na(Malawi_WRA$survey_weight)) #All observations have weight
@@ -136,6 +148,7 @@ Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant))
 
 #Height - ouliers (converting 999 to NA)
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >200]
+# REVIEW: Outliers 999 to NA
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >999] <- NA
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT <130] 
 Malawi_WRA$AGE_IN_YEARS[Malawi_WRA$HEIGHT <120] 
@@ -152,6 +165,7 @@ hist(Malawi_WRA$WEIGHT)
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >200]
 Malawi_WRA$region[Malawi_WRA$WEIGHT >999] # Checking if this "missing values" are affecting more to a particular region
 Malawi_WRA$urbanity[Malawi_WRA$WEIGHT >999] # Same but for urbanity
+# REVIEW: Outliers 999 to NA
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >999] <- NA
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >80] 
 Malawi_WRA$HEIGHT[Malawi_WRA$WEIGHT >80] 
@@ -406,16 +420,16 @@ saveRDS(EligibleDHS,
 
 # add GPS values
 # TODO: Add Malawi boundaries
-
 GPS<-dplyr::rename(GPS, survey_cluster1='DHSCLUST')
 
 
+
 # Only for Se in the dataset
-GPS_Se <- merge(EligibleDHS[, c("survey_cluster1", "selenium")], GPS, by='survey_cluster1')
+GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "selenium")], GPS, by='survey_cluster1')
 GPS_Se  <- st_as_sf(GPS_Se, crs = st_crs(4326), coords = c('LONGNUM', 'LATNUM'))
 
  # Saving Se dataset into R object
-saveRDS(GPS_Se[,c("survey_cluster1", "selenium", "ADM1NAME", "geometry")], 
+saveRDS(GPS_Se[,c("unique_id","survey_cluster1", "selenium", "ADM1NAME", "geometry")], 
  file=here::here("data", "inter-output","dhs_se.rds"))
 
 
@@ -434,6 +448,13 @@ ggplot() +
 tm_shape(b_admin1) +
   tm_polygons() +
   tm_shape(GPS_Se) + 
+  tm_symbols(col = "black", size = "selenium")
+
+boundaries$shapeID[boundaries$shapeID == "60268647B1308848342151"] 
+  boundaries  %>% filter(shapeID != "60268647B1308848342151")  %>% 
+  tm_shape() +
+  tm_polygons() +
+  tm_shape(dhs_se) + 
   tm_symbols(col = "black", size = "selenium")
 
 
