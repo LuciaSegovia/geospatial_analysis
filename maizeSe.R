@@ -162,7 +162,6 @@ ggplot() +
   geom_sf(aes(fill = Se_median)) 
   
 
-
 # Trying out the paralellisation ------
 results <- list()
 # set up a cluster with n cores for parallel processing. I use n - 1 cores to leave one core free for other processes.
