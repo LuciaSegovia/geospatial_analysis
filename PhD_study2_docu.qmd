@@ -14,6 +14,8 @@ The objectives of these exploratory analysis are:
 
 ## Dataset & Variables
 
+### Geo-referenced crop (maize) composition (Se in maize) in Malawi
+
 1.  Malawi maize grain and soil Se concentration dataset. It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
 
 File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
@@ -30,6 +32,8 @@ File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
 -   BIO1
 -   BIO12
 -   TIM
+
+### Geo-referenced biomarkers data (Plasma Se in WRA) in Malawi 
 
 2.  Malawi DHS -- MNS 2015-2016. Access need to be requested to DHS data\[Add link\]().
 
@@ -77,11 +81,47 @@ GPS displacement within district.
 
 #TODO: Check README and recommended readings to understand displacement and what it is possible and not possible for analysis. 
 
+### Boundaries of Malawi
 
 3.  Malawi boundaries
 
--   folder name (gadm40_MWI_shp)
+- folder name (gadm40_MWI_shp): The file for the EAs has some issues that lead some points in the lake. Hence, we found a different file with the Malawi boudaries. 
 
+- GeoBoundaries: It also has 3 level of boudaries: 1-region, 2-district, 3-EA.
+
+### Geo-referenced apparent food consumption in Malawi (Se intake)
+
+4. Fourth Integrated Household Survey 2016-2017. https://doi.org/10.48529/g2p9-9r19. It can be accessed through the World Bank microdata website. 
+
+Information about each module and the information contained can be found [here](https://microdata.worldbank.org/index.php/catalog/2936/pdf-documentation)
+
+**File of interest & variables**:
+
+a. Food consumption
+
+b. Geographic data (HouseholdGeovariablesIHS4.csv). This dataset has information on the displaced coordinates of each household, distance to some features (road, population centre, agricultural market, etc), and other enviromental variables (elevation, rainfall, etc).
+
+Variables of interest:
+
+-   case_id: Unique Household Identifier
+
+-   HHID: household id (Survey Solutions Unique HH Identifier)
+
+-   lat_modified: GPS Latitude Modified
+
+-   lon_modified: GPS Longitude Modified
+
+-   dist_road: HH Distance in (KMs) to Nearest Road
+
+-   dist_agmrkt: HH Distance in (KMs) to Nearest Agricultural Market
+
+-   ssa_aez09: Agro-ecological Zones
+
+-   srtm_1k: Elevation (m)
+
+c. Sales vs stored crops (rainy season) (AG_MOD_I)
+d. Sales vs stored crops (dry (dimba) season) (AG_MOD_O)
+d. Sales vs stored trees (12months) (AG_MOD_Q)
 
 # Exploratory analysis
 
@@ -154,9 +194,9 @@ Only 3 respondent reported smoking cigarettes, if we want to include this varabl
 #TODO: Check smoking incidence in WRA in Malawi.
 
 
-
-
 After merging the datasets, some Wealth quintile were missing, hence following recomendations form F.S we used the household wealth quintile  for those available to impute it. This was available for 17 of the 39 observation with missing values.
+
+For Plasma Se, we only have values for `r length(unique(EligibleDHS$sdist))`. This will condition the model choice.
 
 ## 4) Maize Se concentration in Malawi
 
@@ -179,3 +219,16 @@ Also there are 3 rows lost, which are also lost when subsetting using either st_
 It could be also a combination of both. 
 
 ## 5) Malawi GPS data & country boundaries 
+
+We have found several shape files with the boundaries for Malawi. The issues is that not many of the files hasve the boundaries at EA level. 
+
+This is due to the confidenciality as those are the cluster uses for most of the survey and are bases on the census data. 
+
+One of good source of countries boundaries are GADM, we were using those boundaries the problem is that they include lake Malawi as part of the boundaries of the EA/district / state. HEcne when using the boundaries to locate the HHs and/or maize it seems that part of the data is falling inside the lake. If we try to remove the lake area it leads to the missing of some observations. 
+
+We are going to use other EA boundaries found [here]() frm the World Bank and used previously by the NE Red Cross. 
+
+If those are also not valid, then we will try to use the lak boundaries to "close" the distric boundaries near the lake in the GADM boundaries, or we could do the buffered boundaries based on the EA centroids. 
+
+
+

@@ -1,0 +1,90 @@
+---
+title: "Using widgetframe"
+author: "Bhaskar V. Karambelkar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using widgetframe}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The `widgetframe` package eases embedding of  `htmlwidgets` inside various HTML based R Markdown documents using iframes.
+To make the iframes [responsive](https://en.wikipedia.org/wiki/Responsive_web_design) it uses NPR's [Pymjs](http://blog.apps.npr.org/pym.js/) library.
+
+This package provides two primary functions, `frameableWidget`, and `frameWidget`. `frameableWidget` is used to add extra code to a `htmlwidgets` instance, which allows it to be rendered inside a responsive iframe. `frameWidget` returns a new `htmlwidgets` instance, which wraps and displays content of another `htmlwidgets` instance (e.g. `leaflet`, `DT` etc.) inside a responsive iframe. 
+
+### Current Status
+
+For each of the document type below you can find fully working example code in the [Github Repo](https://github.com/bhaskarvk/widgetframe/tree/examples).
+
+- Works With
+    * [Flex Dashboard](http://rmarkdown.rstudio.com/flexdashboard/):  [Demo](https://rawgit.com/bhaskarvk/widgetframe/examples/flexdashboard/dashboard.html).
+    * [RMarkdown](rmarkdown.rstudio.com) + [knitr](yihui.name/knitr/):  [Demo](https://rawgit.com/bhaskarvk/widgetframe/examples/rmarkdown/knitr_example.html).
+    * [RMarkdown Website](http://rmarkdown.rstudio.com/lesson-13.html):  [Demo](https://rawgit.com/bhaskarvk/widgetframe/examples/rmarkdown-website/site/index.html).
+    * [Xaringan Presentations](https://slides.yihui.name/xaringan/):  [Demo](https://rawgit.com/bhaskarvk/widgetframe/examples/xaringan/widgetframe.html#1).<br/>(May also work with other RMarkdown + knitr based presentations.)
+    * [Bookdown](https://bookdown.org/) gitbook: (Needs a Makefile for assembly).  [Demo](https://rawgit.com/bhaskarvk/widgetframe/examples/bookdown/book/index.html).
+    * [blogdown](https://github.com/rstudio/blogdown/):  [Demo](https://rawgit.com/bhaskarvk/widgetframe/examples/blogdown/public/index.html).
+
+<br/>
+
+- Does not (yet) work with
+    * Shiny: See [Github Issue](https://github.com/bhaskarvk/widgetframe/issues/11)
+    * Crosstalk: See [Github Issue](https://github.com/bhaskarvk/widgetframe/issues/3)
+
+### Installation
+
+Avaliable on [CRAN](https://cran.r-project.org/package=widgetframe) and can be installed using ...
+
+```{r, eval=FALSE}
+install.packages('widgetframe')
+```
+
+Or install the dev version from Github using `devtools` ...
+
+
+```{r, eval=FALSE}
+if(!require(devtools)) {
+  install.packages('devtools')
+}
+devtools::install_github('bhaskarvk/widgetframe')
+```
+
+### Usage
+
+#### `frameableWidget` function.
+
+The `frameableWidget` function should be used when you need a HTML which can be embedded in an external CMS like WordPress or Blogger, or a static HTML website.
+
+```{r, eval=FALSE}
+library(leaflet)
+library(widgetframe)
+l <- leaflet() %>% addTiles()
+htmlwidgets::saveWidget(frameableWidget(l),'leaflet.html')
+```
+
+The resulting `leaflet.html` file contains the necessary Pym.js Child initialization code and will work inside a regular iFrame or better yet a Pym.js responsive iFrame. It is expected that the site which is going to embed this widget's content has the necessary Pymjs Parent initialization code as described [here](http://blog.apps.npr.org/pym.js/). The HTML dependencies of the widget (CSS/JS files) will be either inlined or kept external depending on the `seflcontained` argument to `saveWidget`.
+
+#### `frameWidget` function
+
+`frameWidget` function takes an existing `htmlwidgets` instance such as `leaflet` or `DT` etc., wraps it and returns a new `htmlwidgets` instance, which when rendered, displays the input wrapped `htmlwdigets` instance inside a responsive iFrame. This function can be used to knit htmlwidgets such that they are unaffected by the parent HTML file's CSS. This could be useful in [bookdown](https://bookdown.org/) or [R Markdown Websites](http://rmarkdown.rstudio.com/rmarkdown_websites.html) to embed widgets such that they are unaffected by the site's global CSS/JS. 
+
+```
+```{r}
+library(leaflet)
+library(widgetframe)
+l <- leaflet(height=300) %>% addTiles() %>% setView(0,0,1)
+frameWidget(l)
+```
+```
+
+```
+```{r}
+library(dygraphs)
+ts <- dygraph(nhtemp, main = “New Haven Temperatures”,
+              height=250, width=‘95%’) 
+frameWidget(ts)
+```
+``` 
+
+To know more about how `widgetframe` and `knitr`/`rmarkdown` work together, see the [`widgetframe` and `knitr`](widgetframe_and_knitr.html) vignette.

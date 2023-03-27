@@ -37,7 +37,7 @@ boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
 boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries",  "geoBoundaries-MWI-ADM3.shp"))
 
-boundaries  <- boundaries  %>% filter(shapeID != "60268647B1308848342151") 
+# boundaries  <- boundaries  %>% filter(shapeID != "60268647B1308848342151") 
 # Getting info on the admin boudaries (EA/district level)
 # Using ID to avoid duplicates
 name_var  <- paste0("ID_", bn)

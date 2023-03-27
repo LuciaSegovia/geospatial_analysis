@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Bhaskar V. Karambelkar" />
+
+<meta name="date" content="2017-12-19" />
+
+<title>Using widgetframe</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Using widgetframe</h1>
+<h4 class="author"><em>Bhaskar V. Karambelkar</em></h4>
+<h4 class="date"><em>2017-12-19</em></h4>
+
+
+
+<p>The <code>widgetframe</code> package eases embedding of <code>htmlwidgets</code> inside various HTML based R Markdown documents using iframes. To make the iframes <a href="https://en.wikipedia.org/wiki/Responsive_web_design">responsive</a> it uses NPR’s <a href="http://blog.apps.npr.org/pym.js/">Pymjs</a> library.</p>
+<p>This package provides two primary functions, <code>frameableWidget</code>, and <code>frameWidget</code>. <code>frameableWidget</code> is used to add extra code to a <code>htmlwidgets</code> instance, which allows it to be rendered inside a responsive iframe. <code>frameWidget</code> returns a new <code>htmlwidgets</code> instance, which wraps and displays content of another <code>htmlwidgets</code> instance (e.g. <code>leaflet</code>, <code>DT</code> etc.) inside a responsive iframe.</p>
+<div id="current-status" class="section level3">
+<h3>Current Status</h3>
+<p>For each of the document type below you can find fully working example code in the <a href="https://github.com/bhaskarvk/widgetframe/tree/examples">Github Repo</a>.</p>
+<ul>
+<li>Works With
+<ul>
+<li><a href="http://rmarkdown.rstudio.com/flexdashboard/">Flex Dashboard</a>: <a href="https://rawgit.com/bhaskarvk/widgetframe/examples/flexdashboard/dashboard.html">Demo</a>.</li>
+<li><a href="rmarkdown.rstudio.com">RMarkdown</a> + <a href="yihui.name/knitr/">knitr</a>: <a href="https://rawgit.com/bhaskarvk/widgetframe/examples/rmarkdown/knitr_example.html">Demo</a>.</li>
+<li><a href="http://rmarkdown.rstudio.com/lesson-13.html">RMarkdown Website</a>: <a href="https://rawgit.com/bhaskarvk/widgetframe/examples/rmarkdown-website/site/index.html">Demo</a>.</li>
+<li><a href="https://slides.yihui.name/xaringan/">Xaringan Presentations</a>: <a href="https://rawgit.com/bhaskarvk/widgetframe/examples/xaringan/widgetframe.html#1">Demo</a>.<br />(May also work with other RMarkdown + knitr based presentations.)</li>
+<li><a href="https://bookdown.org/">Bookdown</a> gitbook: (Needs a Makefile for assembly). <a href="https://rawgit.com/bhaskarvk/widgetframe/examples/bookdown/book/index.html">Demo</a>.</li>
+<li><a href="https://github.com/rstudio/blogdown/">blogdown</a>: <a href="https://rawgit.com/bhaskarvk/widgetframe/examples/blogdown/public/index.html">Demo</a>.</li>
+</ul></li>
+</ul>
+<p><br /></p>
+<ul>
+<li>Does not (yet) work with
+<ul>
+<li>Shiny: See <a href="https://github.com/bhaskarvk/widgetframe/issues/11">Github Issue</a></li>
+<li>Crosstalk: See <a href="https://github.com/bhaskarvk/widgetframe/issues/3">Github Issue</a></li>
+</ul></li>
+</ul>
+</div>
+<div id="installation" class="section level3">
+<h3>Installation</h3>
+<p>Avaliable on <a href="https://cran.r-project.org/package=widgetframe">CRAN</a> and can be installed using …</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">install.packages</span>(<span class="st">'widgetframe'</span>)</code></pre></div>
+<p>Or install the dev version from Github using <code>devtools</code> …</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="cf">if</span>(<span class="op">!</span><span class="kw">require</span>(devtools)) {
+  <span class="kw">install.packages</span>(<span class="st">'devtools'</span>)
+}
+devtools<span class="op">::</span><span class="kw">install_github</span>(<span class="st">'bhaskarvk/widgetframe'</span>)</code></pre></div>
+</div>
+<div id="usage" class="section level3">
+<h3>Usage</h3>
+<div id="frameablewidget-function." class="section level4">
+<h4><code>frameableWidget</code> function.</h4>
+<p>The <code>frameableWidget</code> function should be used when you need a HTML which can be embedded in an external CMS like WordPress or Blogger, or a static HTML website.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(leaflet)
+<span class="kw">library</span>(widgetframe)
+l &lt;-<span class="st"> </span><span class="kw">leaflet</span>() <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">addTiles</span>()
+htmlwidgets<span class="op">::</span><span class="kw">saveWidget</span>(<span class="kw">frameableWidget</span>(l),<span class="st">'leaflet.html'</span>)</code></pre></div>
+<p>The resulting <code>leaflet.html</code> file contains the necessary Pym.js Child initialization code and will work inside a regular iFrame or better yet a Pym.js responsive iFrame. It is expected that the site which is going to embed this widget’s content has the necessary Pymjs Parent initialization code as described <a href="http://blog.apps.npr.org/pym.js/">here</a>. The HTML dependencies of the widget (CSS/JS files) will be either inlined or kept external depending on the <code>seflcontained</code> argument to <code>saveWidget</code>.</p>
+</div>
+<div id="framewidget-function" class="section level4">
+<h4><code>frameWidget</code> function</h4>
+<p><code>frameWidget</code> function takes an existing <code>htmlwidgets</code> instance such as <code>leaflet</code> or <code>DT</code> etc., wraps it and returns a new <code>htmlwidgets</code> instance, which when rendered, displays the input wrapped <code>htmlwdigets</code> instance inside a responsive iFrame. This function can be used to knit htmlwidgets such that they are unaffected by the parent HTML file’s CSS. This could be useful in <a href="https://bookdown.org/">bookdown</a> or <a href="http://rmarkdown.rstudio.com/rmarkdown_websites.html">R Markdown Websites</a> to embed widgets such that they are unaffected by the site’s global CSS/JS.</p>
+<pre><code>```{r}
+library(leaflet)
+library(widgetframe)
+l &lt;- leaflet(height=300) %&gt;% addTiles() %&gt;% setView(0,0,1)
+frameWidget(l)
+```</code></pre>
+<pre><code>```{r}
+library(dygraphs)
+ts &lt;- dygraph(nhtemp, main = “New Haven Temperatures”,
+              height=250, width=‘95%’) 
+frameWidget(ts)
+```</code></pre>
+<p>To know more about how <code>widgetframe</code> and <code>knitr</code>/<code>rmarkdown</code> work together, see the <a href="widgetframe_and_knitr.html"><code>widgetframe</code> and <code>knitr</code></a> vignette.</p>
+</div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

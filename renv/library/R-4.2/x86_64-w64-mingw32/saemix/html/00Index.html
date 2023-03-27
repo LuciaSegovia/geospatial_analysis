@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+<head><title>R: Stochastic Approximation Expectation Maximization (SAEM)
+Algorithm</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+<link rel="stylesheet" type="text/css" href="R.css" />
+</head><body><div class="container">
+<h1> Stochastic Approximation Expectation Maximization (SAEM)
+Algorithm
+<img class="toplogo" src="../../../doc/html/Rlogo.svg" alt="[R logo]" />
+</h1>
+<hr/>
+<div style="text-align: center;">
+<a href="../../../doc/html/packages.html"><img class="arrow" src="../../../doc/html/left.jpg" alt="[Up]" /></a>
+<a href="../../../doc/html/index.html"><img class="arrow" src="../../../doc/html/up.jpg" alt="[Top]" /></a>
+</div><h2>Documentation for package &lsquo;saemix&rsquo; version 3.1</h2>
+
+<ul><li><a href="../DESCRIPTION">DESCRIPTION file</a>.</li>
+</ul>
+
+<h2>Help Pages</h2>
+
+
+<p style="text-align: center;">
+<a href="#A">A</a>
+<a href="#B">B</a>
+<a href="#C">C</a>
+<a href="#D">D</a>
+<a href="#E">E</a>
+<a href="#F">F</a>
+<a href="#G">G</a>
+<a href="#I">I</a>
+<a href="#K">K</a>
+<a href="#L">L</a>
+<a href="#M">M</a>
+<a href="#N">N</a>
+<a href="#O">O</a>
+<a href="#P">P</a>
+<a href="#R">R</a>
+<a href="#S">S</a>
+<a href="#T">T</a>
+<a href="#V">V</a>
+<a href="#Y">Y</a>
+<a href="#misc">misc</a>
+</p>
+
+
+<h2><a id="A">-- A --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="default.saemix.plots.html">advanced.gof</a></td>
+<td>Wrapper functions to produce certain sets of default plots</td></tr>
+<tr><td style="width: 25%;"><a href="logLik.html">AIC.SaemixObject</a></td>
+<td>Extract likelihood from a saemixObject resulting from a call to saemix</td></tr>
+</table>
+
+<h2><a id="B">-- B --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="backward.procedure.html">backward.procedure</a></td>
+<td>Backward procedure for joint selection of covariates and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="default.saemix.plots.html">basic.gof</a></td>
+<td>Wrapper functions to produce certain sets of default plots</td></tr>
+<tr><td style="width: 25%;"><a href="logLik.html">BIC.covariate</a></td>
+<td>Extract likelihood from a saemixObject resulting from a call to saemix</td></tr>
+<tr><td style="width: 25%;"><a href="logLik.html">BIC.SaemixObject</a></td>
+<td>Extract likelihood from a saemixObject resulting from a call to saemix</td></tr>
+</table>
+
+<h2><a id="C">-- C --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="coef.saemix.html">coef</a></td>
+<td>Extract coefficients from a saemix fit</td></tr>
+<tr><td style="width: 25%;"><a href="coef.saemix.html">coef,SaemixObject</a></td>
+<td>Extract coefficients from a saemix fit</td></tr>
+<tr><td style="width: 25%;"><a href="coef.saemix.html">coef-method</a></td>
+<td>Extract coefficients from a saemix fit</td></tr>
+<tr><td style="width: 25%;"><a href="coef.saemix.html">coef.saemix</a></td>
+<td>Extract coefficients from a saemix fit</td></tr>
+<tr><td style="width: 25%;"><a href="coef.saemix.html">coef.SaemixObject</a></td>
+<td>Extract coefficients from a saemix fit</td></tr>
+<tr><td style="width: 25%;"><a href="compare.saemix.html">compare.saemix</a></td>
+<td>Model comparison with information criteria (AIC, BIC).</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">compute.eta.map</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">compute.sres</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="conddist.saemix.html">conddist.saemix</a></td>
+<td>Estimate conditional mean and variance of individual parameters using the MCMC algorithm</td></tr>
+<tr><td style="width: 25%;"><a href="default.saemix.plots.html">covariate.fits</a></td>
+<td>Wrapper functions to produce certain sets of default plots</td></tr>
+<tr><td style="width: 25%;"><a href="cow.saemix.html">cow.saemix</a></td>
+<td>Evolution of the weight of 560 cows, in SAEM format</td></tr>
+<tr><td style="width: 25%;"><a href="createSaemixObject.html">createSaemixObject</a></td>
+<td>Create saemix objects with only data filled in</td></tr>
+<tr><td style="width: 25%;"><a href="createSaemixObject.html">createSaemixObject.empty</a></td>
+<td>Create saemix objects with only data filled in</td></tr>
+<tr><td style="width: 25%;"><a href="createSaemixObject.html">createSaemixObject.initial</a></td>
+<td>Create saemix objects with only data filled in</td></tr>
+</table>
+
+<h2><a id="D">-- D --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="default.saemix.plots.html">default.saemix.plots</a></td>
+<td>Wrapper functions to produce certain sets of default plots</td></tr>
+</table>
+
+<h2><a id="E">-- E --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="epilepsy.saemix.html">epilepsy.saemix</a></td>
+<td>Epilepsy count data</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.html">estep</a></td>
+<td>Stochastic Approximation Expectation Maximization (SAEM) algorithm</td></tr>
+<tr><td style="width: 25%;"><a href="saemixPredictNewdata.html">estimateIndividualParametersNewdata</a></td>
+<td>Predictions for a new dataset</td></tr>
+<tr><td style="width: 25%;"><a href="saemixPredictNewdata.html">estimateMeanParametersNewdata</a></td>
+<td>Predictions for a new dataset</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">eta</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">eta-method</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">eta-methods</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">eta.saemix</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">eta.SaemixObject</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+</table>
+
+<h2><a id="F">-- F --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="fim.saemix.html">fim.saemix</a></td>
+<td>Computes the Fisher Information Matrix by linearisation</td></tr>
+<tr><td style="width: 25%;"><a href="fitted.saemix.html">fitted</a></td>
+<td>Extract Model Predictions</td></tr>
+<tr><td style="width: 25%;"><a href="fitted.saemix.html">fitted.saemix</a></td>
+<td>Extract Model Predictions</td></tr>
+<tr><td style="width: 25%;"><a href="fitted.saemix.html">fitted.SaemixObject</a></td>
+<td>Extract Model Predictions</td></tr>
+<tr><td style="width: 25%;"><a href="fitted.saemix.html">fitted.SaemixRes</a></td>
+<td>Extract Model Predictions</td></tr>
+<tr><td style="width: 25%;"><a href="forward.procedure.html">forward.procedure</a></td>
+<td>Backward procedure for joint selection of covariates and random effects</td></tr>
+</table>
+
+<h2><a id="G">-- G --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="llgq.saemix.html">gqg.mlx</a></td>
+<td>Log-likelihood using Gaussian Quadrature</td></tr>
+</table>
+
+<h2><a id="I">-- I --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="default.saemix.plots.html">individual.fits</a></td>
+<td>Wrapper functions to produce certain sets of default plots</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.html">initialiseMainAlgo</a></td>
+<td>Stochastic Approximation Expectation Maximization (SAEM) algorithm</td></tr>
+<tr><td style="width: 25%;"><a href="initialize-methods.html">initialize-method</a></td>
+<td>Methods for Function initialize</td></tr>
+<tr><td style="width: 25%;"><a href="initialize-methods.html">initialize-methods</a></td>
+<td>Methods for Function initialize</td></tr>
+</table>
+
+<h2><a id="K">-- K --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="knee.saemix.html">knee.saemix</a></td>
+<td>Knee pain data</td></tr>
+<tr><td style="width: 25%;"><a href="testnpde.html">kurtosis</a></td>
+<td>Tests for normalised prediction distribution errors</td></tr>
+</table>
+
+<h2><a id="L">-- L --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="llgq.saemix.html">llgq.saemix</a></td>
+<td>Log-likelihood using Gaussian Quadrature</td></tr>
+<tr><td style="width: 25%;"><a href="llis.saemix.html">llis.saemix</a></td>
+<td>Log-likelihood using Importance Sampling</td></tr>
+<tr><td style="width: 25%;"><a href="llgq.saemix.html">llqg.saemix</a></td>
+<td>Log-likelihood using Gaussian Quadrature</td></tr>
+<tr><td style="width: 25%;"><a href="logLik.html">logLik</a></td>
+<td>Extract likelihood from a saemixObject resulting from a call to saemix</td></tr>
+<tr><td style="width: 25%;"><a href="logLik.html">logLik.SaemixObject</a></td>
+<td>Extract likelihood from a saemixObject resulting from a call to saemix</td></tr>
+<tr><td style="width: 25%;"><a href="lung.saemix.html">lung.saemix</a></td>
+<td>NCCTG Lung Cancer Data, in SAEM format</td></tr>
+</table>
+
+<h2><a id="M">-- M --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="map.saemix.html">map.saemix</a></td>
+<td>Estimates of the individual parameters (conditional mode)</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.html">mstep</a></td>
+<td>Stochastic Approximation Expectation Maximization (SAEM) algorithm</td></tr>
+<tr><td style="width: 25%;"><a href="mydiag.html">mydiag</a></td>
+<td>Matrix diagonal</td></tr>
+</table>
+
+<h2><a id="N">-- N --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="npdeSaemix.html">npdeSaemix</a></td>
+<td>Create an npdeObject from an saemixObject</td></tr>
+</table>
+
+<h2><a id="O">-- O --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="oxboys.saemix.html">oxboys.saemix</a></td>
+<td>Heights of Boys in Oxford</td></tr>
+</table>
+
+<h2><a id="P">-- P --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="PD1.saemix.html">PD1.saemix</a></td>
+<td>Data simulated according to an Emax response model, in SAEM format</td></tr>
+<tr><td style="width: 25%;"><a href="PD1.saemix.html">PD2.saemix</a></td>
+<td>Data simulated according to an Emax response model, in SAEM format</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">phi</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">phi-method</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">phi-methods</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">phi.saemix</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">phi.SaemixObject</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixObject-ANY-method.html">plot</a></td>
+<td>General plot function from SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixData.html">plot,SaemixData</a></td>
+<td>Plot of longitudinal data</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixData.html">plot,SaemixData-methods</a></td>
+<td>Plot of longitudinal data</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixModel.html">plot,SaemixModel</a></td>
+<td>Plot model predictions using an SaemixModel object</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixModel.html">plot,SaemixModel-methods</a></td>
+<td>Plot model predictions using an SaemixModel object</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixObject-ANY-method.html">plot,SaemixObject</a></td>
+<td>General plot function from SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixRes-class.html">plot,SaemixRes</a></td>
+<td>Class "SaemixRes"</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixData.html">plot,SaemixSimData</a></td>
+<td>Plot of longitudinal data</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixData.html">plot-method</a></td>
+<td>Plot of longitudinal data</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixModel-SaemixData-method.html">plot-method</a></td>
+<td>Plot model predictions for a new dataset. If the dataset is large, only the first 20 subjects (id's) will be shown.</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixModel.html">plot-method</a></td>
+<td>Plot model predictions using an SaemixModel object</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixObject-ANY-method.html">plot-method</a></td>
+<td>General plot function from SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="plot-methods.html">plot-method</a></td>
+<td>Methods for Function plot</td></tr>
+<tr><td style="width: 25%;"><a href="plot-methods.html">plot-methods</a></td>
+<td>Methods for Function plot</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixData.html">plot-SaemixData</a></td>
+<td>Plot of longitudinal data</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixModel.html">plot-SaemixModel</a></td>
+<td>Plot model predictions using an SaemixModel object</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixObject-ANY-method.html">plot.saemix</a></td>
+<td>General plot function from SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixData.html">plot.SaemixData</a></td>
+<td>Plot of longitudinal data</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixModel-SaemixData-method.html">plot.SaemixModel</a></td>
+<td>Plot model predictions for a new dataset. If the dataset is large, only the first 20 subjects (id's) will be shown.</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixData.html">plot.SaemixSimData</a></td>
+<td>Plot of longitudinal data</td></tr>
+<tr><td style="width: 25%;"><a href="plot-SaemixObject-ANY-method.html">plotnpde</a></td>
+<td>General plot function from SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">predict,SaemixObject</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="predict-methods.html">predict-method</a></td>
+<td>Methods for Function predict</td></tr>
+<tr><td style="width: 25%;"><a href="predict-methods.html">predict-methods</a></td>
+<td>Methods for Function predict</td></tr>
+<tr><td style="width: 25%;"><a href="predict.SaemixModel.html">predict.SaemixModel</a></td>
+<td>Predictions for a new dataset</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">print,SaemixData</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixModel-class.html">print,SaemixModel</a></td>
+<td>Class "SaemixModel"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">print,SaemixObject</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixRes-class.html">print,SaemixRes</a></td>
+<td>Class "SaemixRes"</td></tr>
+<tr><td style="width: 25%;"><a href="print-methods.html">print-method</a></td>
+<td>Methods for Function print</td></tr>
+<tr><td style="width: 25%;"><a href="print-methods.html">print-methods</a></td>
+<td>Methods for Function print</td></tr>
+<tr><td style="width: 25%;"><a href="print-methods.html">print.saemix</a></td>
+<td>Methods for Function print</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">psi</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">psi-method</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">psi-methods</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">psi.saemix</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="psi-methods.html">psi.SaemixObject</a></td>
+<td>Functions to extract the individual estimates of the parameters and random effects</td></tr>
+</table>
+
+<h2><a id="R">-- R --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="rapi.saemix.html">rapi.saemix</a></td>
+<td>Rutgers Alcohol Problem Index</td></tr>
+<tr><td style="width: 25%;"><a href="read-methods.html">readSaemix,SaemixData</a></td>
+<td>Create a longitudinal data structure from a file or a dataframe Helper function not intended to be called by the user</td></tr>
+<tr><td style="width: 25%;"><a href="read-methods.html">readSaemix-method</a></td>
+<td>Create a longitudinal data structure from a file or a dataframe Helper function not intended to be called by the user</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.setoptions.html">replace.data.options</a></td>
+<td>Function setting the default options for the plots in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.setoptions.html">replace.plot.options</a></td>
+<td>Function setting the default options for the plots in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="replaceData.html">replaceData</a></td>
+<td>Replace the data element in a SaemixObject object</td></tr>
+<tr><td style="width: 25%;"><a href="replaceData.html">replaceData-methods</a></td>
+<td>Replace the data element in a SaemixObject object</td></tr>
+<tr><td style="width: 25%;"><a href="replaceData.html">replaceData.saemixObject</a></td>
+<td>Replace the data element in a SaemixObject object</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">resid</a></td>
+<td>Extract Model Residuals</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">resid.saemix</a></td>
+<td>Extract Model Residuals</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">resid.SaemixObject</a></td>
+<td>Extract Model Residuals</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">resid.SaemixRes</a></td>
+<td>Extract Model Residuals</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">residuals</a></td>
+<td>Extract Model Residuals</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">residuals.saemix</a></td>
+<td>Extract Model Residuals</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">residuals.SaemixObject</a></td>
+<td>Extract Model Residuals</td></tr>
+<tr><td style="width: 25%;"><a href="resid.saemix.html">residuals.SaemixRes</a></td>
+<td>Extract Model Residuals</td></tr>
+</table>
+
+<h2><a id="S">-- S --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="saemix.html">saemix</a></td>
+<td>Stochastic Approximation Expectation Maximization (SAEM) algorithm</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.setoptions.html">saemix.data.setoptions</a></td>
+<td>Function setting the default options for the plots in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.convergence</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.correlations</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.data</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.distpsi</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.distribresiduals</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.fits</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.llis</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.mirror</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.npde</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.obsvspred</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.parcov</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.parcov.aux</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.randeff</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.randeffcov</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.scatterresiduals</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.select.html">saemix.plot.select</a></td>
+<td>Plots of the results obtained by SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.setoptions.html">saemix.plot.setoptions</a></td>
+<td>Function setting the default options for the plots in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.plot.data.html">saemix.plot.vpc</a></td>
+<td>Functions implementing each type of plot in SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="saemix.predict.html">saemix.predict</a></td>
+<td>Compute model predictions after an saemix fit</td></tr>
+<tr><td style="width: 25%;"><a href="saemixControl.html">saemixControl</a></td>
+<td>List of options for running the algorithm SAEM</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">SaemixData</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="saemixData.html">saemixData</a></td>
+<td>Function to create a SaemixData object</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">SaemixData-class</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixModel-class.html">SaemixModel</a></td>
+<td>Class "SaemixModel"</td></tr>
+<tr><td style="width: 25%;"><a href="saemixModel.html">saemixModel</a></td>
+<td>Function to create a SaemixModel object</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixModel-class.html">SaemixModel-class</a></td>
+<td>Class "SaemixModel"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">SaemixObject</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">SaemixObject-class</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="saemixPredictNewdata.html">saemixPredictNewdata</a></td>
+<td>Predictions for a new dataset</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">SaemixRepData</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">SaemixRepData-class</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixRes-class.html">SaemixRes</a></td>
+<td>Class "SaemixRes"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixRes-class.html">SaemixRes-class</a></td>
+<td>Class "SaemixRes"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">SaemixSimData</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">SaemixSimData-class</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">show,SaemixData</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixModel-class.html">show,SaemixModel</a></td>
+<td>Class "SaemixModel"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">show,SaemixObject</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixRes-class.html">show,SaemixRes</a></td>
+<td>Class "SaemixRes"</td></tr>
+<tr><td style="width: 25%;"><a href="show-methods.html">show-method</a></td>
+<td>Methods for Function show</td></tr>
+<tr><td style="width: 25%;"><a href="show-methods.html">show-methods</a></td>
+<td>Methods for Function show</td></tr>
+<tr><td style="width: 25%;"><a href="showall-methods.html">showall</a></td>
+<td>Methods for Function showall</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixData-class.html">showall,SaemixData</a></td>
+<td>Class "SaemixData"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixModel-class.html">showall,SaemixModel</a></td>
+<td>Class "SaemixModel"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">showall,SaemixObject</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixRes-class.html">showall,SaemixRes</a></td>
+<td>Class "SaemixRes"</td></tr>
+<tr><td style="width: 25%;"><a href="showall-methods.html">showall-method</a></td>
+<td>Methods for Function showall</td></tr>
+<tr><td style="width: 25%;"><a href="showall-methods.html">showall-methods</a></td>
+<td>Methods for Function showall</td></tr>
+<tr><td style="width: 25%;"><a href="simulate.SaemixObject.html">simul.saemix</a></td>
+<td>Perform simulations under the model for an saemixObject object</td></tr>
+<tr><td style="width: 25%;"><a href="simulate.SaemixObject.html">simulate.SaemixObject</a></td>
+<td>Perform simulations under the model for an saemixObject object</td></tr>
+<tr><td style="width: 25%;"><a href="simulateDiscreteSaemix.html">simulateDiscreteSaemix</a></td>
+<td>Perform simulations under the model for an saemixObject object defined by its log-likelihood</td></tr>
+<tr><td style="width: 25%;"><a href="testnpde.html">skewness</a></td>
+<td>Tests for normalised prediction distribution errors</td></tr>
+<tr><td style="width: 25%;"><a href="step.saemix.html">step.saemix</a></td>
+<td>Stepwise procedure for joint selection of covariates and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="stepwise.procedure.html">stepwise.procedure</a></td>
+<td>Stepwise procedure for joint selection of covariates and random effects</td></tr>
+<tr><td style="width: 25%;"><a href="subset.html">subset</a></td>
+<td>Data subsetting</td></tr>
+<tr><td style="width: 25%;"><a href="subset.html">subset-methods</a></td>
+<td>Data subsetting</td></tr>
+<tr><td style="width: 25%;"><a href="subset.html">subset.SaemixData</a></td>
+<td>Data subsetting</td></tr>
+<tr><td style="width: 25%;"><a href="summary-methods.html">summary</a></td>
+<td>Methods for Function summary</td></tr>
+<tr><td style="width: 25%;"><a href="summary-methods.html">summary,SaemixData</a></td>
+<td>Methods for Function summary</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixModel-class.html">summary,SaemixModel</a></td>
+<td>Class "SaemixModel"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">summary,SaemixObject</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="summary-methods.html">summary-method</a></td>
+<td>Methods for Function summary</td></tr>
+<tr><td style="width: 25%;"><a href="summary-methods.html">summary-methods</a></td>
+<td>Methods for Function summary</td></tr>
+</table>
+
+<h2><a id="T">-- T --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="testnpde.html">testnpde</a></td>
+<td>Tests for normalised prediction distribution errors</td></tr>
+<tr><td style="width: 25%;"><a href="theo.saemix.html">theo.saemix</a></td>
+<td>Pharmacokinetics of theophylline</td></tr>
+<tr><td style="width: 25%;"><a href="toenail.saemix.html">toenail.saemix</a></td>
+<td>Toenail data</td></tr>
+<tr><td style="width: 25%;"><a href="transform.html">transform</a></td>
+<td>Transform covariates</td></tr>
+<tr><td style="width: 25%;"><a href="transform.html">transform.numeric</a></td>
+<td>Transform covariates</td></tr>
+<tr><td style="width: 25%;"><a href="transformContCov.html">transform.SaemixData</a></td>
+<td>Transform covariates</td></tr>
+<tr><td style="width: 25%;"><a href="transformCatCov.html">transformCatCov</a></td>
+<td>Transform covariates</td></tr>
+<tr><td style="width: 25%;"><a href="transformContCov.html">transformContCov</a></td>
+<td>Transform covariates</td></tr>
+</table>
+
+<h2><a id="V">-- V --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="validate.covariance.model.html">validate.covariance.model</a></td>
+<td>Validate the structure of the covariance model</td></tr>
+<tr><td style="width: 25%;"><a href="validate.names.html">validate.names</a></td>
+<td>Name validation (## )Helper function not intended to be called by the user)</td></tr>
+<tr><td style="width: 25%;"><a href="vcov.html">vcov</a></td>
+<td>Extracts the Variance-Covariance Matrix for a Fitted Model Object</td></tr>
+<tr><td style="width: 25%;"><a href="vcov.html">vcov.SaemixObject</a></td>
+<td>Extracts the Variance-Covariance Matrix for a Fitted Model Object</td></tr>
+<tr><td style="width: 25%;"><a href="vcov.html">vcov.SaemixRes</a></td>
+<td>Extracts the Variance-Covariance Matrix for a Fitted Model Object</td></tr>
+</table>
+
+<h2><a id="Y">-- Y --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="yield.saemix.html">yield.saemix</a></td>
+<td>Wheat yield in crops treated with fertiliser, in SAEM format</td></tr>
+</table>
+
+<h2><a id="misc">-- misc --</a></h2>
+
+<table style="width: 100%;">
+<tr><td style="width: 25%;"><a href="extract-methods.html">[</a></td>
+<td>Get/set methods for SaemixData object</td></tr>
+<tr><td style="width: 25%;"><a href="extract-methods.html">[-method</a></td>
+<td>Get/set methods for SaemixData object</td></tr>
+<tr><td style="width: 25%;"><a href="sub-SaemixModel-method.html">[-method</a></td>
+<td>Get/set methods for SaemixModel object</td></tr>
+<tr><td style="width: 25%;"><a href="sub-SaemixObject-method.html">[-method</a></td>
+<td>Get/set methods for SaemixObject object</td></tr>
+<tr><td style="width: 25%;"><a href="sub-SaemixRes-method.html">[-method</a></td>
+<td>Get/set methods for SaemixRes object</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixModel-class.html">[&lt;--method</a></td>
+<td>Class "SaemixModel"</td></tr>
+<tr><td style="width: 25%;"><a href="SaemixObject-class.html">[&lt;--method</a></td>
+<td>Class "SaemixObject"</td></tr>
+<tr><td style="width: 25%;"><a href="extract-methods.html">[&lt;--method</a></td>
+<td>Get/set methods for SaemixData object</td></tr>
+</table>
+</div></body></html>

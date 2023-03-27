@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Bhaskar V. Karambelkar" />
+
+<meta name="date" content="2017-12-19" />
+
+<title>widgetframe and knitr</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">widgetframe and knitr</h1>
+<h4 class="author"><em>Bhaskar V. Karambelkar</em></h4>
+<h4 class="date"><em>2017-12-19</em></h4>
+
+
+
+<div id="knitr" class="section level2">
+<h2><code>knitr</code></h2>
+<p>The <a href="https://yihui.name/knitr/"><code>knitr</code></a> package, along with the <a href="http://rmarkdown.rstudio.com/"><code>rmarkdown</code></a> package converts a R markdown (Rmd) document into a target document, which can be an HTML Document, a HTML Website, a Dashboard, or a PDF/Word Document etc.</p>
+<p><code>widgetframe</code> is designed to be used in Rmd documents which will eventually be knitted to an HTML or a derived format. There is little or no benefit in using <code>widgetframe::frameWidget()</code> when the output format is not HTML based such as PDF, Microsoft Word etc. In fact <code>widgetframe</code> will most definitely not work for such output formats.</p>
+</div>
+<div id="regular-htmlwidgets-and-knitr" class="section level2">
+<h2>Regular <code>htmlwidgets</code> and <code>knitr</code></h2>
+<p>By default when knitting <code>htmlwidgets</code> the <code>htmlwidgets:::knit_print.htmlwidgets()</code> function (an internal function exposed as an S3 method) is called. The output of this call is a <code>list</code> containing the HTML code + a list of HTML dependencies (JS/CSS) required to render the widget. How this is then inserted into the final document depends on the output format. For this discussion we are going to limit to HTML based output formats because as noted above <code>widgetframe</code> is designed to work only for HTML based output formats.</p>
+<p>Let’s start with the simplest of HTML output format <code>rmarkdown::html_document()</code>. The <code>self_contained</code> (default = <code>TRUE</code>), and the <code>lib_dir</code> (default = name of document + <code>_files</code>) arguments of this output format dictate how <code>htmlwidgets</code> instances appear in the final document. If <code>self_contained</code> is <code>TRUE</code> then the HTML dependencies (JS/CSS) are all inlined and the result is just one single HTML document. Naturally this document is quite large in size due to the dependencies being inlined. If <code>self_contained</code> is <code>FALSE</code> then the HTML dependencies are kept in a separate directory determined by the <code>lib_dir</code> argument. Other HTML based formats like <code>bookdown</code>, <code>flexdashboard</code> etc. too have similar arguments. This is not surprising as they tend to extend <code>rmarkdown::html_document</code>.</p>
+<div id="potential-issues" class="section level3">
+<h3>Potential Issues</h3>
+<p>Unless you are working on small one-off Rmd document, it is never a good idea to have <code>self_contained</code> set to its default value <code>TRUE</code>. It results in large HTML documents which are slow to load in the browser. Secondly by inlining dependencies you lose the ability to share common dependencies across different HTMLs. Lastly you also limit the browser’s ability to cache HTML dependencies across sessions.</p>
+<p>Even if you were to externalize the dependencies by setting <code>sefl_contained=FALSE</code>, there are still two potential issues…</p>
+<ul>
+<li>Different <code>htmlwidgets</code> may depend on different versions of the same Javascript/CSS dependency. But when the final document is produced only a single version of the said dependency is used. This may cause certain widgets to not display, or work incorrectly.</li>
+<li>The styling rules (CSS) of the widget may be overridden by those of the output format. This will again result in the widget not displaying properly in the final document.</li>
+</ul>
+<p>These problems typically don’t occur when knitting one-off HTML documents using the <code>rmarkdown::html_document</code> format. But they do occur once you start outputting documents in the <code>bookdown</code>, <code>blogdown</code>, <code>rmarkdown</code> websites, <code>xaringan</code> and other HTML based output formats. And this is where <code>widgetframe</code> comes in.</p>
+</div>
+</div>
+<div id="widgetframe" class="section level2">
+<h2><code>widgetframe</code></h2>
+<p><code>widgetframe</code> is itself a <code>htmlwidgets</code> instance, but of a different kind. Instead of wrapping a Javascript based dataviz object, it wraps another <code>htmlwidgets</code> instance like <code>leaflet</code>, or <code>DT</code>, or <code>dygraphs</code> etc. It does so by embedding the target <code>htmlwidgets</code> instance in a HTML <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe">iframe</a>. It also uses NPR’s <a href="http://blog.apps.npr.org/pym.js/">pym.js</a> Javascript library to make the iframes <a href="https://en.wikipedia.org/wiki/Responsive_web_design">responsive</a>. This allows you to easily embed <code>htmlwidgets</code> inside complex HTML documents and avoid the issues mentioned in the section above.</p>
+</div>
+<div id="widgetframe-and-knitr" class="section level2">
+<h2><code>widgetframe</code> and <code>knitr</code></h2>
+<p>To understand how the knitting of <code>widgetframe</code>s differ from regular <code>htmlwidgets</code>, let’s examine the following code. It shows you how to use <code>widgetframe::fameWidget()</code> function in a RMarkdown document and the three knitr chunk options it supports.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="st">`</span><span class="dt"></span><span class="st">``</span><span class="dt">{r, include=FALSE}</span>
+
+<span class="dt"># widgetframe supports 3 custom knitr chunk options...</span>
+
+<span class="dt"># For all practicle purposes this should always be FALSE </span>
+<span class="dt">knitr::opts_chunk$set(widgetframe_self_contained = FALSE) # default = FALSE</span>
+
+<span class="dt"># For all practicle purposes this should always be TRUE </span>
+<span class="dt">knitr::opts_chunk$set(widgetframe_isolate_widgets = TRUE) # default = TRUE</span>
+
+<span class="dt"># Only needed in bookdown format/s such as bookdown::gitbook. Otherwise don't set.</span>
+<span class="dt"># knitr::opts_chunk$set(widgetframe_widgets_dir = 'widgets' ) </span>
+<span class="st">`</span><span class="st">``</span>
+
+<span class="st">`</span><span class="dt"></span><span class="st">``</span><span class="dt">{r leaflet-01}</span>
+<span class="dt">library(leaflet)</span>
+<span class="dt">library(widgetframe)</span>
+<span class="dt">l &lt;- leaflet() %&gt;% addTiles() %&gt;% setView(0,0,1)</span>
+<span class="dt">frameWidget(l, width='90%')</span>
+<span class="st">`</span><span class="st">``</span></code></pre></div>
+<p>While using <code>wigdetframe</code> is as simple as <code>widgetframe::frameWidget(some_other_widget)</code>, how the widget is knitted depends on three custom knitr chunk options explained below. When <code>knitr</code> comes across a <code>widgetframe::frameWidget()</code> call in a R Markdown document, it calls <code>widgetframe:::knit_print.widgetframe()</code> function (internal function exposed as a S3 method) to render the widget. This function is a wrapper around the <code>htmlwidgets:::knit_print.htmlwidgets()</code> function of the taget <code>htmlwidgets</code> instance. It is important to know that both <code>knitr_print.widgetframe()</code> and <code>knitr_print.htmlwidgets()</code> functions have no way of knowing what the target output format is and what arguments were passed to the target output format. So in order to knit the target widget in a child HTML document, which is displayed inside an iframe of the parent HTML document, <code>widgetframe</code> needs to depend of the three chunk options shown in the code sample above. We now discuss these 3 options and what their values should be for different output formats.</p>
+<div id="widgetfram_self_contained" class="section level3">
+<h3>widgetfram_self_contained</h3>
+<p>This option is similar to the <code>self_contained</code> argument of the <code>rmarkdown::html_document()</code> output format. The reason we need a separate chucnk option is because …</p>
+<ol style="list-style-type: decimal">
+<li><p>As explained above <code>knitr_print.widgetframe()</code> has no way of knowing what the output format is and what arguments were passed to it.</p></li>
+<li><p>Unlike <code>self_contained</code> which defaults to <code>TRUE</code>, <code>widgetframe_self_contained</code> defaults to <code>FALSE</code>. That is to say that by default when using <code>widgetframe</code> the dependencies of the target <code>htmlwidgets</code> instance are kept in a separate directory.</p></li>
+</ol>
+<p>There is very little reason to set this option to <code>TRUE</code>. If however you do set it to <code>TRUE</code> the HTML file for the wrapped widget will have its dependencies inlined, resulting in a single large HTML file. Note that this is not the same as your final output HTML. This is just the HTML for the widget which is displayed inside an iframe in the final HTML document. Wheter the final HTML document has inlined dependencies depends on the <code>self_contaied</code> argument of your output format e.g. <code>rmarkdown::html_document()</code>.</p>
+</div>
+<div id="widgetframe_isolate_widgets" class="section level3">
+<h3>widgetframe_isolate_widgets</h3>
+<p>Defaults to <code>TRUE</code>, and when <code>TRUE</code>, isolates HTML dependencies (CSS/JS) of <code>htmlwidgets</code> of different types. This avoids compatibility issues when <code>htmlwidgets</code> of different types depend on the same dependency(ies) but on different versions. For example if you are using some <code>leaflet</code>, and some <code>DT</code> <code>htmlwdigets</code> in your document (doesn’t matter how many), then the dependencies of <code>leaflet</code> widgets will be stored separately from dependencies of <code>DT</code> widgets and any other widget other than <code>leaflet</code>. So <code>leaflet</code> can depend on version ‘X’ of <code>jQuery</code> and <code>DT</code> can depend on version ‘Y’ and both will work correctly. Note that multiple widgets of the same type will share the same set of dependencies in order to avoid unnecessary duplication. There is very little reason to set this option to <code>FALSE</code>.</p>
+</div>
+<div id="widgetframe_widgets_dir" class="section level3">
+<h3>widgetframe_widgets_dir</h3>
+<p>This option, if provided, determines where the HTML code for the wrapped <code>htmlwidgets</code> instance is written. Before discussing more we should note that <code>knitr_print.htmlwidgets()</code> never actually creates any files/directories or touches the file-system in any way. It merely returns a R list which then used by the output format to embed the widget’s HTML (and dependencies) in the final document. However, <code>knitr_print.widgetframe()</code> does create HTML file/s and dependencies directories for the wrapped widget. It needs to, so that the final document can embed the widget’s HTML which is saved separately, inside an iframe. This may not be important to know from a user perspective but a must know, if you want to extend or contribute to <code>widgetframe</code>.</p>
+<p>For almost all output formats except <code>bookdown</code>, this option should not be set and it will default to <code>file.path(knitr::opts_chunk$get('fig.path'),'widgets')</code>. That is a <code>widgets</code> directory inside the directory <code>knitr::opts_chunk$get('fig.path')</code>. This is done this way because as noted <code>knitr_print</code> has no way of knowing the arguments of the output format including the final destination directory of the document. However it does have access to the <code>fig.path</code> knitr chunk option. Refer to <a href="https://github.com/yihui/knitr/issues/1390">this</a> Github issue for a discussion around this. See the <code>bookdown</code> section below for a use case where this value needs to be explicitly set.</p>
+<p>Another scenario where you may need to set this option is when your RMarkdown output format has <code>self_contained=TRUE</code> (Note: This is the <code>self_contained</code> argument of your HTML output format e.g. <code>rmarkdown::html_document</code> and not the <code>widgetframe_self_contained</code> chunk argument described above).</p>
+</div>
+<div id="chunk-options-and-output" class="section level3">
+<h3>Chunk Options and Output</h3>
+<p>To understand how each of the three knitr chunk options affect the wrapped widget’s HTML document, see the code and the table below.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="st">`</span><span class="dt"></span><span class="st">``</span><span class="dt">{r leaflet-01}</span>
+<span class="dt">library(leaflet)</span>
+<span class="dt">library(widgetframe)</span>
+<span class="dt">l &lt;- leaflet() %&gt;% addTiles() %&gt;% setView(0,0,1)</span>
+<span class="dt">frameWidget(l, width='90%')</span>
+<span class="st">`</span><span class="st">``</span>
+
+<span class="st">`</span><span class="dt"></span><span class="st">``</span><span class="dt">{r dygraph-01}</span>
+<span class="dt">library(dygraphs)</span>
+<span class="dt">ts &lt;- dygraph(nhtemp, main = &quot;New Haven Temperatures&quot;)</span>
+<span class="dt">frameWidget(ts, height = 350, width = '95%')</span>
+<span class="st">`</span><span class="st">``</span></code></pre></div>
+<p>I’ve ommitted the <code>widgetframe_</code> prefix for each of the 3 options below to conserve space.</p>
+<table>
+<colgroup>
+<col width="18%"></col>
+<col width="18%"></col>
+<col width="18%"></col>
+<col width="45%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"><code>self_contained</code></th>
+<th align="left"><code>isolate_widgets</code></th>
+<th align="left"><code>widgets_dir</code></th>
+<th align="left">Output</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>FALSE</code> <sup>†</sup></td>
+<td align="left"><code>TRUE</code> <sup>†</sup></td>
+<td align="left">Not Set <sup>†</sup></td>
+<td align="left">Inside <code>widgets</code> directory, <code>widget_leaflet-01.html</code> and <code>widget_dygraph-01.html</code> files and <code>leaflet_libs</code> directory for <code>leaflet</code> and <code>dygraph_libs</code> directory for <code>dygraph</code> dependencies.</td>
+</tr>
+<tr class="even">
+<td align="left"><code>FALSE</code> <sup>†</sup></td>
+<td align="left"><code>FALSE</code></td>
+<td align="left">Not Set <sup>†</sup></td>
+<td align="left">Inside <code>widgets</code> directory, <code>widget_leaflet-01.html</code> and <code>widget_dygraph-01.html</code> files and a single <code>libs</code> directory for both <code>leaflet</code> and <code>dygraph</code> dependencies.</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>TRUE</code></td>
+<td align="left">DOESN’T MATTER</td>
+<td align="left">Not Set <sup>†</sup></td>
+<td align="left">Inside <code>widgets</code> directory, two huge <code>widget_leaflet-01.html</code> and <code>widget_dygraph-01.html</code> files with respective dependencies inlined.</td>
+</tr>
+</tbody>
+</table>
+<p>†: Default Value.</p>
+<p>By default the widget HTML + dependencies (JS/CSS files) are located inside <code>widgets</code> directory, which is created inside wherever <code>knitr::opts_chunk$get('fig.path')</code> points too. However if <code>widgetframe_widgets_dir</code> is set then the widget HTML + dependencies are placed inside a directory whose name is the value of this option, and the path is resolved relative to the current working directory (<code>getwd()</code>) while knitting.</p>
+</div>
+</div>
+<div id="widgetframe-and-bookdown" class="section level2">
+<h2><code>widgetframe</code> and <code>bookdown</code></h2>
+<p>For the <a href="https://bookdown.org/home/getting-started.html">bookdown</a> output format, we need some additional steps to correctly use <code>widgetframe</code>s. This section describes those steps.</p>
+<ol style="list-style-type: decimal">
+<li><p>The default output directory of the <code>bookdown</code> book is <code>_book</code>, which can be configured via <code>_bookdown.yml</code> file.</p></li>
+<li><p>For the <code>bookdown::gitbook</code> format we need to explicitly set the <code>widgetframe_widgets_dir</code> to some value (e.g. ‘widgets’), so that the embedded widgets HTML code is saved in this directory instead of the default.</p></li>
+<li><p>After <code>'bookdown::render_book(&quot;index.Rmd&quot;)</code> has been called, we need to move the widgets directory inside the final output directory.</p></li>
+</ol>
+<p>You can easily use a Makefile for this. e.g.</p>
+<p>Your <code>_bookdown.yml</code> file</p>
+<div class="sourceCode"><pre class="sourceCode json"><code class="sourceCode json"><span class="er">output_dir:</span> <span class="er">&quot;book&quot;</span></code></pre></div>
+<p>and your <code>Makefile</code></p>
+<div class="sourceCode"><pre class="sourceCode makefile"><code class="sourceCode makefile"><span class="dv">book:</span><span class="dt"> index.Rmd</span>
+    Rscript -e <span class="st">'bookdown::render_book(&quot;index.Rmd&quot;)'</span>
+    mv widgets book/.</code></pre></div>
+<p>and inside <code>index.Rmd</code> you should have something like</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="st">`</span><span class="dt"></span><span class="st">``</span><span class="dt">{r, include=FALSE}</span>
+<span class="dt">knitr::opts_chunk$set(widgetframe_widgets_dir = 'widgets' ) </span>
+<span class="st">`</span><span class="st">``</span></code></pre></div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

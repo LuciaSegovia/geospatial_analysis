@@ -1,0 +1,106 @@
+PD1.saemix              Data simulated according to an Emax response
+                        model, in SAEM format
+SaemixData-class        Class "SaemixData"
+SaemixModel-class       Class "SaemixModel"
+SaemixObject-class      Class "SaemixObject"
+SaemixRes-class         Class "SaemixRes"
+[                       Get/set methods for SaemixData object
+[,SaemixModel-method    Get/set methods for SaemixModel object
+[,SaemixObject-method   Get/set methods for SaemixObject object
+[,SaemixRes-method      Get/set methods for SaemixRes object
+backward.procedure      Backward procedure for joint selection of
+                        covariates and random effects
+coef.saemix             Extract coefficients from a saemix fit
+compare.saemix          Model comparison with information criteria
+                        (AIC, BIC).
+conddist.saemix         Estimate conditional mean and variance of
+                        individual parameters using the MCMC algorithm
+cow.saemix              Evolution of the weight of 560 cows, in SAEM
+                        format
+createSaemixObject      Create saemix objects with only data filled in
+default.saemix.plots    Wrapper functions to produce certain sets of
+                        default plots
+epilepsy.saemix         Epilepsy count data
+fim.saemix              Computes the Fisher Information Matrix by
+                        linearisation
+fitted.saemix           Extract Model Predictions
+forward.procedure       Backward procedure for joint selection of
+                        covariates and random effects
+initialize-methods      Methods for Function initialize
+knee.saemix             Knee pain data
+llgq.saemix             Log-likelihood using Gaussian Quadrature
+llis.saemix             Log-likelihood using Importance Sampling
+logLik                  Extract likelihood from a saemixObject
+                        resulting from a call to saemix
+lung.saemix             NCCTG Lung Cancer Data, in SAEM format
+map.saemix              Estimates of the individual parameters
+                        (conditional mode)
+mydiag                  Matrix diagonal
+npdeSaemix              Create an npdeObject from an saemixObject
+oxboys.saemix           Heights of Boys in Oxford
+plot,SaemixModel,ANY-method
+                        Plot model predictions using an SaemixModel
+                        object
+plot,SaemixModel,SaemixData-method
+                        Plot model predictions for a new dataset. If
+                        the dataset is large, only the first 20
+                        subjects (id's) will be shown.
+plot,SaemixObject,ANY-method
+                        General plot function from SAEM
+plot-methods            Methods for Function plot
+plot.SaemixData         Plot of longitudinal data
+predict-methods         Methods for Function predict
+predict.SaemixModel     Predictions for a new dataset
+print-methods           Methods for Function print
+psi-methods             Functions to extract the individual estimates
+                        of the parameters and random effects
+rapi.saemix             Rutgers Alcohol Problem Index
+readSaemix,SaemixData-method
+                        Create a longitudinal data structure from a
+                        file or a dataframe Helper function not
+                        intended to be called by the user
+replaceData             Replace the data element in a SaemixObject
+                        object
+resid.saemix            Extract Model Residuals
+saemix                  Stochastic Approximation Expectation
+                        Maximization (SAEM) algorithm
+saemix.plot.data        Functions implementing each type of plot in
+                        SAEM
+saemix.plot.select      Plots of the results obtained by SAEM
+saemix.plot.setoptions
+                        Function setting the default options for the
+                        plots in SAEM
+saemix.predict          Compute model predictions after an saemix fit
+saemixControl           List of options for running the algorithm SAEM
+saemixData              Function to create a SaemixData object
+saemixModel             Function to create a SaemixModel object
+saemixPredictNewdata    Predictions for a new dataset
+show-methods            Methods for Function show
+showall-methods         Methods for Function showall
+simulate.SaemixObject   Perform simulations under the model for an
+                        saemixObject object
+simulateDiscreteSaemix
+                        Perform simulations under the model for an
+                        saemixObject object defined by its
+                        log-likelihood
+step.saemix             Stepwise procedure for joint selection of
+                        covariates and random effects
+stepwise.procedure      Stepwise procedure for joint selection of
+                        covariates and random effects
+subset                  Data subsetting
+summary-methods         Methods for Function summary
+testnpde                Tests for normalised prediction distribution
+                        errors
+theo.saemix             Pharmacokinetics of theophylline
+toenail.saemix          Toenail data
+transform               Transform covariates
+transformCatCov         Transform covariates
+transformContCov        Transform covariates
+validate.covariance.model
+                        Validate the structure of the covariance model
+validate.names          Name validation (## )Helper function not
+                        intended to be called by the user)
+vcov                    Extracts the Variance-Covariance Matrix for a
+                        Fitted Model Object
+yield.saemix            Wheat yield in crops treated with fertiliser,
+                        in SAEM format

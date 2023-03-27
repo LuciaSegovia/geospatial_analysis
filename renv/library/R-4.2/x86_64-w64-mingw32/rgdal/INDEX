@@ -1,0 +1,33 @@
+CRS-class               Class "CRS" of coordinate reference system
+                        arguments
+GDALDataset-class       Class "GDALDataset"
+GDALDriver-class        Class "GDALDriver": GDAL Driver Object
+GDALMajorObject-class   Class "GDALMajorObject"
+GDALRasterBand-class    Class "GDALRasterBand"
+GDALReadOnlyDataset-class
+                        Class "GDALReadOnlyDataset"
+GDALReadOnlyDataset-methods
+                        subset methods for "GDALReadOnlyDataset"
+GDALTransientDataset-class
+                        Class "GDALTransientDataset"
+GridsDatums             Grids and Datums PE&RS listing
+RGB2PCT                 Convert RGB three band to single band colour
+                        table
+SGDF2PCT                Convert RGB three band to single band colour
+                        table
+SpatialGDAL-class       Class "SpatialGDAL"
+closeDataset-methods    closeDataset methods
+displayDataset          Display a GDAL dataset
+is_proj_CDN_enabled     PROJ search paths and content download network
+                        handling
+list_coordOps           List PROJ 6 coordinate operations
+llgridlines             Plot long-lat grid over projected data
+make_EPSG               Make a data frame of EPSG projection codes
+nor2k                   Norwegian peaks over 2000m
+projInfo                List PROJ.4 tag information
+rgdal-deprecated        Deprecated functions and methods
+showP4                  Show Well-Known Text spatial reference system
+                        metadata
+spTransform-methods     Methods for Function spTransform for map
+                        projection and datum transformation in package
+                        "rgdal"
