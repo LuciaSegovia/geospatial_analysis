@@ -1,9 +1,0 @@
-widgetframe-package	widgetframe
-frameableWidget	frameableWidget
-frameOptions	frameOptions
-frameWidget	frameWidget
-renderWidgetframe	widgetframe-shiny
-saveWidgetframe	saveWidgetframe
-widgetframe	widgetframe
-widgetframe-shiny	widgetframe-shiny
-widgetframeOutput	widgetframe-shiny

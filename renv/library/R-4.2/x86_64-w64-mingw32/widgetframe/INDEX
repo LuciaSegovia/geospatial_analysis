@@ -1,9 +1,0 @@
-frameOptions            Options for widget's iframe.
-frameWidget             A widget that wraps another widget inside a
-                        responsive iframe.
-frameableWidget         Adds pymjs initialization code to a htmlwidget.
-saveWidgetframe         Save a widgetframe and its child widget to HTML
-                        files.
-widgetframe             widgetframe: A package for wrapping htmlwidgets
-                        in responsive iframes.
-widgetframe-shiny       Shiny bindings for widgetframe
