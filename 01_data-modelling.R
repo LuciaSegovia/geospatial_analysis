@@ -57,8 +57,8 @@ plot(admin)
 
 # Allocating Se values to each admin unit
 # Choose the dataset:
-Se.df  <- maize_se 
-#Se.df  <- dhs_se 
+#Se.df  <- maize_se 
+Se.df  <- dhs_se[, c(1:4, 18, 22)] 
 Se_admin = st_intersection(Se.df, admin)
 
 names(Se_admin)
@@ -68,9 +68,19 @@ sum(duplicated(Se_admin$unique_id))
 subset(Se_admin, grepl("likoma", NAME_1))
 length(unique(Se_admin$ID_3))
 
+#Checking district
+
+check  <- setdiff(Se_admin$sdist, Se_admin$DIST_CODE)
+
+subset(Se_admin, sdist %in% check)
+
 removed_id  <- setdiff(dhs_se$unique_id, Se_admin$unique_id)
 
 removed_id  <- subset(dhs_se, unique_id %in% removed_id)
+
+Se_admin %>% 
+ggplot() + 
+  geom_sf(aes(fill = selenium)) 
 
 # Checking the points
  boundaries  %>% 
@@ -93,7 +103,8 @@ removed_id  <- subset(dhs_se, unique_id %in% removed_id)
 # Checking plasma values for the model
 #Rename your variable:
 names(Se_admin)
-names(Se_admin)[1]  <- "selenium" 
+names(Se_admin)[3]  <- "sdist" 
+names(Se_admin)[4]  <- "selenium" 
 # check for normality
 summaplot(Se_admin$selenium)
 sum(is.na(Se_admin$selenium))
@@ -102,8 +113,8 @@ Se_admin$sel_log<-log(Se_admin$selenium)
 summaplot(Se_admin$sel_log)
 
 # fit the model: Plasma/Maize Se
-model<-lme(sel_log~1, random=~1|shapeID, data=Se_admin)
-model<-lme(sel_log~1, random=~1|NAME_1/ID_3, data=Se_admin)
+model<-lme(sel_log~1, random=~1|EACODE, data=Se_admin)
+model<-lme(sel_log~1, random=~1|DIST_CODE/EACODE, data=Se_admin)
 
 # check distribution of residuals
 histplot(residuals(model,level=0))
@@ -126,12 +137,14 @@ re <- tibble::rownames_to_column(re, var = paste0("ID_", bn))
 re <- tibble::rownames_to_column(re)
 names(re)[1]  <- "NAME_1"
 names(re)[1]  <- "NAME_1_ID_3"
-names(re)[1]  <- "shapeID"
+names(re)[1]  <- "EACODE"
 head(re)
 hist(re$se_mean)
 
 re$ID_3  <- stringr::str_replace(re$NAME_1_ID_3, "^[:alpha:]*[:punct:]", "")
 
+class(re$EACODE)
+admin$EACODE  <- as.character(admin$EACODE)
 
 re %>% 
 full_join(., admin)  %>% st_as_sf()  %>% 

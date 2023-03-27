@@ -220,7 +220,7 @@ It could be also a combination of both.
 
 ## 5) Malawi GPS data & country boundaries 
 
-We have found several shape files with the boundaries for Malawi. The issues is that not many of the files hasve the boundaries at EA level. 
+We have found several shape files with the boundaries for Malawi. The issues is that not many of the files have the boundaries at EA level. 
 
 This is due to the confidenciality as those are the cluster uses for most of the survey and are bases on the census data. 
 
@@ -230,5 +230,14 @@ We are going to use other EA boundaries found [here]() frm the World Bank and us
 
 If those are also not valid, then we will try to use the lak boundaries to "close" the distric boundaries near the lake in the GADM boundaries, or we could do the buffered boundaries based on the EA centroids. 
 
+We have checked the new boundaries and they seemed correct, only that the areas when compared with the previous map are different. We are going to check that the distric reproted in the DHS survey are the same as those allocated by binding the EA bounderies file. 
+
+For those that the district are missing (NA) in the DHS, we would check that those points fall within what would be consided the district that it's reported in the EA boundaries file. Same for those with discrepancies. 
+
+Then we will resolve accordingly. 
+
+Because of these tests should be run for all the datasets with boundaries. We have created a script where we are performing all these steps bedore the modelling, as this can be considered cleaning and processing previous the modelling. 
+
+Then we will save the outputs in the inter-output folder, and use them in the model. 
 
 
