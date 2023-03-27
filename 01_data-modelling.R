@@ -18,12 +18,14 @@ library(numDeriv)
 
 # Loading the datat
 #check dhs.R script
-dhs.df <- readRDS(here::here("data", "inter-output", "dhs.rds")) #cleaned dhs data
 dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
 
 dim(dhs_se)
 names(dhs_se)
+
 sum(duplicated(dhs_se$unique_id))
+length(unique(dhs_se$survey_cluster1))
+
 #check maizeSe.R script
 maize_se  <- readRDS(here::here("data", "inter-output","maize_se.rds")) # cleaned Spatial maize Se data
 
@@ -35,18 +37,22 @@ boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
 
 
 boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries",  "geoBoundaries-MWI-ADM3.shp"))
+ "mwi-boundaries", "echo2_prioritization" , 
+ "ECHO2_prioritization.shp"))
+
+names(boundaries)
 
 # boundaries  <- boundaries  %>% filter(shapeID != "60268647B1308848342151") 
 # Getting info on the admin boudaries (EA/district level)
 # Using ID to avoid duplicates
 name_var  <- paste0("ID_", bn)
 admin  <- boundaries[, c("NAME_1",  name_var, "geometry")]
-admin  <- boundaries[, c("shapeName",  "shapeID", "geometry")]
+admin  <- boundaries[, c(1:7, 27)]
 test  <- admin[, name_var]
 #sum(duplicated(admin$ID_3))
 sum(duplicated(test))
-unique(admin$NAME_1)
+sum(duplicated(admin$EACODE))
+length(unique(admin$EACODE))
 plot(admin)
 
 # Allocating Se values to each admin unit

@@ -266,18 +266,36 @@ plot(DHSDATA$education_level, DHSDATA$region,
 
 DHSDATA %>% group_by (region) %>% dplyr::count(wealth_quintile)
 
-
+# Merging with DHS dataset ----
 # Merging with DHS dataset to obtain Wealth index and other variables 
 
-EligibleDHS <- Malawi_WRA %>% left_join(., DHSDATA) %>% dplyr::rename(
+EligibleDHS <- Malawi_WRA %>% 
+ left_join(., DHSDATA) %>% dplyr::rename(
   #person_id=WomenID,
   is_lactating= "v404", #breastfeeding yes=1, no=0
   is_smoker= "v463a", # Only cover cigarettes (other smoking variables)
   survey_strata= "v022", 
   had_fever='m416',
   had_diarrhea= 'm419',
-  had_malaria= 'm420')
+  had_malaria= 'm420')  
+  
 
+dhs_varibles  <- c("household_id1", "LINENUMBER",
+"region",
+"wealth_quintile",
+"Literacy",
+"education_level", 
+"is_lactating",
+"is_smoker",
+"survey_strata",
+"had_fever",
+"had_diarrhea",
+"had_malaria", 
+"sdist")
+
+# Selecting variables
+women  <- Malawi_WRA %>% dplyr::select(c(1:14, 21:23,
+ 25, 27, 92, 96,97, 117, 131:162))  %>% names()
 
 #Checking if intoducing duplicates
 n01 == dim(EligibleDHS)[1] # need to be minus pregnant
@@ -422,14 +440,12 @@ saveRDS(EligibleDHS,
 # TODO: Add Malawi boundaries
 GPS<-dplyr::rename(GPS, survey_cluster1='DHSCLUST')
 
-
-
 # Only for Se in the dataset
-GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "selenium")], GPS, by='survey_cluster1')
+GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist",  "selenium")], GPS, by='survey_cluster1')
 GPS_Se  <- st_as_sf(GPS_Se, crs = st_crs(4326), coords = c('LONGNUM', 'LATNUM'))
 
  # Saving Se dataset into R object
-saveRDS(GPS_Se[,c("unique_id","survey_cluster1", "selenium", "ADM1NAME", "geometry")], 
+saveRDS(GPS_Se, 
  file=here::here("data", "inter-output","dhs_se.rds"))
 
 
