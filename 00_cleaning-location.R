@@ -142,6 +142,7 @@ test_buffer2  <- st_buffer(test_centroid, dist =2000, endCapStyle = "SQUARE")
 names(test_buffer2)
 
 #Checking buffers around the centroid have been created correclty
+
 tm_shape(nso_bound) +
 tm_polygons() +
 tm_shape(test_buffer2) +
@@ -152,4 +153,14 @@ tm_polygons() +
 tm_shape(test_buffer2) +
 tm_polygons(col = "red") +
 tm_shape(park) +
+tm_borders(col = "green") 
+
+# Checking HH location (DHS) vs National Parks.
+
+
+tm_shape(nso_bound) +
+tm_polygons() +
+tm_shape(dhs_se) +
+tm_dots(col = "red") +
+tm_shape(parks) +
 tm_borders(col = "green") 
