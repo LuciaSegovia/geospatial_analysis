@@ -244,14 +244,22 @@ We have checked the discrepancies between the echo2 boundaries and the DHS with 
 
 Therefore, for district level we will use NSO boundaries. In addition, for the small scale units we are going to generate our own boundaries based on the centroids of the EAs. 
 
-To do so, we will 
+To do so, we will:
 
-a) generate the centroids of each EA reprted in ECHO2 file
+a) generate the centroids of each EA reprted in ECHO2 file.
 b) draw a 2km-radious boundary for each centrod.In the future, we may want to differenciate between Rural and Urban EAs. 
 
+After discussion with Claire (14/04/2023)
+
+The three set of boundaries we are using are:
+1) HHs-location based: We will draw buffers around the HHs of the WRA which donated blood for plasma Se. We will start with 5km buffer as it is the common displacement (geographic masking) used in rurar areas in DHS surveys. Then, we will create bigger buffer up to Admin boundaries and/or 100km radious (used for analisys of proximity to the market). 
+2) Admin. unit based: We will start with Traditional Authorities, since we could not get good EAs boundaries (See above) and we will aggregate up to District/Region. 
+3) Agro-eco based: Lastly, we will used the agro-ecological areas (also used in IHS4) to aggregate the data. #REVIEW: We were thinking to use the soil type as well, but maybe we will have some kind of cofounding if we are using that as one of the covariates of the model. 
 
 Because of these tests should be run for all the datasets with boundaries. We have created a script where we are performing all these steps before the modelling, as this can be considered cleaning and processing previous the modelling. 
 
 Then we will save the outputs in the inter-output folder, and use them in the model. 
 
+
+After, we need to ask for the model that will provide an estimate (predicted-mean) of each area. The current model is only giving values for those areas with at least one observation. 
 
