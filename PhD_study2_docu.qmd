@@ -81,21 +81,23 @@ GPS displacement within district.
 
 #TODO: Check README and recommended readings to understand displacement and what it is possible and not possible for analysis. 
 
-### Boundaries of Malawi
+### 3. Boundaries of Malawi
 
-3.  Malawi boundaries
+  Malawi boundaries
 
-- GADM maps and data (gadm40_MWI_shp): The file for the EAs has some issues that lead some points in the lake. Hence, we found a different file with the Malawi boudaries. 
+- GADM maps and data, (gadm40_MWI_shp), https://gadm.org/download_country.html, The file for the EAs has some issues that lead some points in the lake. Hence, we found a different file with the Malawi boudaries, 
+
+- Malawi NSO from HDX (Humanitarian datasets), (mwi_adm_nso_hotosm_20230329), https://data.humdata.org/dataset/cod-ab-mwi
+
+- Population over Enumeration Areas NSO, (ea_bds) https://www.masdap.mw/catalogue/#/dataset/126, This layer shows the distribution of the population over the country of Malawi on the basis of enumeration area boundary. Data producer is the National Statistical Office.
+
+- Echo2 priritization, These files covered up to EAs. (depricated - Updated version: Population over Enumeration Areas NSO)
 
 - GeoBoundaries: It also has 3 level of boudaries: 1-region, 2-district, 3-TA. These files has no EA boundaries (depricated).
 
-- Echo2 priritization: These files covered up to EAs.
+### 4. Geo-referenced apparent food consumption in Malawi (Se intake)
 
-- Malawi NSO from HDX (Humanitarian datasets) (mwi_adm_nso_hotosm_20230329)
-
-### Geo-referenced apparent food consumption in Malawi (Se intake)
-
-4. Fourth Integrated Household Survey 2016-2017. https://doi.org/10.48529/g2p9-9r19. It can be accessed through the World Bank microdata website. 
+Fourth Integrated Household Survey 2016-2017. https://doi.org/10.48529/g2p9-9r19. It can be accessed through the World Bank microdata website. 
 
 Information about each module and the information contained can be found [here](https://microdata.worldbank.org/index.php/catalog/2936/pdf-documentation)
 

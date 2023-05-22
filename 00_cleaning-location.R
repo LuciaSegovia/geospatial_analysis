@@ -117,7 +117,7 @@ removed_id  <- setdiff(dhs_se$unique_id, Se_admin$unique_id)
 
 removed_id  <- subset(dhs_se, unique_id %in% removed_id)
 
-haven::as_factor(dhs_se$sdist)  %>% sort()
+haven::as_factor(dhs_se$sdist) %>% sort()
 
 plot(check)
 

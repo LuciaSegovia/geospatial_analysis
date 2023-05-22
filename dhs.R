@@ -6,6 +6,7 @@ library(dplyr) # data wrangling
 library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
 library(survey) # survey design
+options(survey.lonely.psu="adjust") # For Error of one PSU at stage 1
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 source(here::here("CEPHaStat_3.R")) #stat functions
@@ -475,6 +476,14 @@ boundaries$shapeID[boundaries$shapeID == "60268647B1308848342151"]
 
 
 # Applying survey weight
+EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs.rds"))
+
+class(EligibleDHS$region)
+
+EligibleDHS$survey_cluster1  <- as.factor(EligibleDHS$survey_cluster1)
+EligibleDHS$wealth_quintile  <- as.factor(EligibleDHS$wealth_quintile)
+EligibleDHS$sdist  <- as.factor(EligibleDHS$sdist)
+EligibleDHS$region  <- as.factor(EligibleDHS$region)
 
 # Complex sample design parameters
 
@@ -485,4 +494,11 @@ strata=EligibleDHS$survey_strata, #This strata
 
 # tabulate indicator by region
 
-svyby(~selenium, ~urbanity,  DHSdesign, svymean, vartype=c("se","ci"))
+svyby(~selenium, ~sdist,  DHSdesign, svymean, vartype=c("se","ci"))
+
+svyhist(~selenium,   DHSdesign)
+
+svyboxplot(selenium~urbanity,   DHSdesign)
+svyboxplot(selenium~wealth_quintile,   DHSdesign)
+svyboxplot(selenium~sdist,   DHSdesign)
+svyboxplot(selenium~region,   DHSdesign)
