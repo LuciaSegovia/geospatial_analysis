@@ -9,16 +9,18 @@ library(tmap)  #spatial data manipulation and visualisation
 
 
 # Loading the datat
-# Plasma Se
+# Plasma Se & Maize Se
 dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
+maize_se  <- readRDS(here::here("data", "inter-output","maize_se.rds")) # cleaned Spatial maize Se data
 
 dim(dhs_se)
 names(dhs_se)
+class(maize_se)
 
 sum(duplicated(dhs_se$unique_id))
 length(unique(dhs_se$survey_cluster1))
 
-#Removing values missing Plasma Se value
+#Removing values missing Plasma Se value (exc. 34)
 dhs_se  <-  subset(dhs_se, !is.na(selenium))
 length(unique(dhs_se$survey_cluster1))
 
@@ -28,29 +30,36 @@ count(is.na(dhs_se$sdist))
 # Boundaries for Malawi 
 
 # EAs
-boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "echo2_prioritization" , 
- "ECHO2_prioritization.shp"))
+ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
-names(boundaries)
+names(ea_bnd)
+class(ea_bnd)
 
 # TA
- nso_bound  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries",
     "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
+
+names(ta_bnd)
+class(ta_bnd)
 
 # national parks
 
 parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
 
-View(nso_bound)
-head(boundaries)
+View(ta_bnd)
+head(ea_bnd)
 
-table(sf::st_is_valid(nso_bound))
-table(sf::st_is_valid(boundaries))
+table(sf::st_is_valid(ta_bnd))
+table(sf::st_is_valid(ea_bnd))
 
-nso_bound  <- st_make_valid(nso_bound)
+plot(ta_bnd[, "ADM1_EN"])
+
+plot(ea_bnd[, "FEMALE"])
+
+nso_bound  <- st_make_valid(ta_bnd) # Check this
 
 # Selecting only variables that are interesting. 
 admin  <- boundaries[, c(1:7, 27)]
@@ -126,7 +135,7 @@ plot(check)
 
 # Getting EAs centroids
 
-test_centroid  <- st_point_on_surface(boundaries[, c(1,27)])
+test_centroid  <- st_point_on_surface(ea_bnd[, c(1,27)])
 
 names(test_centroid)
 
@@ -164,3 +173,75 @@ tm_shape(dhs_se) +
 tm_dots(col = "red") +
 tm_shape(parks) +
 tm_borders(col = "green") 
+
+# Aggregation at HH level
+
+# Getting the buffer around the HHS (10km).
+
+test_buffer  <- st_buffer(dhs_se, dist =10000)
+names(test_buffer)
+
+
+#Checking buffers around the centroid have been created correclty
+
+tm_shape(ea_bnd)+
+tm_polygons() +
+tm_shape(test_buffer) +
+tm_polygons(border.col = "red") +
+tm_shape(dhs_se) +
+tm_dots() 
+
+
+
+test_buffer  <-  st_join(dhs_se,  maize_se, st_is_within_distance,
+            dist = units::set_units(10, "km"))
+
+nrow(dhs_se)
+
+nrow(test_buffer)
+
+
+cellSize <- 0.001
+grid <- (st_bbox(dhs_se) + cellSize/2*c(-1,-1,1,1)) %>%
+  st_make_grid(cellsize=c(cellSize, cellSize)) %>% st_sf()
+
+ggplot() + geom_sf(data=grid) + geom_sf(data=dhs_se)
+
+
+
+
+## Testing OpenAI suggestion 
+
+# Set up your point location
+point_location <- data.frame(
+  lon = -13.2543,
+  lat = 34.3015
+)
+
+# Load the Malawi shapefile
+malawi_shapefile <- st_read("path_to_malawi_shapefile/malawi.shp")
+
+# Create a spatial point object
+sp_point <- st_as_sf(point_location, coords = c("lon", "lat"), crs = 4326)
+
+# Define the extent for the map
+map_extent <- st_bbox(ea_bnd) + 0.1
+
+# Create a square polygon around the point
+buffer_distance <- 1 # Adjust the buffer distance as needed
+buffer_poly <- st_buffer(dhs_se, dist = buffer_distance)
+
+# Intersect the buffer polygon with the Malawi shapefile to constrain the boundaries
+constrained_poly <- st_intersection(buffer_poly, ea_bnd)
+
+# Divide the constrained polygon into quadrants
+quadrants <- st_split(constrained_poly, st_as_sfc(st_bbox(constrained_poly), crs = st_crs(constrained_poly)), fill = TRUE)
+
+# Plot the map (use quadrant instead of constrain poly)
+ggplot() +
+  geom_sf(data = ea_bnd, fill = "lightgray", color = "black") +
+  geom_sf(data = constrained_poly, fill = "lightblue", color = "black") +
+  geom_sf(data = sp_point, color = "red", size = 3) +
+  coord_sf(xlim = c(map_extent$xmin, map_extent$xmax),
+           ylim = c(map_extent$ymin, map_extent$ymax)) +
+  theme_bw()

@@ -14,9 +14,9 @@ The objectives of these exploratory analysis are:
 
 ## Dataset & Variables
 
-### Geo-referenced crop (maize) composition (Se in maize) in Malawi
+### 1. Geo-referenced crop (maize) composition (Se in maize) in Malawi
 
-1.  Malawi maize grain and soil Se concentration dataset. It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
+Malawi maize grain and soil Se concentration dataset. It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
 
 File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
 
@@ -33,9 +33,9 @@ File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
 -   BIO12
 -   TIM
 
-### Geo-referenced biomarkers data (Plasma Se in WRA) in Malawi 
+### 2. Geo-referenced biomarkers data (Plasma Se in WRA) in Malawi 
 
-2.  Malawi DHS - MNS 2015-2016. Access need to be requested to DHS data\[Add link\]().
+Malawi DHS - MNS 2015-2016. Access need to be requested to DHS data [here](https://dhsprogram.com/methodology/survey/survey-display-483.cfm).
 
 **File of interest & variables**:
 
@@ -83,17 +83,21 @@ GPS displacement within district.
 
 ### 3. Boundaries of Malawi
 
-  Malawi boundaries
+Malawi administrative boundaries, from the higher to the smallest area: Region> District> Traditional Authorities (TA)> Enumeration Areas (EA). 
 
 - GADM maps and data, (gadm40_MWI_shp), https://gadm.org/download_country.html, The file for the EAs has some issues that lead some points in the lake. Hence, we found a different file with the Malawi boudaries, 
 
 - Malawi NSO from HDX (Humanitarian datasets), (mwi_adm_nso_hotosm_20230329), https://data.humdata.org/dataset/cod-ab-mwi
 
-- Population over Enumeration Areas NSO, (ea_bds) https://www.masdap.mw/catalogue/#/dataset/126, This layer shows the distribution of the population over the country of Malawi on the basis of enumeration area boundary. Data producer is the National Statistical Office.
+- Population over Enumeration Areas NSO, (eas_bnd) https://www.masdap.mw/catalogue/#/dataset/126, This layer shows the distribution of the population over the country of Malawi on the basis of enumeration area boundary. Data producer is the National Statistical Office.
 
 - Echo2 priritization, These files covered up to EAs. (depricated - Updated version: Population over Enumeration Areas NSO)
 
 - GeoBoundaries: It also has 3 level of boudaries: 1-region, 2-district, 3-TA. These files has no EA boundaries (depricated).
+
+Other boundaries in Malawi, including agro-ecological zones, agricultural land, body water, national parks, etc. 
+
+#TODO: Getting the AEZ from the Scoping review (R prjct, data folder).
 
 ### 4. Geo-referenced apparent food consumption in Malawi (Se intake)
 
@@ -232,7 +236,7 @@ This is due to the confidenciality as those are the cluster uses for most of the
 
 One of good source of countries boundaries are GADM, we were using those boundaries the problem is that they include lake Malawi as part of the boundaries of the EA/district / state. Hence when using the boundaries to locate the HHs and/or maize it seems that part of the data is falling inside the lake. If we try to remove the lake area it leads to the missing of some observations. 
 
-We are going to use other EA boundaries found [here]() frm the World Bank and used previously by the NE Red Cross. 
+We are going to use other EA boundaries found [here]() from the World Bank and used previously by the NE Red Cross. 
 
 If those are also not valid, then we will try to use the lak boundaries to "close" the distric boundaries near the lake in the GADM boundaries, or we could do the buffered boundaries based on the EA centroids. 
 
@@ -254,7 +258,7 @@ b) draw a 2km-radious boundary for each centrod.In the future, we may want to di
 After discussion with Claire (14/04/2023)
 
 The three set of boundaries we are using are:
-1) HHs-location based: We will draw buffers around the HHs of the WRA which donated blood for plasma Se. We will start with 5km buffer as it is the common displacement (geographic masking) used in rurar areas in DHS surveys. Then, we will create bigger buffer up to Admin boundaries and/or 100km radious (used for analisys of proximity to the market). 
+1) HH location based: We will draw buffers around the HHs of the WRA which donated blood for plasma Se. We will start with 5km buffer as it is the common displacement (geographic masking) used in rurar areas in DHS surveys. Then, we will create bigger buffer up to Admin boundaries and/or 100km radious (used for analisys of proximity to the market). 
 2) Admin. unit based: We will start with Traditional Authorities, since we could not get good EAs boundaries (See above) and we will aggregate up to District/Region. 
 3) Agro-eco based: Lastly, we will used the agro-ecological areas (also used in IHS4) to aggregate the data. #REVIEW: We were thinking to use the soil type as well, but maybe we will have some kind of cofounding if we are using that as one of the covariates of the model. 
 
@@ -262,6 +266,12 @@ Because of these tests should be run for all the datasets with boundaries. We ha
 
 Then we will save the outputs in the inter-output folder, and use them in the model. 
 
-
 After, we need to ask for the model that will provide an estimate (predicted-mean) of each area. The current model is only giving values for those areas with at least one observation. 
 
+#### Household location-based aggregation
+
+Test 1: Drawing a 10km buffer around the HH: we generate 10km buffer around each DHS HH location using the `st_butter()` function. The problem is that there are areas thar are outside the Malawi land. And, in addition, some of the buffers may be also within national parks where no maize samples were collected. Hence, we decided to use a different approach.
+
+Test 2: [Non-overalpping join](https://r.geocompx.org/spatial-operations.html#non-overlapping-joins), which are based on proximity. We are merging DHS dataset with the GeoNutrition dataset using two functions: `st_join()` and `st_is_within_distance()`. It doesn't work because it use all the data in maize Se dataset.
+
+If we are going to do a prediction we need to build the boudaries. Hence, ideally we should be able to calculate an area size, instead of a buffer. 
