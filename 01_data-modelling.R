@@ -25,6 +25,13 @@ names(dhs_se)
 
 sum(duplicated(dhs_se$unique_id))
 length(unique(dhs_se$survey_cluster1))
+class(dhs_se$wealth_quintile)
+class(dhs_se$sdist)
+
+dhs_se$wealth_quintile  <- haven::zap_labels(dhs_se$wealth_quintile)
+
+plot(dhs_se[, "wealth_quintile"])
+table(dhs_se$wealth_quintile, dhs_se$region)
 
 #check maizeSe.R script
 maize_se  <- readRDS(here::here("data", "inter-output","maize_se.rds")) # cleaned Spatial maize Se data

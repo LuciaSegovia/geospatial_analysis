@@ -195,7 +195,13 @@ Plasma Se values were slightly higher in the highest education level, with lower
 
 Plasma Se values were similar when aggregated by region, whereas we can start seeing some differences when we are plotting the results by district. Also notice, that the number of observations per district is 1) much smaller and 2) much diverse (from `r min(table(EligibleDHS$sdist))` to `r max(table(EligibleDHS$sdist))`). 
 
-#TODO: Check weighting and how to apply them to the survey, including to plotting the data.
+#REVIEW: Check weighting and how to apply them to the survey, including to plotting the data.
+Because we are exploring how much Plasma Se variablity is explained by Maize Se concentration, we do not need to apply (or worry about) the weights. Only, we would need to apply them if we want to express some findings at population level, e.g., perc. of population at risk. We are not likely to do that, as 1) it is not the objective of the study/ model, and 2) we are working at certain scales where data will not be representative (e.g., district). 
+
+#TODO: Check the data
+What it would be important to check, it is wether the data is balance (e.g., highly skewed to one side and hence driving the model outcomes). 
+We checked wealth by region and it seemed that there is a slight unbalance for the lowest Q in the middle region and towards the highes Q in the Northern region. 
+See `r table(dhs_se$wealth_quintile, dhs_se$region)`. 
 
 #TODO: Generate a dataset with districs and soil type, and proximity to the Lake Malawi (from the "centre of the district" to the lake) - Ask Liberty/ Louise whether that have been created previosly. 
 

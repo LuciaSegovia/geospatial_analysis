@@ -437,12 +437,14 @@ EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 saveRDS(EligibleDHS, 
  file=here::here("data", "inter-output","dhs.rds"))
 
+#EligibleDHS  <- readRDS(here::here("data","inter-output","dhs.rds")) 
+
 # add GPS values
 # TODO: Add Malawi boundaries
 GPS<-dplyr::rename(GPS, survey_cluster1='DHSCLUST')
 
 # Only for Se in the dataset
-GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist",  "selenium")], GPS, by='survey_cluster1')
+GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist",  "selenium", "wealth_quintile", "region")], GPS, by='survey_cluster1')
 GPS_Se  <- st_as_sf(GPS_Se, crs = st_crs(4326), coords = c('LONGNUM', 'LATNUM'))
 
  # Saving Se dataset into R object
@@ -502,3 +504,8 @@ svyboxplot(selenium~urbanity,   DHSdesign)
 svyboxplot(selenium~wealth_quintile,   DHSdesign)
 svyboxplot(selenium~sdist,   DHSdesign)
 svyboxplot(selenium~region,   DHSdesign)
+
+
+plot(EligibleDHS$wealth_quintile, EligibleDHS$region, 
+     main="Wealth vs Region",
+     xlab="Wealth Q", ylab="Region", pch=19)
