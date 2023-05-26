@@ -329,6 +329,16 @@ boxplot(selenium ~ urbanity*wealth_quintile, data = EligibleDHS,
      main="Plasma Selenium by Wealth Quintile",
      xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
 
+boxplot(BMI ~ urbanity*wealth_quintile, data = EligibleDHS, 
+     main="BMI by Wealth Quintile",
+     xlab="Wealth Quantile", ylab="BMI (kg/m^2)", pch=19)
+
+(x  <- boxplot(BMI ~ wealth_quintile, data = EligibleDHS, 
+     main="BMI by Residency",
+     xlab="Residency", ylab="BMI (kg/m^2)", pch=19))
+
+x$stats[3,]
+
 #Education level
 unique(EligibleDHS$education_level)
 sum(is.na(EligibleDHS$education_level)) #29 observations are missing Educ. 
@@ -437,7 +447,7 @@ EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 saveRDS(EligibleDHS, 
  file=here::here("data", "inter-output","dhs.rds"))
 
-#EligibleDHS  <- readRDS(here::here("data","inter-output","dhs.rds")) 
+EligibleDHS  <- readRDS(here::here("data","inter-output","dhs.rds")) 
 
 # add GPS values
 # TODO: Add Malawi boundaries

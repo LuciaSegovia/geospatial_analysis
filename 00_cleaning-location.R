@@ -7,7 +7,6 @@ library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
-
 # Loading the datat
 # Plasma Se & Maize Se
 dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
@@ -35,6 +34,9 @@ ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
 
 names(ea_bnd)
 class(ea_bnd)
+# Mean area for each EA
+mean(ea_bnd$AREA_KM)
+sd(ea_bnd$AREA_KM)
 
 # TA
  ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
