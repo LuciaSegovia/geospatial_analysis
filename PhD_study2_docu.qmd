@@ -97,7 +97,7 @@ Malawi administrative boundaries, from the higher to the smallest area: Region> 
 
 Other boundaries in Malawi, including agro-ecological zones, agricultural land, body water, national parks, etc. 
 
-#TODO: Getting the AEZ from the Scoping review (R prjct, data folder).
+We are not incluiding the AEZs boundaries because they are only 4 AEZs in Malawi, hence areas are too big to get any meanful spatial variation, and/or level of aggregation. Note: The AEZ can be found in the Scoping review (R project, data folder), and further inforamtion can be found in [here](https://climateknowledgeportal.worldbank.org/sites/default/files/2019-06/CSA%20_Profile_Malawi.pdf).
 
 ### 4. Geo-referenced apparent food consumption in Malawi (Se intake)
 
@@ -166,7 +166,7 @@ According to the NSO (2017) report: Malawi Micronutrient Survey 2015-2016. There
 #TODO: Would that impact our results? Probably yes. Check what that would mean for our analysis. 
 
 In the same report, inflamation was reported around 12% but it was consistent across age groups, residency, and wealth Q. However, malaria prevalence was higher in rural areas and for the different wealth Q, w/ lowest WQ being 6-times higher than the highes WQ. Since, these two variables seemed to be also related to Plasma Se status. Can we identify if malaria is influencing Se status?
-#TODO: Check correlation btween malaria and Se status. 
+#TODO: Check correlation between malaria and Se status. 
 
 When plotting wealth quintiles we can see that were more HH on the highest wealth Q. 
 

@@ -153,6 +153,7 @@ Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >200]
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >999] <- NA
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT <130] 
 Malawi_WRA$AGE_IN_YEARS[Malawi_WRA$HEIGHT <120] 
+
 # height Weighted mean by region
 ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(HEIGHT, wt,na.rm = T))
 
@@ -215,9 +216,29 @@ summaplot(x)
 # Se Weighted mean/median by region/urbanity
 ddply(Malawi_WRA,~region, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
 #Boxplot Se ~ U/R and Region
 boxplot(selenium ~ urbanity*region, data = Malawi_WRA,
         col = c("white", "steelblue"), frame = FALSE)
+
+#Boxplot Se ~ Malaria and Region
+boxplot(selenium ~ Malaria_test_result*region, data = Malawi_WRA,
+        col = c("white", "steelblue"), frame = FALSE)
+
+# Individual level - source of variability 
+
+# Selenium & Age
+plot(Malawi_WRA$selenium, Malawi_WRA$AGE_IN_YEARS, 
+     main="Selenium by Age",
+     xlab="Selenium", ylab="Age", pch=19)
+
+ # Selenium & BMI
+plot(Malawi_WRA$selenium, Malawi_WRA$BMI,
+     main="Selenium by BMI",
+     xlab="Selenium", ylab="BMI", pch=19)
+
+# Selenium & CRP (Inflamation)
+boxplot(selenium ~ crp_HIGH, Malawi_WRA)
 
 # Checking DHS survey data  ------
 # (Wealth index and other variables)
@@ -241,7 +262,7 @@ summary(DHSDATA$wealth_quintile)
 plot(DHSDATA$wealth_quintile, DHSDATA$education_level, 
      main="Wealth vs Education",
      xlab="Wealth Q", ylab="Education level", pch=19)
-
+	
 # education 0-3 (low to high)
 plot(DHSDATA$wealth_quintile, DHSDATA$education_level, 
      main="Wealth vs Education",
@@ -279,7 +300,8 @@ EligibleDHS <- Malawi_WRA %>%
   had_fever='m416',
   had_diarrhea= 'm419',
   had_malaria= 'm420')  
-  
+
+
 
 dhs_varibles  <- c("household_id1", "LINENUMBER",
 "region",
@@ -443,11 +465,21 @@ EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
 EligibleDHS$LOW_SEL_IDI <- ifelse(EligibleDHS$selenium<64.8,1,0)
 EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 
+
 # Saving Se dataset into R object
 saveRDS(EligibleDHS, 
  file=here::here("data", "inter-output","dhs.rds"))
 
 EligibleDHS  <- readRDS(here::here("data","inter-output","dhs.rds")) 
+
+# Checking BMI & wealth Q (co-linearity)
+EligibleDHS$wealth_quintile  <- haven::zap_labels(EligibleDHS$wealth_quintile)
+plot(EligibleDHS$selenium, EligibleDHS$BMI, col=EligibleDHS$wealth_quintile)
+ggplot(EligibleDHS, aes(BMI, selenium, col=wealth_quintile)) + geom_point()
+
+plot(EligibleDHS$wealth_quintile, EligibleDHS$BMI)
+ggplot(EligibleDHS, aes(BMI, wealth_quintile, col=selenium)) + geom_point()
+
 
 # add GPS values
 # TODO: Add Malawi boundaries
