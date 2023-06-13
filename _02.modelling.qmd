@@ -17,6 +17,9 @@ See sensitivity analysis.
 
 ## Parameter inclusion
 
+# Maize Se
+
+Predicted-mean Se in maize at different level of aggregation. According to Gashu et al, 2019 the covariates that were selected (significant) for the maize Se map (kringing map) were mean atmospheric temperature (MAT) and pH. 
 
 ### . Other crops 
 

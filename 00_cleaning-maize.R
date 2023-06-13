@@ -3,20 +3,46 @@ library(dplyr)
 library(sp)
 library(sf) # for reading in and writting shapefiles
 
+
 # Loading data 
-maize.df  <- readxl::read_excel(here::here("data", "maize", "2009_mwi-maize.xls"))
+crop  <- readr::read_csv(here::here("data", "maize", "2012_crop-min.csv"))
+soil  <- readr::read_csv(here::here("data", "maize", "2012_soil-min.csv"), skip =2)
 
 #Checking data
-head(maize.df)
-names(maize.df)
+head(crop)
+head(soil)
+
+tail(soil)
+names(crop)
+names(soil)
+
+crop <- crop  %>% filter(!is.na(X_coord) & !is.na(Y_coord))  %>% 
+st_as_sf(., coords =c("X_coord", "Y_coord"), crs = "+init=epsg:32736")
+
+#crop$geometry  <- spTransform(crop$geometry, CRS("+init=epsg:4326"))
+#Changing the projection system so it is in line with other datasets (long/lat)
+crop <- st_transform(crop,  crs = "+init=epsg:4326")
+
+cord.dec3  =  SpatialPoints(cbind( crop$X_coord,
+ crop$Y_coord), proj4string = CRS("+init=epsg:32736"))
+
+plot(cord.dec3, axes = TRUE, main = "Lat-Long Coordinates", cex.axis = 0.95)
+
+
+# Loading data 
+maize  <- readxl::read_excel(here::here("data", "maize", "2009_mwi-maize.xls"))
+
+#Checking data
+head(maize)
+names(maize)
 
 #Renaming variable & adding info on data source
-names(maize.df)[11]  <- "Se_mg"
-maize.df$survey  <- "Chilimba_2009"
+names(maize)[11]  <- "Se_mg"
+maize$survey  <- "Chilimba_2009"
 
 #Checking the spatial function
-cord.dec1  =  SpatialPoints(cbind( maize.df$Longitude_DD, maize.df$Latitude_DD), proj4string = CRS("+proj=longlat"))
-cord.dec2  =  subset(maize.df, select = c(Longitude_DD, Latitude_DD))  %>% st_as_sf(., coords =c("Longitude_DD", "Latitude_DD"), crs = "EPSG:4326")
+cord.dec1  =  SpatialPoints(cbind( maize$Longitude_DD, maize$Latitude_DD), proj4string = CRS("+proj=longlat"))
+cord.dec2  =  subset(maize, select = c(Longitude_DD, Latitude_DD))  %>% st_as_sf(., coords =c("Longitude_DD", "Latitude_DD"), crs = "EPSG:4326")
 
 # Plotting points
 par(mfrow = c(1, 2))
@@ -24,7 +50,7 @@ plot(cord.dec1, axes = TRUE, main = "Lat-Long Coordinates", cex.axis = 0.95)
 plot(cord.dec2, axes = TRUE, main = "Lat-Long Coordinates", col = "red", cex.axis = 0.95)
 
 # Generating spatial dataset
-maize.df <- subset(maize.df, !is.na(Se_mg), select = c(9:11, 14))  %>% 
+maize.df <- subset(maize, !is.na(Se_mg), select = c(9:11, 14))  %>% 
 st_as_sf(., coords =c("Longitude_DD", "Latitude_DD"), crs = "EPSG:4326")
 
 # Loading the data
@@ -67,13 +93,11 @@ data.df  <- rbind(maize.df, grain.df)
 # Checking final dataset
 str(data.df)
 plot(data.df)
-hist(maize.df$Se_triplequad)
-hist(grain.df$Se_triplequad)
-hist(data.df$Se_triplequad)
+hist(maize.df$Se_mg)
+hist(grain.df$Se_mg)
+hist(data.df$Se_mg)
 
 # Maize Se conc. - data manipulation ----
 
-
-
-dim(se.df)
-sum(is.na(se.df$Se_triplequad))
+dim(data.df)
+sum(is.na(data.df$Se_mg))
