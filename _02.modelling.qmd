@@ -1,0 +1,50 @@
+---
+title: "Methods: Model selection"
+format: html
+editor: source
+---
+
+
+# Model considerations
+
+See model framework
+
+### . Household displacement
+
+It is important that we think about the displacement of the household location and the potential impacts on the final results. For instance, when two houeholds are in the same EA, the maize Se value is the same for both households. 
+
+See sensitivity analysis. 
+
+## Parameter inclusion
+
+
+### . Other crops 
+
+There were some discsusions around including or not other crops into the model. The rationale for inclusion is: 
+
+1) the model will be more generalisable/ flexible: Because other countries may not have a unique dominant staple crop, as it is maize in Malawi. 
+2) the model will account for spatial variation due to other crops, hence probably yielding more accurate results. 
+
+However, the addition of more crops will add more complexity to the model due to:
+ 
+ 1) different crops may have a different food system. I.e, the catchment area (or foodshed), may be different. For instance, importing that crop or getting it from further away. 
+ 2) other crops are not equally important accross the country, and all of them are less consumed than maize in all districts (see image)
+ 3) there are other uncertainties that may play a role, for instance, sesonality and the displacement of the household location, that may be more difficult to characterise with a more complex model.
+
+ In addition, with this analysis were are using maize Se as a proxy for a) the spatial variation of Se in crops-livestock-human, b) the foodshed and/or food catchment area, and c) maize is the main crop consumed accross the country in similar proportions (see images), while other grains are consumed in particular region and various amounts [@ref own analysis using IHS4]. We are not aiming to find a model that will be used to predict the plasma se of populations, as there are other potential sources of plasma Se variability that are not taken into consideration in this modelling excersise, such as fish intake, total food intake, etc. 
+
+
+# Model assumptions
+
+
+# Model selection
+
+
+# Model validation & checks
+
+
+## Sensitivity
+
+### Household displacement
+
+In order to see how the displacement may potentially affect the model results. We have displaced all/ X% of the sample within range. Hence, the point locations were displaced by 2km, and the analysis were re-run. 

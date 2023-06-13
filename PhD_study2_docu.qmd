@@ -1,7 +1,7 @@
 ---
 title: "Reproducible data documentation for the study on geospatial relationship between plasma Se concetration in WRA & maize grain Se concentration in Malawi"
 format: html
-editor: visual
+editor: source
 ---
 
 # Intro
@@ -16,9 +16,10 @@ The objectives of these exploratory analysis are:
 
 ### 1. Geo-referenced crop (maize) composition (Se in maize) in Malawi
 
-Malawi maize grain and soil Se concentration dataset. It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
+a. Malawi maize grain and soil Se concentration dataset (2018). It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
 
-File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
+File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx 
+ data/maize/Malawi_Grain.csv
 
 **Variables**:
 
@@ -33,6 +34,20 @@ File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
 -   BIO12
 -   TIM
 
+b. Malawi maize grain and soil Se concentration dataset (2009-2010). It is publicly available [here](). 
+
+File name: data/maize/2009_mwi-maize.xls
+
+
+**Variables**:
+
+c. Malawi crops, including maize, mineral concentration dataset (2012-2013). It is publicly available [here](). 
+
+File name: data/maize/2009_mwi-maize.xl
+
+**Variables**:
+
+
 ### 2. Geo-referenced biomarkers data (Plasma Se in WRA) in Malawi 
 
 Malawi DHS - MNS 2015-2016. Access need to be requested to DHS data [here](https://dhsprogram.com/methodology/survey/survey-display-483.cfm).
@@ -40,6 +55,8 @@ Malawi DHS - MNS 2015-2016. Access need to be requested to DHS data [here](https
 **File of interest & variables**:
 
 a. Micronutrient survey data (MW_WRA). This dataset provided information on biomarker data and other biological data for women of reproductive age in Malawi. 
+
+#TODO: Find the variable for CRP levels
 
 -   mregion (region) [1-3 = N->S]
 -   mtype (urban/rural) [U-R = 1-2] 
