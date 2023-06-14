@@ -3,32 +3,6 @@ library(dplyr)
 library(sp)
 library(sf) # for reading in and writting shapefiles
 
-
-# Loading data 
-crop  <- readr::read_csv(here::here("data", "maize", "2012_crop-min.csv"))
-soil  <- readr::read_csv(here::here("data", "maize", "2012_soil-min.csv"), skip =2)
-
-#Checking data
-head(crop)
-head(soil)
-
-tail(soil)
-names(crop)
-names(soil)
-
-crop <- crop  %>% filter(!is.na(X_coord) & !is.na(Y_coord))  %>% 
-st_as_sf(., coords =c("X_coord", "Y_coord"), crs = "+init=epsg:32736")
-
-#crop$geometry  <- spTransform(crop$geometry, CRS("+init=epsg:4326"))
-#Changing the projection system so it is in line with other datasets (long/lat)
-crop <- st_transform(crop,  crs = "+init=epsg:4326")
-
-cord.dec3  =  SpatialPoints(cbind( crop$X_coord,
- crop$Y_coord), proj4string = CRS("+init=epsg:32736"))
-
-plot(cord.dec3, axes = TRUE, main = "Lat-Long Coordinates", cex.axis = 0.95)
-
-
 # Loading data 
 maize  <- readxl::read_excel(here::here("data", "maize", "2009_mwi-maize.xls"))
 

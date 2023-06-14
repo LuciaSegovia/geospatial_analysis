@@ -41,11 +41,21 @@ File name: data/maize/2009_mwi-maize.xls
 
 **Variables**:
 
-c. Malawi crops, including maize, mineral concentration dataset (2012-2013). It is publicly available [here](). 
+c. Malawi crops, including maize, mineral concentration dataset (2012-2013) and soil pH. It is publicly available [here](https://www.sciencedirect.com/science/article/pii/S0048969714014764). (Joy et al., 2014)(@ref) - **EXCLUDED** For more information check the section 2 (Cleaning and Exploratory analysis).
 
-File name: data/maize/2009_mwi-maize.xl
+File source: Supplemantary data on https://www.sciencedirect.com/science/article/pii/S0048969714014764.
+
+File name: 1-s2.0-S0048969714014764-mmc1.xlsx
+File re-name: data/maize/2012_Joy-mwi-samples.
+
+Tabs:1-10: Used in this analysis:
+- STable6: crop sample info (maize Se) and coordenates
+- STable5: Soil samples (soil pH)
+- STable10: Information on each crop and its corresponding soil sample (Sample_number, Soil_sample).
 
 **Variables**:
+
+Cleaning script: 00_cleaning_2012-Joy.R
 
 
 ### 2. Geo-referenced biomarkers data (Plasma Se in WRA) in Malawi 
@@ -150,7 +160,7 @@ c. Sales vs stored crops (rainy season) (AG_MOD_I)
 d. Sales vs stored crops (dry (dimba) season) (AG_MOD_O)
 d. Sales vs stored trees (12months) (AG_MOD_Q)
 
-# Exploratory analysis
+# Cleaning & Exploratory Analysis
 
 ## 1) Micronutrient survey data (MW_WRA)
 
@@ -231,7 +241,7 @@ After merging the datasets, some Wealth quintile were missing, hence following r
 
 For Plasma Se, we only have values for `r length(unique(EligibleDHS$sdist))`. This will condition the model choice.
 
-## 4) Maize Se concentration in Malawi
+## 4) Maize Se concentration in Malawi (GeoNutrition, Gashu et al., 2019)
 
 We extracted the variables of interest from the dataset, then we are doing some data operations, for instance, removing NAs, and transforming Se in dry weight (mcg/kg DW) to Se in fresh weght (mcg/100g FW EP). 
 
@@ -251,7 +261,24 @@ Also there are 3 rows lost, which are also lost when subsetting using either st_
 
 It could be also a combination of both. 
 
-## 5) Malawi GPS data & country boundaries 
+Low number of maize samples were found in the southern region of Malawi (Shire Valley), leading to a more sparce and higher uncertainty in that region. It could be because the harvest season is slightly earlier in that area and hence the fields were already plotted and other crops planted. (@ref). 
+
+In order to minimise the impact on our model, and after checking that maize consumption is the same as other regions in Malawi (even slightly higher), we are including maize samples from other two studes (see data section)
+
+## 5) Maize Se concentration in Malawi (Joy et al., 2014)
+
+This study collected data for various crops, hence we needed to clean the dataset to obtain only the information for Maize Grain. We also excluded maize flour to keep it consistent with our dataset. In addition, soil pH values were obtained to be used as model covariates. 
+
+However, GPS location were only provided for crops and not for soils, hence we were trying to use some information (STable10) to combine the sample number with the soil samples. These led to the correct allocation of a pH value for 57 of the 155 samples. 
+
+Check what it is better, to allocate pH value by proximity or the mean pH value for the soil type.
+
+According to the documentation, soil samples were not taken when the samples were collected at the market. We are then assuming that samples without pH value were collected at the market and hence should be excluded from our analysis. Then, only one or two samples were collected in the Shire Valley, thus this sample dataset will not be contributing substantially to reduce the uncertainty, and it may add other sources of variability (i.e., temporal, analytical, etc). Hence, it was excluded from the final dataset.
+
+
+
+
+## 6) Malawi GPS data & country boundaries 
 
 We have found several shape files with the boundaries for Malawi. The issues is that not many of the files have the boundaries at EA level. 
 
