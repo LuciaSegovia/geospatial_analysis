@@ -21,7 +21,7 @@ a. Malawi maize grain and soil Se concentration dataset (2018). It is publicly a
 File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx 
  data/maize/Malawi_Grain.csv
 
-**Variables**:
+- **Variables:**
 
 -   Latitude/ Longitude
 -   Crop
@@ -53,9 +53,9 @@ Tabs:1-10: Used in this analysis:
 - STable5: Soil samples (soil pH)
 - STable10: Information on each crop and its corresponding soil sample (Sample_number, Soil_sample).
 
-**Variables**:
+**Variables:**
 
-Cleaning script: 00_cleaning_2012-Joy.R
+**Cleaning script:** 00_cleaning_2012-Joy.R
 
 
 ### 2. Geo-referenced biomarkers data (Plasma Se in WRA) in Malawi 
@@ -274,8 +274,6 @@ However, GPS location were only provided for crops and not for soils, hence we w
 Check what it is better, to allocate pH value by proximity or the mean pH value for the soil type.
 
 According to the documentation, soil samples were not taken when the samples were collected at the market. We are then assuming that samples without pH value were collected at the market and hence should be excluded from our analysis. Then, only one or two samples were collected in the Shire Valley, thus this sample dataset will not be contributing substantially to reduce the uncertainty, and it may add other sources of variability (i.e., temporal, analytical, etc). Hence, it was excluded from the final dataset.
-
-
 
 
 ## 6) Malawi GPS data & country boundaries 
