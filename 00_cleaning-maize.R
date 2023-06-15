@@ -4,15 +4,32 @@ library(sp)
 library(sf) # for reading in and writting shapefiles
 
 # Loading data 
-maize  <- readxl::read_excel(here::here("data", "maize", "2009_mwi-maize.xls"))
+maize  <- readxl::read_excel(here::here("data", "maize",
+ "AllanChilimbaFieldData_forLucia_20230615.xlsx"), sheet = 1)
 
 #Checking data
 head(maize)
 names(maize)
 
 #Renaming variable & adding info on data source
-names(maize)[11]  <- "Se_mg"
+names(maize)[c(23, 28)]  <- c( "Se_mg", "pH")
 maize$survey  <- "Chilimba_2009"
+
+# Unit conversion
+#maize$lat  <-  gsub('E |o', '', maize$lat)
+#maize$long  <-  gsub('S |o', '', maize$long)
+#
+#maize$lat  <-  as.numeric(measurements::conv_unit(maize$lat, from = 'deg_dec_min', to = 'dec_deg'))
+#maize$long   <-  as.numeric(measurements::conv_unit(maize$lat, from = 'deg_dec_min', to = 'dec_deg'))
+#
+#hist(maize$lat[maize$lat < 140000])
+#hist(maize$long)
+#hist(maize$long[maize$long < 140000])
+#
+#maize  <- subset(maize, lat < 140000 & long < 140000)
+#
+#cord.dec1  =  SpatialPoints(cbind( maize$long, maize$lat), proj4string = CRS("+proj=longlat"))
+#
 
 #Checking the spatial function
 cord.dec1  =  SpatialPoints(cbind( maize$Longitude_DD, maize$Latitude_DD), proj4string = CRS("+proj=longlat"))
@@ -75,3 +92,6 @@ hist(data.df$Se_mg)
 
 dim(data.df)
 sum(is.na(data.df$Se_mg))
+
+plot(cord.dec1, axes = TRUE, main = "Chilimba Sample Sites", cex.axis = 0.95)
+plot(cord.dec1b, axes = TRUE, main = "GeoNutrition Sample Sites", col = "red", cex.axis = 0.95, add = TRUE)
