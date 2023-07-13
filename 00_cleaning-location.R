@@ -10,7 +10,7 @@ library(tmap)  #spatial data manipulation and visualisation
 # Loading the datat
 # Plasma Se & Maize Se
 dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
-maize_se  <- readRDS(here::here("data", "inter-output","maize_se.rds")) # cleaned Spatial maize Se data
+maize_se  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
 
 dim(dhs_se)
 names(dhs_se)
@@ -34,6 +34,7 @@ ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
 
 names(ea_bnd)
 class(ea_bnd)
+
 # Mean area for each EA
 mean(ea_bnd$AREA_KM)
 sd(ea_bnd$AREA_KM)
@@ -63,8 +64,8 @@ plot(ea_bnd[, "FEMALE"])
 
 nso_bound  <- st_make_valid(ta_bnd) # Check this
 
-# Selecting only variables that are interesting. 
-admin  <- boundaries[, c(1:7, 27)]
+# Selecting only variables that are interesting. (EA code, area, geo)
+admin  <- ea_bnd[, c(4, 17, 18)]
 
 sum(duplicated(admin$EACODE))
 length(unique(admin$EACODE))
@@ -73,19 +74,37 @@ length(unique(admin$EACODE))
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
 
-Se.df  <- dhs_se
-Se_admin = st_intersection(Se.df, admin)
+data.df <- st_as_sf(maize_se , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
+
+Se_admin = st_intersection(data.df, admin)
+
 Se_check = st_intersection(Se.df, nso_bound)
+
+plot(Se_admin[, "Se_mg"])
+plot(data.df[, "Se_mg"])
 
 names(Se_check)
 names(Se_admin)
 dim(Se_admin)
 dim(Se_check)
-nrow(Se_admin) == nrow(Se.df)
+nrow(Se_admin) == nrow(data.df)
+nrow(Se_admin) - nrow(data.df) # Loosing 4 rows.
 sum(duplicated(Se_admin$unique_id))
 subset(Se_admin, grepl("Likoma", DISTRICT))
 subset(dhs_se, grepl("likoma", haven::as_factor(sdist)))
 length(unique(Se_admin$EACODE))
+
+boxplot(Se_mg ~ EACODE, Se_admin)
+boxplot(pH ~ EACODE, Se_admin)
+
+summary  <- Se_admin  %>% group_by(EACODE)  %>% 
+summarise( count = n(Se_mg), 
+          median_Se = median(Se_mg), 
+          mean_logSe = mean(log_Se), 
+          sd_Se = sd(Se_mg))
+
+plot(summary[, "sd_logSe"])
 
 #Checking district that are different between reported in DHS
 # And assigned by geographic location. 
@@ -103,11 +122,11 @@ test  <- subset(dhs_se,
 
 #tm_shape(nso_bound) 
 
-nso_bound  %>% filter(ADM2_EN == "Mzimba")  %>% 
+ea_bnd  %>%  #filter(ADM2_EN == "Mzimba")  %>% 
 tm_shape() +
 tm_polygons() +
-tm_shape(test) +
-tm_symbols()
+tm_shape(data.df) +
+tm_symbols(size =0.3)
 
 check_location  <- subset(Se_admin, sdist %in% check, 
 select = c(unique_id))  %>%  st_drop_geometry()  %>% pull()

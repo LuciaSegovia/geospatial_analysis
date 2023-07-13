@@ -19,9 +19,9 @@ The objectives of these exploratory analysis are:
 a. Malawi maize grain and soil Se concentration dataset (2018). It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
 
 File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx 
- data/maize/Malawi_Grain.csv
+(data/maize/Malawi_Grain.csv)
 
-- **Variables:**
+**Variables:**
 
 -   Latitude/ Longitude
 -   Crop
@@ -34,10 +34,9 @@ File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
 -   BIO12
 -   TIM
 
-b. Malawi maize grain and soil Se concentration dataset (2009-2010). It is publicly available [here](). 
+b. Malawi maize grain and soil Se concentration dataset (2009-2010). It is publicly available [here](), but we obtained a more extensive dataset from the co-authors of the manuscript (L.A.) including the values of pH (in water) of the soil where samples were collected. 
 
-File name: data/maize/2009_mwi-maize.xls
-
+File name: data/maize/AllanChilimbaFieldData_forLucia_20230615.xlsx
 
 **Variables**:
 
@@ -162,30 +161,32 @@ d. Sales vs stored trees (12months) (AG_MOD_Q)
 
 # Cleaning & Exploratory Analysis
 
-## 1) Micronutrient survey data (MW_WRA)
+## 1) Se biomarker dataset (DHS)
+
+### 1.1) Micronutrient survey data (MW_WRA)
 
 There are `r sum(!is.na(EligibleDHS$selenium))` entries for plasma Se in the dataset.
 
-### Age
+#### Age
 -  There are some observation (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
 In addition, mean (and median) were higher in the northern region compared with southern and center. Whereas, mean/median age were higher in rural areas. We applied survey weights when calculating them. 
 
-### Gender & Pregnancy
+#### Gender & Pregnancy
 - There is one entry labelled as "male" while the dataset should only contain women.  
 
-### Height & Weight
+#### Height & Weight
 -  There are outliers in height which are higher than 2m, some are coded as 999, we can assume those are missing values (NA) according to the coding standards reported in (ICF. 2018. Demographic and Health Surveys Standard Recode Manual for DHS7. The Demographic
 and Health Surveys Program. Rockville, Maryland, U.S.A.: ICF). There is also one observation with a recorded height of 100.2.  
 -  There are some outliers in weight as well of higher than expented, on the lower bound seems plausible given age and height.
 -  We generated BMI variable which also has some outliers due to the high weight of some WRA. 
 
-### Selenium
+#### Selenium
 
 Se median (and mean) values were higher in urban settings than in rural, and the highest in the southern region. Then, the median dissagregated by region and urbanity showed that northern and southern urban population had the highest Plasma Se median, while the centre region were the lowest, particuarly for rural WRA. 
 
 What it is interesting is that while the Northern-urban WRA had higher Se, than their southern counterpart, the Southern-rural WRA had higher plasma Se than their northern counterparts. In addition, wRA who live in urban setting of the centre region had similar plasma Se median concentration as women in the northern region in rural settings. 
 
-## 2) Socio-Economic data (DHSDATA)
+### 1.2) Socio-Economic data (DHSDATA)
 
 We extracted the socio-economic information from the DHS survey, however, we are only interested in the data that has Plasma Se values. 
 
@@ -203,7 +204,7 @@ Similarly, we can see that `r sum(DHSDATA$education_level >1 & DHSDATA$Literacy 
 
 All education and wealth level have representation in all three regions. Again, when looking at the data we could see that there is a slight "over-reporting" of the wealthiest Quintiles. 
 
-## 3) Combining DHS datasets: Plasma Se & covariates
+### 1.3) Combining DHS datasets: Plasma Se & covariates
 
 According to Phiri et al (2019), the influencing factors for Plasma Se (for WRA) in Malawi were soil type and proximity to Lake Malawi. 
 
@@ -211,14 +212,13 @@ In addition, other authors have reported that socio-economic characteristics may
 
 Here we are exploring the variabilty of Plasma Se according to those variables. First within the same dataset.
 
-
-### Wealth
+#### Wealth
 Plasma Se values were similar across wealth Q, with higher variability in the two lowest Q. 
 
-### Education level
+#### Education level
 Plasma Se values were slightly higher in the highest education level, with lower variablity, while the opposite was true for the primary education level. 
 
-### Place of residency
+#### Place of residency
 
 Plasma Se values were similar when aggregated by region, whereas we can start seeing some differences when we are plotting the results by district. Also notice, that the number of observations per district is 1) much smaller and 2) much diverse (from `r min(table(EligibleDHS$sdist))` to `r max(table(EligibleDHS$sdist))`). 
 
@@ -232,7 +232,7 @@ See `r table(dhs_se$wealth_quintile, dhs_se$region)`.
 
 #TODO: Generate a dataset with districs and soil type, and proximity to the Lake Malawi (from the "centre of the district" to the lake) - Ask Liberty/ Louise whether that have been created previosly. 
 
-### Smoking
+#### Smoking
 Only 3 respondent reported smoking cigarettes, if we want to include this varable, we may need to combine with other smoking variables (including the other variables), although I believe that women who smoke in this context it may be very low.
 #TODO: Check smoking incidence in WRA in Malawi.
 
@@ -241,13 +241,13 @@ After merging the datasets, some Wealth quintile were missing, hence following r
 
 For Plasma Se, we only have values for `r length(unique(EligibleDHS$sdist))`. This will condition the model choice.
 
-## 4) Maize Se concentration in Malawi (GeoNutrition, Gashu et al., 2019)
+## 2) Maize Se concentration in Malawi
 
-We extracted the variables of interest from the dataset, then we are doing some data operations, for instance, removing NAs, and transforming Se in dry weight (mcg/kg DW) to Se in fresh weght (mcg/100g FW EP). 
+### 2.1) GeoNutrition (Gashu et al., 2019)
 
-#REVIEW: Moisture assumptions
-Because, moisture content was not estimated, we are assuming same moisture content as the one measuere in the study of Hwang et al., (2016) for white maize. This is one of the assumptions that should be listed and tested, as for that study we have some data with their respective GPS, hence some extra analysis could be performed
+We extracted the variables of interest from the dataset (Se (only in maize), pH, coordenates), then we are doing some data operations, for instance, removing NAs (values >999). 
 
+#### Spatial pre-liminary analysis
 
 There is a missmatch between the EAs and the maize Se conc. sampling. Resulting in 2200 () EAs without a maize Se conc. value. There are two potentital reasons for this to happen:
 
@@ -263,9 +263,24 @@ It could be also a combination of both.
 
 Low number of maize samples were found in the southern region of Malawi (Shire Valley), leading to a more sparce and higher uncertainty in that region. It could be because the harvest season is slightly earlier in that area and hence the fields were already plotted and other crops planted. (@ref). 
 
-In order to minimise the impact on our model, and after checking that maize consumption is the same as other regions in Malawi (even slightly higher), we are including maize samples from other two studes (see data section)
+In order to minimise the impact on our model, and after checking that maize consumption is the same as other regions in Malawi (even slightly higher), we decided to include maize samples from other two studes (see data section & next section).
 
-## 5) Maize Se concentration in Malawi (Joy et al., 2014)
+#### Fresh weight
+#REVIEW: Moisture assumptions
+Transforming Se in dry weight (mcg/kg DW) to Se in fresh weght (mcg/100g FW EP).
+
+Because, moisture content was not estimated, we are assuming same moisture content as the one measuere in the study of Hwang et al., (2016) for white maize. This is one of the assumptions that should be listed and tested, as for that study we have some data with their respective GPS, hence some extra analysis could be performed
+
+
+### 2.2) Mineral concentration in maize (Chilimba et al., 2011)
+
+We extracted the variable of interes, removed NA and check the coordinate projections to make sure both datasets (GeoNutrition & this dataset) were compatible. 
+
+When we combined both dataset we can see that, as expected, the Se conctration is heavily skewerd and it would need log transformation, while pH has a normal distribution.
+
+We are generating a log_Se variable and saving the dataset as intermediate output for further analysis. 
+
+### 2.3) Mineral concentration in crops (Joy et al., 2014)
 
 This study collected data for various crops, hence we needed to clean the dataset to obtain only the information for Maize Grain. We also excluded maize flour to keep it consistent with our dataset. In addition, soil pH values were obtained to be used as model covariates. 
 
@@ -276,7 +291,7 @@ Check what it is better, to allocate pH value by proximity or the mean pH value 
 According to the documentation, soil samples were not taken when the samples were collected at the market. We are then assuming that samples without pH value were collected at the market and hence should be excluded from our analysis. Then, only one or two samples were collected in the Shire Valley, thus this sample dataset will not be contributing substantially to reduce the uncertainty, and it may add other sources of variability (i.e., temporal, analytical, etc). Hence, it was excluded from the final dataset.
 
 
-## 6) Malawi GPS data & country boundaries 
+## 3) Malawi GPS data & country boundaries 
 
 We have found several shape files with the boundaries for Malawi. The issues is that not many of the files have the boundaries at EA level. 
 
