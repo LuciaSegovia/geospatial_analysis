@@ -1,8 +1,9 @@
 
+# Loading libraries
 library(dplyr)
 library(sp)
 library(sf) # for reading in and writting shapefiles
-
+#source("CEPHaStat_3.R")
 # Loading data 
 maize  <- readxl::read_excel(here::here("data", "maize",
  "AllanChilimbaFieldData_forLucia_20230615.xlsx"), sheet = 1)
@@ -40,17 +41,23 @@ par(mfrow = c(1, 2))
 plot(cord.dec1, axes = TRUE, main = "Lat-Long Coordinates", cex.axis = 0.95)
 plot(cord.dec2, axes = TRUE, main = "Lat-Long Coordinates", col = "red", cex.axis = 0.95)
 
+# Selecting & renaming variables of interest: Se, pH & coord
+maize.df <- subset(maize, !is.na(Se_mg), 
+select = c(Se_mg, pH, survey,Longitude_DD, Latitude_DD ))   %>% 
+rename(Longitude = "Longitude_DD", Latitude = "Latitude_DD")
+
 # Generating spatial dataset
-maize.df <- subset(maize, !is.na(Se_mg), select = c(9:11, 14))  %>% 
-st_as_sf(., coords =c("Longitude_DD", "Latitude_DD"), crs = "EPSG:4326")
+#maize.df  <- maize.df %>% 
+#st_as_sf(., coords =c("Longitude_DD", "Latitude_DD"), crs = "EPSG:4326")
 
 # Loading the data
 grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
-"Geostatistics_and_mapping", "Malawi_Grain.xlsx"))
+"Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
+names(grain) # checking variables
 
-# Subsetting variables of interest: only maize and Se.
+# Subsetting variables of interest: coord., Se (only in Maize) and pH.
 grain <- subset(grain, Crop == "Maize",
-select = c(Latitude, Longitude, Se_triplequad))
+select = c(Latitude, Longitude, Se_triplequad, pH_Wa))
 
 #Checking data & removing NAs
 hist(grain$Se_triplequad)
@@ -63,8 +70,9 @@ head(grain.df)
 names(grain.df)
 
 # Renaming variable & adding info on data source
-names(grain.df)[3]  <- "Se_mg"
+grain.df   <- grain.df  %>% rename(Se_mg = "Se_triplequad", pH = "pH_Wa")
 grain.df$survey  <- "GeoNutrition_2018"
+names(grain.df) # Checkin the renaming
 
 # Saving sample sites
 cord.dec1b  =  SpatialPoints(cbind(grain.df$Longitude, grain.df$Latitude), proj4string = CRS("+proj=longlat"))
@@ -75,23 +83,33 @@ plot(cord.dec1, axes = TRUE, main = "Chilimba Sample Sites", cex.axis = 0.95)
 plot(cord.dec1b, axes = TRUE, main = "GeoNutrition Sample Sites", col = "red", cex.axis = 0.95)
 
 # Generating spatial dataset
-grain.df  <- st_as_sf(grain.df , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
+#grain.df  <- st_as_sf(grain.df , coords =c("Longitude", "Latitude"),
+# crs = "EPSG:4326")
 
 # Merging the two survey datasets
 data.df  <- rbind(maize.df, grain.df)
+names(data.df)
 
 # Checking final dataset
 str(data.df)
 plot(data.df)
+par(mfrow = c(1, 2))
 hist(maize.df$Se_mg)
 hist(grain.df$Se_mg)
 hist(data.df$Se_mg)
+hist(data.df$pH)
+hist(log(data.df$Se_mg))
 
 # Maize Se conc. - data manipulation ----
-
-dim(data.df)
+dim(data.df) # 1282
 sum(is.na(data.df$Se_mg))
+data.df$log_Se  <- log(data.df$Se_mg)
 
-plot(cord.dec1, axes = TRUE, main = "Chilimba Sample Sites", cex.axis = 0.95)
-plot(cord.dec1b, axes = TRUE, main = "GeoNutrition Sample Sites", col = "red", cex.axis = 0.95, add = TRUE)
+# Generating spatial dataset
+#data.df  <- st_as_sf(grain.df , coords =c("Longitude", "Latitude"),
+ #crs = "EPSG:4326")
+
+# Data exploration:
+#CEPHaStat.R is not working... (Check in RStudio)
+
+saveRDS(data.df, here::here("data", "inter-output", "mwi-maize-se.RDS"))
