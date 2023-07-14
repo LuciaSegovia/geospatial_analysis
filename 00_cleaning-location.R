@@ -6,7 +6,7 @@ library(ggplot2) # visualisation
 library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
-
+ 
 # Loading the datat
 # Plasma Se & Maize Se
 dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
@@ -47,7 +47,7 @@ sd(ea_bnd$AREA_KM)
 names(ta_bnd)
 class(ta_bnd)
 
-# national parks
+# National parks
 
 parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
@@ -60,7 +60,7 @@ table(sf::st_is_valid(ea_bnd))
 
 plot(ta_bnd[, "ADM1_EN"])
 
-plot(ea_bnd[, "FEMALE"])
+plot(ea_bnd[, "EACODE"])
 
 nso_bound  <- st_make_valid(ta_bnd) # Check this
 
@@ -70,18 +70,19 @@ admin  <- ea_bnd[, c(4, 17, 18)]
 sum(duplicated(admin$EACODE))
 length(unique(admin$EACODE))
 
-
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
 
 data.df <- st_as_sf(maize_se , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
-Se_admin = st_intersection(data.df, admin)
+#Se_admin = st_intersection(data.df, admin)
+Se_admin  <-  st_join(data.df, admin)
 
-Se_check = st_intersection(Se.df, nso_bound)
+#Se_check = st_intersection(Se.df, nso_bound)
 
 plot(Se_admin[, "Se_mg"])
+plot(data.df[, "Se_mg"])
 plot(data.df[, "Se_mg"])
 
 names(Se_check)
