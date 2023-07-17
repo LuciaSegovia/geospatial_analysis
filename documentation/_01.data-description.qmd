@@ -21,16 +21,16 @@ a. Malawi maize grain and soil Se concentration dataset (2018). It is publicly a
 File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx 
 (data/maize/Malawi_Grain.csv)
 
-**Variables:**
+**Variables:** Those marked with (*) where included. 
 
--   Latitude/ Longitude
+-   Latitude/ Longitude*
 -   Crop
--   Se_triplequad
+-   Se_triplequad*
 -   Zn
--   pH_Wa (pH in water)
+-   pH_Wa (pH in water)*
 -   N_pct
 -   Org_pct
--   BIO1
+-   BIO1*
 -   BIO12
 -   TIM
 
@@ -159,6 +159,18 @@ c. Sales vs stored crops (rainy season) (AG_MOD_I)
 d. Sales vs stored crops (dry (dimba) season) (AG_MOD_O)
 d. Sales vs stored trees (12months) (AG_MOD_Q)
 
+
+### 5. Enviromental covariates (Mean Annual Temperature)
+
+a. mwi_CHELSA_bio10_1.tif: This dataset has information on the Mean Annual Temperature (MAT) for Malawi from 1979-2013. 
+
+The dataset is a cropped (clipped) area from the global (CHELSA_bio10_1.tf) which is a worldwide high resolution raster layer. The geographic coordinate system are referenced to the WGS 84 horizontal datum, with the horizontal coordinates expressed in decimal degrees. The dataset is in GEOtiff format and was extracted from the CHELSA dataset [here](https://datadryad.org/stash/dataset/doi:10.5061/dryad.kd1d4). This variable was used as enviromental covariates for the geospatial Se maize model (BIO1). 
+
+The clipping was done on QGIS version (3.28.3) Firenze using the ea_bnd layer as reference extend for clipping. 
+
+Secuence: Raster>Extraction>Clip Raster by Extend...>Clipping extent>Calculate from a layer> ea_bnd. 
+
+
 # Cleaning & Exploratory Analysis
 
 ## 1) Se biomarker dataset (DHS)
@@ -274,11 +286,18 @@ Because, moisture content was not estimated, we are assuming same moisture conte
 
 ### 2.2) Mineral concentration in maize (Chilimba et al., 2011)
 
-We extracted the variable of interes, removed NA and check the coordinate projections to make sure both datasets (GeoNutrition & this dataset) were compatible. 
+This dataset provided Se concentration in Maize grain and pH in soil (measured in water) for the same locations, however it did not contain informaiton on the mean annual temperature (MAT) (`BIO1`) for that location, which are provided in the GeoNutrition datasets & used for the final model. 
+
+We extracted the variable of interes, removed NA and check the coordinate projections to make sure both datasets (GeoNutrition & this dataset) were compatible. Then, we proceed to extract the information on the MAT from the CHELSA dataset which was downloaded from [here]
+(https://datadryad.org/stash/dataset/doi:10.5061/dryad.kd1d4) on 2023/07/17 and cropped for Malawi for easy usage. 
+
 
 When we combined both dataset we can see that, as expected, the Se conctration is heavily skewerd and it would need log transformation, while pH has a normal distribution.
 
 We are generating a log_Se variable and saving the dataset as intermediate output for further analysis. 
+
+For more inforamtion on that see the exploratory analysis and the variable selection for the model reported in Gashu et al., (2019) [@ref] and the analysis done by Lark et al. (2019), here are the [scripts](https://github.com/rmlark/GeoNutrition/blob/main/Soil_Crop_comparisons/Malawi/Malawi_model.R). 
+
 
 ### 2.3) Mineral concentration in crops (Joy et al., 2014)
 
@@ -290,6 +309,9 @@ Check what it is better, to allocate pH value by proximity or the mean pH value 
 
 According to the documentation, soil samples were not taken when the samples were collected at the market. We are then assuming that samples without pH value were collected at the market and hence should be excluded from our analysis. Then, only one or two samples were collected in the Shire Valley, thus this sample dataset will not be contributing substantially to reduce the uncertainty, and it may add other sources of variability (i.e., temporal, analytical, etc). Hence, it was excluded from the final dataset.
 
+### 2.4) Mean Annual Temperature
+
+Mean Annual Temperature (MAT) was used as enviromental covariates for the geospatial Se maize model. The data was extracted from the CHELSA dataset. The geographic coordinate system are referenced to the WGS 84 horizontal datum, with the horizontal coordinates expressed in decimal degrees. 
 
 ## 3) Malawi GPS data & country boundaries 
 

@@ -3,6 +3,10 @@
 library(dplyr)
 library(sp)
 library(sf) # for reading in and writting shapefiles
+library(raster) # raster manipulation
+library(tmap)  #spatial data manipulation and visualisation
+library(sfheaders) # deconstructing’ and ‘reconstructing’ sf objects
+
 #source("CEPHaStat_3.R")
 # Loading data 
 maize  <- readxl::read_excel(here::here("data", "maize",
@@ -44,20 +48,52 @@ plot(cord.dec2, axes = TRUE, main = "Lat-Long Coordinates", col = "red", cex.axi
 # Selecting & renaming variables of interest: Se, pH & coord
 maize.df <- subset(maize, !is.na(Se_mg), 
 select = c(Se_mg, pH, survey,Longitude_DD, Latitude_DD ))   %>% 
-rename(Longitude = "Longitude_DD", Latitude = "Latitude_DD")
+dplyr::rename(Longitude = "Longitude_DD",  Latitude = "Latitude_DD")
 
-# Generating spatial dataset
-#maize.df  <- maize.df %>% 
-#st_as_sf(., coords =c("Longitude_DD", "Latitude_DD"), crs = "EPSG:4326")
+# Generating spatial dataset for maize
+geomaize.df  <- maize.df %>% 
+st_as_sf(., coords =c("Longitude", "Latitude"), crs = "EPSG:4326")
+
+# Adding the variable BIO1 for Chilimba loc. (Mean Annual Temp - CHELSA dataset)
+
+# Loading data (MAT)
+mat  <- raster(here::here("data", "covariates", "mwi_CHELSA_bio_10_1.tif" ))
+
+#Checking projection WGS84
+crs(mat)
+
+#Visualising the MAT data & maize sample locations
+tm_shape(mat) + 
+tm_raster() + 
+tm_shape(geomaize.df) + 
+tm_symbols(size = 0.1)
+
+
+# Extracting MAT (BIO1) from the raster for maize sample loc
+geomaize.df$BIO1  <- extract(mat, geomaize.df)
+
+#Plotting the results
+plot((geomaize.df$BIO1)/10,geomaize.df$Se_mg,pch=16,xlab="Mean annual temperature /°C",
+ylab=expression("Maize grain Se/ mg kg"^{-1}),log="y")
+
+# Saving it back to dataframe
+
+maize.df  <-  st_drop_geometry(geomaize.df)  %>% right_join(., maize.df)
+
+# Another way of getting back to dataframe
+#maize.df <- sf_to_df(geomaize.df, fill = TRUE)   %>% 
+#dplyr::rename(Longitude = "Longitude_DD",  Latitude = "Latitude_DD")  %>% 
+#select = c(Se_mg, pH, BIO1, survey, Longitude, Latitude)
+ 
 
 # Loading the data
 grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
 "Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
 names(grain) # checking variables
 
-# Subsetting variables of interest: coord., Se (only in Maize) and pH.
+# Subsetting variables of interest: coord., Se (only in Maize), pH and  MAT (BIO1).
 grain <- subset(grain, Crop == "Maize",
-select = c(Latitude, Longitude, Se_triplequad, pH_Wa))
+select = c(Latitude, Longitude, Se_triplequad, pH_Wa, BIO1))
 
 #Checking data & removing NAs
 hist(grain$Se_triplequad)
@@ -85,6 +121,8 @@ plot(cord.dec1b, axes = TRUE, main = "GeoNutrition Sample Sites", col = "red", c
 # Generating spatial dataset
 #grain.df  <- st_as_sf(grain.df , coords =c("Longitude", "Latitude"),
 # crs = "EPSG:4326")
+
+names(maize.df)
 
 # Merging the two survey datasets
 data.df  <- rbind(maize.df, grain.df)
