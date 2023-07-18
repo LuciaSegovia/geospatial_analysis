@@ -34,36 +34,33 @@ data.df[which(is.na(data.df$pH)),]
 data.df  <- subset(data.df, !is.na(pH)) # removing NA
 
 
-sum(duplicated(dhs_se$unique_id))
-length(unique(dhs_se$survey_cluster1))
-class(dhs_se$wealth_quintile)
-class(dhs_se$sdist)
+#sum(duplicated(dhs_se$unique_id))
+#length(unique(dhs_se$survey_cluster1))
+#class(dhs_se$wealth_quintile)
+#class(dhs_se$sdist)
+#dhs_se$wealth_quintile  <- haven::zap_labels(dhs_se$wealth_quintile)
 
-dhs_se$wealth_quintile  <- haven::zap_labels(dhs_se$wealth_quintile)
-
-plot(dhs_se[, "wealth_quintile"])
-table(dhs_se$wealth_quintile, dhs_se$region)
-
-#check maizeSe.R script
-data.df  <- readRDS(here::here("data", "inter-output","maize_se.rds")) # cleaned Spatial maize Se data
-
+#plot(dhs_se[, "wealth_quintile"])
+#table(dhs_se$wealth_quintile, dhs_se$region)
 
 
 # Checking plasma values for the model
 #Rename your variable:
-names(Se_admin)
-names(Se_admin)[3]  <- "sdist" 
-names(Se_admin)[4]  <- "selenium" 
+#names(Se_admin)
+#names(Se_admin)[3]  <- "sdist" 
+#names(Se_admin)[4]  <- "selenium" 
 
 
 # check for normality
 summaplot(data.df$Se_mg)
+summary(data.df$Se_mg)
 sum(is.na(data.df$Se_mg))
 sum(is.na(data.df$pH))
-data.df  <- subset(data.df, !is.na(pH))
 data.df$logSe<-log(data.df$Se_mg)
 summaplot(data.df$logSe)
 
+
+#REVIEW: Values of the final model, seemed quite low and high influenced by around the mean values
 
 # fit the model: Maize Se
 model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
@@ -71,16 +68,41 @@ model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
 model1<-lme(logSe ~ pH + BIO1, random=~1|EACODE, data=data.df, method = "ML")
 
 anova(model0, model1)
-#model<-lme(sel_log~1, random=~1|DIST_CODE/EACODE, data=Se_admin)
+
+# Model 1: with covariates is performing better: Keeping cov.
 
 # check distribution of residuals
-histplot(residuals(model1,level=0))
 summaplot(residuals(model1,level=0))
 
-# output the results
+model2<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE, data=data.df, method = "ML")
+
+model3<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
+
+anova(model2, model3)
+
+# Model 3: w/ nested random effect is better
+
+# check distribution of residuals
+summaplot(residuals(model3,level=0))
+
+model4<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
+
+model5<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT/TA_CODE, data=data.df, method = "ML")
+
+model6<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "ML")
+
+anova(model4, model5, model6)
+
+# Model 6: w/ full nested random effect is better
+
+# check distribution of residuals
+summaplot(residuals(model6,level=0))
+
+model1  <- model0
+# output the results (model 1)
 summary(model1)
 fixef(model1) # fixed effects
-n  <- fixef(model1)[1] # fixed effects (intercept)
+n  <- fixef(model1)[1] # fixed effects (intercept) (-7.768999)
 re <- ranef(model1) # random effects (log Se mean per EA)
 
 # output for nested outcome
@@ -99,8 +121,43 @@ re$se_mean  <- exp(re$intercept+n)
 
 head(re)
 hist(re$se_mean)
+summary(re$se_mean)
+ea.df  <- re
 
-re$ID_3  <- stringr::str_replace(re$NAME_1_ID_3, "^[:alpha:]*[:punct:]", "")
+# output the results (model 3)
+summary(model3)
+fixef(model3) # fixed effects
+n  <- fixef(model3)[1] # fixed effects (intercept) (-7.95739323)
+re <- ranef(model3)[[1]] # random effects (log Se mean per TA)
+re <- tibble::rownames_to_column(re)
+names(re)
+names(re)[1]  <- "TA_CODE"
+names(re)[2]  <- "intercept"
+re$se_mean  <- exp(re$intercept+n)
+
+head(re)
+hist(re$se_mean)
+
+ta.df  <- re
+
+# output the results (model 6)
+summary(model6)
+fixef(model6) # fixed effects
+n  <- fixef(model6)[1] # fixed effects (intercept) (-7.95956540)
+re <- ranef(model6)[[1]] # random effects (log Se mean per Dist)
+re <- tibble::rownames_to_column(re)
+names(re)
+names(re)[1]  <- "DISTRICT"
+names(re)[2]  <- "intercept"
+re$se_mean  <- exp(re$intercept+n)
+
+head(re)
+hist(re$se_mean)
+summary(re$se_mean)
+
+dist.df  <- re
+
+
 
 class(re$EACODE)
 admin$EACODE  <- as.character(admin$EACODE)

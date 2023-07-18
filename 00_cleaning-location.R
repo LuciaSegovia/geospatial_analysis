@@ -22,6 +22,9 @@ library(tmap)  #spatial data manipulation and visualisation
 # Plasma Se & Maize Se conc. (cleaned from 00_cleaning-maize.R)
 # dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
 data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+# Explore the dataset
+head(data.df)
+names(data.df)
 
 # Admin Boundaries for Malawi 
 
@@ -30,18 +33,23 @@ ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
 # TAs
- ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries",
-    "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
+# ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+# "mwi-boundaries", "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
 
+# Explore the shapefile
+head(ea_bnd)
 
-# Selecting only variables that are interesting. (EA code, EA area & district geo)
-admin  <- ea_bnd[, c(4, 11, 17, 18)]
+# Getting the admin units (the one with the higher no of unique id/names)
+dim(ea_bnd) #9235
+sum(duplicated(ea_bnd$EACODE))
+length(unique(ea_bnd$EACODE)) #9219
+length(unique(ea_bnd$DISTRICT)) #28/30 #dist code/ district
+length(unique(ea_bnd$TA_CODE)) #351/350 #ta code/ ta
+sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
 
-dim(admin) #9235
-sum(duplicated(admin$EACODE))
-length(unique(admin$EACODE)) #9219
-length(unique(ea_bnd$DISTRICT)) #28/30
+# Selecting only variables that are interesting. (EA code, EA area, TA code, district & geo)
+admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
+head(admin)
 
 # Generating the spatial object (geometry) from data
 geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
@@ -58,7 +66,6 @@ dim(Se_admin)
 sum(is.na(Se_admin$EACODE))
 
 missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
-
 
 #Checking missing values
 tm_shape(ea_bnd) +
@@ -110,9 +117,13 @@ data.df  <- Se_admin  %>% st_drop_geometry()  %>%
 
 # Saving dataset with aggregation unit for modelling 
 #EA
-aggregation  <- "EA"
+aggregation  <- "admin"
 file_name  <- paste0("mwi-maize-se_",aggregation, ".RDS")
 saveRDS(data.df, here::here("data", "inter-output", file_name))
+
+
+
+
 
 names(dhs_se)
 class(maize_se)
@@ -420,3 +431,21 @@ ggplot() +
   tm_symbols(col = "black") +
   tm_shape(Se_admin) + 
   tm_dots(col = "red")
+
+
+
+  # Visualisation of maize Se model results (Maps)
+
+# Visual checks
+
+ea_bnd$EACODE  <- as.character(ea_bnd$EACODE)
+geoea.df  <- ea_bnd  %>% dplyr::select(EACODE, geometry)  %>% 
+left_join(., ea.df)
+
+#Checking the EAs w/ values
+tm_shape(geoea.df) +
+tm_polygons() +
+tm_shape(parks)+
+tm_polygons(col = "green") +
+tm_shape(geoea.df) +
+tm_polygons(col = "se_mean")
