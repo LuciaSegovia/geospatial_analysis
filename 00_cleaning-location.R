@@ -1,3 +1,13 @@
+#######################################################################
+#
+#   Adding information of the level of aggregation for maize Se conc.
+#     in Malawi, info needed to calculate the [redicted-mean of Se conc.
+#   for future use and for modelling. 
+#
+#
+#####################################################################################################
+
+
 # Loading libraries and functions
 
 library(dplyr) # data wrangling 
@@ -6,13 +16,104 @@ library(ggplot2) # visualisation
 library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
- 
-# Loading the datat
-# Plasma Se & Maize Se
-dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
-maize_se  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
 
-dim(dhs_se)
+############################################################################################################## 
+# Loading the datat
+# Plasma Se & Maize Se conc. (cleaned from 00_cleaning-maize.R)
+# dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
+data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+
+# Admin Boundaries for Malawi 
+
+# EAs
+ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
+
+# TAs
+ ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries",
+    "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
+
+
+# Selecting only variables that are interesting. (EA code, EA area & district geo)
+admin  <- ea_bnd[, c(4, 11, 17, 18)]
+
+dim(admin) #9235
+sum(duplicated(admin$EACODE))
+length(unique(admin$EACODE)) #9219
+length(unique(ea_bnd$DISTRICT)) #28/30
+
+# Generating the spatial object (geometry) from data
+geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
+
+dim(geodata.df) #1282
+# Getting info on the admin boudaries (EA/district level)
+# Allocating Se values to each admin unit
+
+#Se_admin = st_intersection(data.df, admin)
+Se_admin  <-  st_join(geodata.df, admin)
+
+dim(Se_admin)
+sum(is.na(Se_admin$EACODE))
+
+missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
+
+
+#Checking missing values
+tm_shape(ea_bnd) +
+tm_polygons() +
+tm_shape(missing) +
+tm_symbols(col ="Se_mg", size =0.1)
+
+st_join(missing[,1:5], admin, st_is_within_distance, 
+            dist = units::set_units(4500, "m"))
+
+# First one (row = 80 at 60m, EACODE == 31106023
+# Second one (row = 346 at 200m, EACODE == 20701017) 
+# Third one (row = 347 at 270m, EACODE == 20701017)
+# Forth one (row = 82 at 4500m. EACODE == 31008901)
+ea_bnd  %>% dplyr::filter(EACODE %in% c("31008901", "31001043")) %>% 
+tm_shape() +
+tm_polygons() +
+tm_shape(missing[1,]) +
+tm_symbols(col ="red", size =0.1)
+
+# Manually fixing missing EACODES
+Se_admin[80,]
+Se_admin[80,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
+            dist = units::set_units(60, "m"))[1,]
+
+missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
+
+Se_admin[346,]
+Se_admin[346,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
+            dist = units::set_units(200, "m"))[2,]
+
+missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
+
+Se_admin[347,]
+Se_admin[347,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
+            dist = units::set_units(270, "m"))[2,]
+
+missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
+
+Se_admin[82,]
+Se_admin[82,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
+            dist = units::set_units(4500, "m"))
+
+(missing  <- Se_admin[which(is.na(Se_admin$EACODE)),])
+
+# Converting back from spatial obj to dataframe
+data.df  <- Se_admin  %>% st_drop_geometry()  %>% 
+           right_join(., data.df) 
+
+# Saving dataset with aggregation unit for modelling 
+#EA
+aggregation  <- "EA"
+file_name  <- paste0("mwi-maize-se_",aggregation, ".RDS")
+saveRDS(data.df, here::here("data", "inter-output", file_name))
+
 names(dhs_se)
 class(maize_se)
 
@@ -26,11 +127,6 @@ length(unique(dhs_se$survey_cluster1))
 #There are 28 that have no sdistrict. 
 count(is.na(dhs_se$sdist))
 
-# Boundaries for Malawi 
-
-# EAs
-ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
 names(ea_bnd)
 class(ea_bnd)
@@ -39,10 +135,6 @@ class(ea_bnd)
 mean(ea_bnd$AREA_KM)
 sd(ea_bnd$AREA_KM)
 
-# TA
- ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries",
-    "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
 
 names(ta_bnd)
 class(ta_bnd)
@@ -64,20 +156,7 @@ plot(ea_bnd[, "EACODE"])
 
 nso_bound  <- st_make_valid(ta_bnd) # Check this
 
-# Selecting only variables that are interesting. (EA code, area, geo)
-admin  <- ea_bnd[, c(4, 17, 18)]
 
-sum(duplicated(admin$EACODE))
-length(unique(admin$EACODE))
-
-# Getting info on the admin boudaries (EA/district level)
-# Allocating Se values to each admin unit
-
-data.df <- st_as_sf(maize_se , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
-
-#Se_admin = st_intersection(data.df, admin)
-Se_admin  <-  st_join(data.df, admin)
 
 #Se_check = st_intersection(Se.df, nso_bound)
 
@@ -267,3 +346,77 @@ ggplot() +
   coord_sf(xlim = c(map_extent$xmin, map_extent$xmax),
            ylim = c(map_extent$ymin, map_extent$ymax)) +
   theme_bw()
+
+
+### Old Scripts
+
+# Loading and selecting the boundaries (1-3; district to EA)
+bn  <- 3
+
+boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries", paste0("gadm40_MWI_", bn, ".shp")))
+
+
+boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries", "echo2_prioritization" , 
+ "ECHO2_prioritization.shp"))
+
+names(boundaries)
+
+# boundaries  <- boundaries  %>% filter(shapeID != "60268647B1308848342151") 
+# Getting info on the admin boudaries (EA/district level)
+# Using ID to avoid duplicates
+name_var  <- paste0("ID_", bn)
+admin  <- boundaries[, c("NAME_1",  name_var, "geometry")]
+admin  <- boundaries[, c(1:7, 27)]
+test  <- admin[, name_var]
+#sum(duplicated(admin$ID_3))
+sum(duplicated(test))
+sum(duplicated(admin$EACODE))
+length(unique(admin$EACODE))
+plot(admin)
+
+# Allocating Se values to each admin unit
+# Choose the dataset:
+#Se.df  <- maize_se 
+Se.df  <- dhs_se[, c(1:4, 18, 22)] 
+Se_admin = st_intersection(Se.df, admin)
+
+names(Se_admin)
+dim(Se_admin)
+nrow(Se_admin) == nrow(Se.df)
+sum(duplicated(Se_admin$unique_id))
+subset(Se_admin, grepl("likoma", NAME_1))
+length(unique(Se_admin$ID_3))
+
+#Checking district
+
+check  <- setdiff(Se_admin$sdist, Se_admin$DIST_CODE)
+
+subset(Se_admin, sdist %in% check)
+
+removed_id  <- setdiff(dhs_se$unique_id, Se_admin$unique_id)
+
+removed_id  <- subset(dhs_se, unique_id %in% removed_id)
+
+Se_admin %>% 
+ggplot() + 
+  geom_sf(aes(fill = selenium)) 
+
+# Checking the points
+ boundaries  %>% 
+  tm_shape() +
+  tm_polygons() +
+  tm_shape(removed_id) + 
+  tm_symbols(col = "black") +
+  tm_shape(Se_admin) + 
+  tm_dots(col = "red")
+
+  # Checking the points
+ boundaries  %>% 
+  tm_shape() +
+  tm_polygons() +
+  tm_shape(dhs_se) + 
+  tm_symbols(col = "black") +
+  tm_shape(Se_admin) + 
+  tm_dots(col = "red")

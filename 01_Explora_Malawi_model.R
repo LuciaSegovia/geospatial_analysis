@@ -77,6 +77,7 @@ anova(mod)
 summa(mod$residuals)
 summaplot(mod$residuals)
 
+
 mod<-lm(log(Se_mg)~pH+BIO1,data=data.df)
 
 summary(mod)
@@ -86,7 +87,11 @@ summaplot(mod$residuals)
 
 # There seems to be a corelation between pH & BIO1. 
 #REVIEW: Maybe dropping BIO1? If there is colinearity?
-mod<-lm(pH~BIO1,data=data.df)
+
+# Collinearity
+cor(data.df$pH,  data.df$BIO1, use = "complete.obs")
+cor(log(data.df$Se_mg),  data.df$BIO1, use = "complete.obs")
+cor(log(data.df$Se_mg),  data.df$pH, use = "complete.obs")
 
 ###########################################################################
 #
@@ -100,10 +105,10 @@ loc_UTM<- spTransform(loc_sp, CRS(UTM36S))
 
 
 #  Create a dataframe with the UTM coordinates, grain nutrient conc.
-#  and soil properties
+#  and pH (soil property) & MAT (enviromental covariates)
 
-gdata<-data.frame(cbind(loc_UTM@coords,data.df$Se_triplequad,
-data.df$pH_Wa,data.df$Org_pct))
+gdata<-data.frame(cbind(loc_UTM@coords,data.df$Se_mg,
+data.df$pH,data.df$BIO1))
 
 #
 #  Next, make a geodata object for the geoR library procedures
@@ -121,7 +126,7 @@ lik.method="ML")
 
 #Extract the maximized log-likelihood for the null model
 
-l0<-mod0$loglik  #2701.842
+l0<-mod0$loglik  #2892.015
 
 # Next, include the first soil property (pH) as a proposed predictor
 mod1<-likfit(geod,
@@ -130,118 +135,54 @@ lik.method="ML")
 
 #Extract the maximized log-likelihood
 
-l1<-mod1$loglik  #2709.729
+l1<-mod1$loglik  #2905.181
 
 # Compute the log-likelihood ratio statistic for adding pH, and the p-value
 # for the null hypothesis,
 
-L1<-2*(l1-l0)  #15.77  
-pval<-1-pchisq(L1,1) #p=7.1 x 10^-5
+L1<-2*(l1-l0)  #26.22 
+pval<-1-pchisq(L1,1) #p=2.87 x 10^-7
 
 #Extract the fixed effects coefficients
 mod1$beta
 #  intercept     covar1 
-#-4.7207352  0.1895304 
+#-4.9157879  0.2256435
 
 #Extract the standard error of the coefficient for pH
 
-sqrt(mod1$beta.var[2,2]) #0.0474
+sqrt(mod1$beta.var[2,2]) #0.04350672
 
-#  Next add (log) of soil organic carbon as a potential covariate
+
+#  Next add MAT as a potential covariate
 
 mod2<-likfit(geod,
-trend=~V4+log(V5),cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
+trend=~V4+V5,cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
 lik.method="ML")
 
 #Extract the maximized log-likelihood
 
-l2<-mod2$loglik  #2710.85
+l2<-mod2$loglik  #2910.369
 
-# Compute the log-likelihood ratio statistic for adding organic carbon, and the p-value
+# Compute the log-likelihood ratio statistic for adding MAT, and the p-value
 # for the null hypothesis,
 
-L2<-2*(l2-l1)  #2.24  
-pval<-1-pchisq(L2,1) #p=0.134
+L2<-2*(l2-l1)  # 10.37673
+pval<-1-pchisq(L2,1) #p=0.001276137
 
-###################################################################################
+#  Next model Downscaled mean annual temperature (MAT) as the only covariate
 #
-#  Environmental covariates
-
-#Create a dataframe with the grain nutrient concentration and environmental covariates
-
-gdata<-data.frame(cbind(loc_UTM@coords,data.df$Se_triplequad,
-data.df$BIO12,data.df$BIO1,data.df$TIM))
-
-geod<-as.geodata(gdata,covar.col = c(4,5,6))
-
-# Fit the null model 
-
-emod0<-likfit(geod,trend="cte",cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
-lik.method="ML")
-
-# Extract the maximized log-likelihood for the null model
-
-el0<-emod0$loglik  #2693.729
-
-
-# Add the first environmental covariate (Downscaled mean annual precipitation, MAP)
-
-emod1<-likfit(geod,
-trend=~V4,cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
-lik.method="ML")
-
-# Extract the maximized log-likelihood 
-
-el1<-emod1$loglik  #2693.74
-
-# Compute the log-likelihood ratio statistic for adding MAP, and the p-value
-# for the null hypothesis,
-
-Le1<-2*(el1-el0)  #0.02  
-pval<-1-pchisq(Le1,1) #p=0.88
-
-#  There is no evidence to retain MAP in the model, so the next model as Downscaled mean 
-#  annual temperature (MAT) as the only covariate
-
-emod2<-likfit(geod,
-trend=~V5,cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
-lik.method="ML")
-
-# Extract the maximized log-likelihood 
-
-el2<-emod2$loglik  #2701.375
-
-# Compute the log-likelihood ratio statistic for adding MAP, and the p-value
-# for the null hypothesis,
-
-Le2<-2*(el2-el0)  #15.29  
-pval<-1-pchisq(Le2,1) #9.209108e-05
-
+#emod2<-likfit(geod,
+#trend=~V5,cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
+#lik.method="ML")
+#
+## Extract the maximized log-likelihood 
+#
+#el2<-emod2$loglik  #2901.194
+#
+## Compute the log-likelihood ratio statistic for adding MAP, and the p-value
+## for the null hypothesis,
+#
+#Le2<-2*(el2-l0)  #18.35844
+#pval<-1-pchisq(Le2,1) #1.830061e-05
+#
 # We have evidence to retain MAP as a predictor
-
-#Extract the model parameters and the standard error of the effect for MAT
-
-emod2$beta
-#  intercept      covar1 
-#-6.36022190  0.01321597 
-
-#se of parameter
-sqrt(emod2$beta.var[2,2]) #0.00320
-
-# Add Terrain Index (TIM) as a predictor
-
-emod3<-likfit(geod,
-trend=~V5+V6,cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
-lik.method="ML")
-
-# Extract the maximized log-likelihood 
-
-el3<-emod3$loglik  # 2701.681
-
-# Compute the log-likelihood ratio statistic for adding MAP, and the p-value
-# for the null hypothesis,
-
-Le3<-2*(el3-el2)  #0.61  
-pval<-1-pchisq(Le3,1) #0.433
-
-#  There is no evidence to retain TIM in the model.

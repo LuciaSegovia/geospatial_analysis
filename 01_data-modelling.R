@@ -1,3 +1,11 @@
+
+#######################################################################
+#
+#   Obtaining maize Se conc. dataset for different level of aggregation
+#     (Predicted-mean of Se conc.)
+#
+#####################################################################################################
+
 # Loading libraries and functions
 
 library(dplyr) # data wrangling 
@@ -7,21 +15,24 @@ library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 source(here::here("CEPHaStat_3.R")) #stat functions
-library(geoR)
+library(geoR)  # geospatial modelling
 #library(maps)
 #library(mapdata) 
-library(nlme)
+library(nlme)  # linear mixed model
 library(Matrix)
 library(numDeriv)
 
+########################################################################
 
 
-# Loading the datat
-#check dhs.R script
-dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
+# Loading the maize Se conc. dataset (cleaned from 01.cleaning-location.R)
+data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se_admin.RDS")) # cleaned geo-loc maize Se data
 
-dim(dhs_se)
-names(dhs_se)
+# Checking missing values: 2 pH
+sum(is.na(data.df$BIO1))
+data.df[which(is.na(data.df$pH)),]
+data.df  <- subset(data.df, !is.na(pH)) # removing NA
+
 
 sum(duplicated(dhs_se$unique_id))
 length(unique(dhs_se$survey_cluster1))
@@ -34,78 +45,9 @@ plot(dhs_se[, "wealth_quintile"])
 table(dhs_se$wealth_quintile, dhs_se$region)
 
 #check maizeSe.R script
-maize_se  <- readRDS(here::here("data", "inter-output","maize_se.rds")) # cleaned Spatial maize Se data
-
-# Loading and selecting the boundaries (1-3; district to EA)
-bn  <- 3
-
-boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", paste0("gadm40_MWI_", bn, ".shp")))
+data.df  <- readRDS(here::here("data", "inter-output","maize_se.rds")) # cleaned Spatial maize Se data
 
 
-boundaries  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "echo2_prioritization" , 
- "ECHO2_prioritization.shp"))
-
-names(boundaries)
-
-# boundaries  <- boundaries  %>% filter(shapeID != "60268647B1308848342151") 
-# Getting info on the admin boudaries (EA/district level)
-# Using ID to avoid duplicates
-name_var  <- paste0("ID_", bn)
-admin  <- boundaries[, c("NAME_1",  name_var, "geometry")]
-admin  <- boundaries[, c(1:7, 27)]
-test  <- admin[, name_var]
-#sum(duplicated(admin$ID_3))
-sum(duplicated(test))
-sum(duplicated(admin$EACODE))
-length(unique(admin$EACODE))
-plot(admin)
-
-# Allocating Se values to each admin unit
-# Choose the dataset:
-#Se.df  <- maize_se 
-Se.df  <- dhs_se[, c(1:4, 18, 22)] 
-Se_admin = st_intersection(Se.df, admin)
-
-names(Se_admin)
-dim(Se_admin)
-nrow(Se_admin) == nrow(Se.df)
-sum(duplicated(Se_admin$unique_id))
-subset(Se_admin, grepl("likoma", NAME_1))
-length(unique(Se_admin$ID_3))
-
-#Checking district
-
-check  <- setdiff(Se_admin$sdist, Se_admin$DIST_CODE)
-
-subset(Se_admin, sdist %in% check)
-
-removed_id  <- setdiff(dhs_se$unique_id, Se_admin$unique_id)
-
-removed_id  <- subset(dhs_se, unique_id %in% removed_id)
-
-Se_admin %>% 
-ggplot() + 
-  geom_sf(aes(fill = selenium)) 
-
-# Checking the points
- boundaries  %>% 
-  tm_shape() +
-  tm_polygons() +
-  tm_shape(removed_id) + 
-  tm_symbols(col = "black") +
-  tm_shape(Se_admin) + 
-  tm_dots(col = "red")
-
-  # Checking the points
- boundaries  %>% 
-  tm_shape() +
-  tm_polygons() +
-  tm_shape(dhs_se) + 
-  tm_symbols(col = "black") +
-  tm_shape(Se_admin) + 
-  tm_dots(col = "red")
 
 # Checking plasma values for the model
 #Rename your variable:
@@ -115,38 +57,46 @@ names(Se_admin)[4]  <- "selenium"
 
 
 # check for normality
-summaplot(Se_admin$selenium)
-sum(is.na(Se_admin$selenium))
-Se_admin  <- subset(Se_admin, !is.na(selenium)) # removing NA
-Se_admin$sel_log<-log(Se_admin$selenium)
-summaplot(Se_admin$sel_log)
+summaplot(data.df$Se_mg)
+sum(is.na(data.df$Se_mg))
+sum(is.na(data.df$pH))
+data.df  <- subset(data.df, !is.na(pH))
+data.df$logSe<-log(data.df$Se_mg)
+summaplot(data.df$logSe)
 
-# fit the model: Plasma/Maize Se
-model<-lme(sel_log~1, random=~1|EACODE, data=Se_admin)
-model<-lme(sel_log~1, random=~1|DIST_CODE/EACODE, data=Se_admin)
+
+# fit the model: Maize Se
+model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
+
+model1<-lme(logSe ~ pH + BIO1, random=~1|EACODE, data=data.df, method = "ML")
+
+anova(model0, model1)
+#model<-lme(sel_log~1, random=~1|DIST_CODE/EACODE, data=Se_admin)
 
 # check distribution of residuals
-histplot(residuals(model,level=0))
-summaplot(residuals(model,level=0))
+histplot(residuals(model1,level=0))
+summaplot(residuals(model1,level=0))
 
 # output the results
-summary(model)
-fixef(model) # fixed effects
-n  <- fixef(model) # fixed effects
-re <- ranef(model) # random effects
+summary(model1)
+fixef(model1) # fixed effects
+n  <- fixef(model1)[1] # fixed effects (intercept)
+re <- ranef(model1) # random effects (log Se mean per EA)
 
 # output for nested outcome
-re  <- re$NAME_1
-re  <- re$ID_3
+#re  <- re$NAME_1
+#re  <- re$ID_3
+re <- tibble::rownames_to_column(re)
 names(re)
-names(re)[1]  <- "intercept"
+names(re)[1]  <- "EACODE"
+names(re)[2]  <- "intercept"
 re$se_mean  <- exp(re$intercept+n)
 
-re <- tibble::rownames_to_column(re, var = paste0("ID_", bn))
-re <- tibble::rownames_to_column(re)
-names(re)[1]  <- "NAME_1"
-names(re)[1]  <- "NAME_1_ID_3"
-names(re)[1]  <- "EACODE"
+#re <- tibble::rownames_to_column(re, var = paste0("ID_", bn))
+#re <- tibble::rownames_to_column(re)
+#names(re)[1]  <- "NAME_1"
+#names(re)[1]  <- "NAME_1_ID_3"
+
 head(re)
 hist(re$se_mean)
 

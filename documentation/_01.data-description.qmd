@@ -162,7 +162,7 @@ d. Sales vs stored trees (12months) (AG_MOD_Q)
 
 ### 5. Enviromental covariates (Mean Annual Temperature)
 
-a. mwi_CHELSA_bio10_1.tif: This dataset has information on the Mean Annual Temperature (MAT) for Malawi from 1979-2013. 
+a. mwi_CHELSA_bio10_1.tif: This raster dataset contains information on the Mean Annual Temperature (MAT) for Malawi from 1979-2013. 
 
 The dataset is a cropped (clipped) area from the global (CHELSA_bio10_1.tf) which is a worldwide high resolution raster layer. The geographic coordinate system are referenced to the WGS 84 horizontal datum, with the horizontal coordinates expressed in decimal degrees. The dataset is in GEOtiff format and was extracted from the CHELSA dataset [here](https://datadryad.org/stash/dataset/doi:10.5061/dryad.kd1d4). This variable was used as enviromental covariates for the geospatial Se maize model (BIO1). 
 
@@ -345,7 +345,9 @@ After discussion with Claire (14/04/2023)
 The three set of boundaries we are using are:
 1) HH location based: We will draw buffers around the HHs of the WRA which donated blood for plasma Se. We will start with 5km buffer as it is the common displacement (geographic masking) used in rurar areas in DHS surveys. Then, we will create bigger buffer up to Admin boundaries and/or 100km radious (used for analisys of proximity to the market). 
 2) Admin. unit based: We will start with Traditional Authorities, since we could not get good EAs boundaries (See above) and we will aggregate up to District/Region. 
-3) Agro-eco based: Lastly, we will used the agro-ecological areas (also used in IHS4) to aggregate the data. #REVIEW: We were thinking to use the soil type as well, but maybe we will have some kind of cofounding if we are using that as one of the covariates of the model. 
+3) Agro-eco based: Lastly, we will used the agro-ecological areas (also used in IHS4) to aggregate the data. 
+
+#REVIEW: We were thinking to use the soil type as well, but maybe we will have some kind of cofounding if we are using that as one of the covariates of the model. 
 
 Because of these tests should be run for all the datasets with boundaries. We have created a script where we are performing all these steps before the modelling, as this can be considered cleaning and processing previous the modelling. 
 
