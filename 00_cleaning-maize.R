@@ -20,22 +20,6 @@ names(maize)
 names(maize)[c(23, 28)]  <- c( "Se_mg", "pH")
 maize$survey  <- "Chilimba_2009"
 
-# Unit conversion
-#maize$lat  <-  gsub('E |o', '', maize$lat)
-#maize$long  <-  gsub('S |o', '', maize$long)
-#
-#maize$lat  <-  as.numeric(measurements::conv_unit(maize$lat, from = 'deg_dec_min', to = 'dec_deg'))
-#maize$long   <-  as.numeric(measurements::conv_unit(maize$lat, from = 'deg_dec_min', to = 'dec_deg'))
-#
-#hist(maize$lat[maize$lat < 140000])
-#hist(maize$long)
-#hist(maize$long[maize$long < 140000])
-#
-#maize  <- subset(maize, lat < 140000 & long < 140000)
-#
-#cord.dec1  =  SpatialPoints(cbind( maize$long, maize$lat), proj4string = CRS("+proj=longlat"))
-#
-
 #Checking the spatial function
 cord.dec1  =  SpatialPoints(cbind( maize$Longitude_DD, maize$Latitude_DD), proj4string = CRS("+proj=longlat"))
 cord.dec2  =  subset(maize, select = c(Longitude_DD, Latitude_DD))  %>% st_as_sf(., coords =c("Longitude_DD", "Latitude_DD"), crs = "EPSG:4326")
@@ -50,41 +34,12 @@ maize.df <- subset(maize, !is.na(Se_mg),
 select = c(Se_mg, pH, survey,Longitude_DD, Latitude_DD ))   %>% 
 dplyr::rename(Longitude = "Longitude_DD",  Latitude = "Latitude_DD")
 
+# Adding MAT empty column to allow dataframes to merge
+maize.df$BIO1  <- NA
+
 # Generating spatial dataset for maize
 geomaize.df  <- maize.df %>% 
 st_as_sf(., coords =c("Longitude", "Latitude"), crs = "EPSG:4326")
-
-# Adding the variable BIO1 for Chilimba loc. (Mean Annual Temp - CHELSA dataset)
-
-# Loading data (MAT)
-mat  <- raster(here::here("data", "covariates", "mwi_CHELSA_bio_10_1.tif" ))
-
-#Checking projection WGS84
-crs(mat)
-
-#Visualising the MAT data & maize sample locations
-tm_shape(mat) + 
-tm_raster() + 
-tm_shape(geomaize.df) + 
-tm_symbols(size = 0.1)
-
-
-# Extracting MAT (BIO1) from the raster for maize sample loc
-geomaize.df$BIO1  <- extract(mat, geomaize.df)
-
-#Plotting the results
-plot((geomaize.df$BIO1)/10,geomaize.df$Se_mg,pch=16,xlab="Mean annual temperature /°C",
-ylab=expression("Maize grain Se/ mg kg"^{-1}),log="y")
-
-# Saving it back to dataframe
-
-maize.df  <-  st_drop_geometry(geomaize.df)  %>% right_join(., maize.df)
-
-# Another way of getting back to dataframe
-#maize.df <- sf_to_df(geomaize.df, fill = TRUE)   %>% 
-#dplyr::rename(Longitude = "Longitude_DD",  Latitude = "Latitude_DD")  %>% 
-#select = c(Se_mg, pH, BIO1, survey, Longitude, Latitude)
- 
 
 # Loading the data
 grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
@@ -127,6 +82,7 @@ names(maize.df)
 # Merging the two survey datasets
 data.df  <- rbind(maize.df, grain.df)
 names(data.df)
+head(data.df)
 
 # Checking final dataset
 str(data.df)
@@ -138,16 +94,76 @@ hist(data.df$Se_mg)
 hist(data.df$pH)
 hist(log(data.df$Se_mg))
 
-# Maize Se conc. - data manipulation ----
+# Missing values check 
 dim(data.df) # 1282
 sum(is.na(data.df$Se_mg))
-data.df$log_Se  <- log(data.df$Se_mg)
+sum(is.na(data.df$pH)) # pH 2 missing values
+sum(is.na(data.df$BIO1)) # 89 missing (to be completed)
+#data.df$log_Se  <- log(data.df$Se_mg)
 
 # Generating spatial dataset
-#data.df  <- st_as_sf(grain.df , coords =c("Longitude", "Latitude"),
- #crs = "EPSG:4326")
+geodata.df  <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
 
 # Data exploration:
 #CEPHaStat.R is not working... (Check in RStudio)
+
+# Adding the variable BIO1 for Chilimba loc. (Mean Annual Temp - CHELSA dataset)
+
+# Loading data (MAT)
+mat  <- raster(here::here("data", "covariates", "mwi_CHELSA_bio_10_1.tif" ))
+
+#Checking projection WGS84
+crs(mat)
+
+#Visualising the MAT data & maize sample locations
+tm_shape(mat) + 
+tm_raster(legend.show = FALSE) + 
+tm_shape(geodata.df) + 
+tm_symbols(size = 0.1)
+
+
+# Extracting MAT (BIO1) from the raster for maize sample loc
+#REVIEW: values extracted as integer
+geodata.df$BIO1b  <- extract(mat, geodata.df)
+head(geodata.df)
+
+# Checking that values are the same as those provided in GeoNutrition
+BIOa  <- geodata.df$BIO1[!is.na(geodata.df$BIO1)]
+BIOb  <- geodata.df$BIO1b[!is.na(geodata.df$BIO1)]
+BIO_check  <- cbind(BIOa, BIOb)
+head(BIO_check)
+
+BIOa == BIOb
+setdiff(round(BIOa), BIOb)
+setdiff(BIOb, round(BIOa))
+round(BIO_check[c(166, 167), ]) #Only one was 1degree dif. due to rounding
+
+geodata.df  <- subset(geodata.df, select = -BIO1)  %>% # Removing BIO1 (orginal)
+dplyr::rename(BIO1 = "BIO1b")  # Renaming extracted BIO1b to BIO1
+
+#Plotting the results
+plot((geodata.df$BIO1)/10,geodata.df$Se_mg,pch=16,xlab="Mean annual temperature /°C",
+ylab=expression("Maize grain Se/ mg kg"^{-1}),log="y")
+
+# Saving the BIO1 back to dataframe (spatial obj to dataframe)
+
+data.df  <- geodata.df %>% 
+st_drop_geometry()  %>%  # dropping the geometry (spatial obj)
+right_join(., data.df  %>% dplyr::select(-BIO1)) # joinning back lon/lat excluding BIO1
+
+#Chekcing again the data
+dim(data.df) # 1282
+sum(is.na(data.df$Se_mg))
+sum(is.na(data.df$pH)) # pH 2 missing values
+sum(is.na(data.df$BIO1)) # completed
+
+# Another way of getting back to dataframe
+#maize.df <- sf_to_df(geomaize.df, fill = TRUE)   %>% 
+#dplyr::rename(Longitude = "Longitude_DD",  Latitude = "Latitude_DD")  %>% 
+#select = c(Se_mg, pH, BIO1, survey, Longitude, Latitude)
+
+
+# Saving dataset for modelling 
 
 saveRDS(data.df, here::here("data", "inter-output", "mwi-maize-se.RDS"))

@@ -257,7 +257,9 @@ For Plasma Se, we only have values for `r length(unique(EligibleDHS$sdist))`. Th
 
 ### 2.1) GeoNutrition (Gashu et al., 2019)
 
-We extracted the variables of interest from the dataset (Se (only in maize), pH, coordenates), then we are doing some data operations, for instance, removing NAs (values >999). 
+We extracted the variables of interest from the dataset: Se conc. (only in maize), pH, MAT, and the coordenates. Then we are doing some data operations, for instance, removing NAs (values >999) in Se conc. and checking missing values for the covariates. 
+
+Two pH values were missing, hence we may exclude those values for the modelling, also there were three locations with missing MAT. This could be completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
 
 #### Spatial pre-liminary analysis
 
@@ -292,9 +294,7 @@ We extracted the variable of interes, removed NA and check the coordinate projec
 (https://datadryad.org/stash/dataset/doi:10.5061/dryad.kd1d4) on 2023/07/17 and cropped for Malawi for easy usage. 
 
 
-When we combined both dataset we can see that, as expected, the Se conctration is heavily skewerd and it would need log transformation, while pH has a normal distribution.
-
-We are generating a log_Se variable and saving the dataset as intermediate output for further analysis. 
+When we combined both dataset we can see that, as expected, the Se conctration is heavily skewerd and it would need log transformation, while pH has a normal distribution. 
 
 For more inforamtion on that see the exploratory analysis and the variable selection for the model reported in Gashu et al., (2019) [@ref] and the analysis done by Lark et al. (2019), here are the [scripts](https://github.com/rmlark/GeoNutrition/blob/main/Soil_Crop_comparisons/Malawi/Malawi_model.R). 
 

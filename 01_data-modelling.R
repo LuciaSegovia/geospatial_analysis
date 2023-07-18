@@ -112,6 +112,8 @@ ggplot() +
 names(Se_admin)
 names(Se_admin)[3]  <- "sdist" 
 names(Se_admin)[4]  <- "selenium" 
+
+
 # check for normality
 summaplot(Se_admin$selenium)
 sum(is.na(Se_admin$selenium))
