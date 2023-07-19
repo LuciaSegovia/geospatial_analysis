@@ -30,7 +30,6 @@ data.df[which(is.na(data.df$pH)),]
 data.df  <- subset(data.df, !is.na(pH)) # removing NA
 
 
-
 ##########################################################################
 #  
 #  Analyses with soil properties
@@ -128,6 +127,10 @@ lik.method="ML")
 
 l0<-mod0$loglik  #2892.015
 
+mod0$parameters.summary
+mod0$model.components
+mod0$practicalRange
+
 # Next, include the first soil property (pH) as a proposed predictor
 mod1<-likfit(geod,
 trend=~V4,cov.model="exponential",ini.cov.pars=c(1,30.0),lambda=0,
@@ -136,6 +139,8 @@ lik.method="ML")
 #Extract the maximized log-likelihood
 
 l1<-mod1$loglik  #2905.181
+
+mod1$parameters.summary
 
 # Compute the log-likelihood ratio statistic for adding pH, and the p-value
 # for the null hypothesis,
