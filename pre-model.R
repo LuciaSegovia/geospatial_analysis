@@ -69,7 +69,7 @@ method = "kendall")
 # to include interactions in the model?
 #Lowerdepth
 
- ggplot() + geom_point(data = EligibleDHS, 
+ ggplot(data = EligibleDHS) + geom_point(
                     aes(y = selenium , x = BMI),
                     shape = 1, 
                     size = 1) + 
@@ -96,6 +96,7 @@ I1 <- inla(selenium ~ wealth_quintile,
            family = "gaussian",
            control.predictor = list(compute = TRUE),
            data = EligibleDHS)
+
 summary(I1)
 
 # Numerical output for the betas

@@ -10,7 +10,7 @@
 
 library(dplyr) # data wrangling 
 #library(plyr) # weighted data analysis
-#library(ggplot2) # visualisation
+library(ggplot2) # visualisation
 #library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
@@ -32,7 +32,6 @@ data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se_admin.RDS"))
 sum(is.na(data.df$BIO1))
 data.df[which(is.na(data.df$pH)),]
 data.df  <- subset(data.df, !is.na(pH)) # removing NA
-
 
 #sum(duplicated(dhs_se$unique_id))
 #length(unique(dhs_se$survey_cluster1))
@@ -59,10 +58,19 @@ sum(is.na(data.df$pH))
 data.df$logSe<-log(data.df$Se_mg)
 summaplot(data.df$logSe)
 
-
-#REVIEW: Values of the final model, seemed quite low and high influenced by around the mean values
+# visualize the data
+ggplot(data = data.df,
+       mapping = aes(x = logSe, y = BIO1/10)) + 
+  geom_point() +
+  facet_wrap(~DISTRICT, ncol = 5) +
+  labs(x = "Se conc. in maize (log(mg/kg))", 
+       y = "Downscaled MAT") + 
+  scale_x_continuous(breaks = 0:4 * 2) +
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
 
 #data.df  <- data.df[,-c(9, 10)]
+#data.df$BIO1b  <- data.df$BIO1/10
 
 # fit the model: Maize Se
 model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
@@ -80,9 +88,9 @@ model2<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE, data=data.df, method = "ML")
 
 model3<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
 
-model3<-lme(logSe ~1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
+model3b<-lme(logSe ~1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
 
-anova(model2, model3)
+anova(model2, model3, model3b)
 
 # Model 3: w/ nested random effect is better
 
@@ -128,7 +136,7 @@ ea.df  <- re
 summary(model3)
 fixef(model3) # fixed effects
 n  <- fixef(model3)[1] # fixed effects (intercept) (-7.95739323)
-re <- ranef(model3)[[1]] # random effects (log Se mean per TA)
+re <- ranef(model3b)[[2]] # random effects (log Se mean per TA)
 re <- tibble::rownames_to_column(re)
 names(re)
 names(re)[1]  <- "TA_CODE"
@@ -166,6 +174,8 @@ length(unique(data.df$DISTRICT))
 dist.df  <- re
 
 
+
+#################################### END ##################################################
 
 class(re$EACODE)
 admin$EACODE  <- as.character(admin$EACODE)
