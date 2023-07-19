@@ -111,19 +111,21 @@ GPS displacement within district.
 
 Malawi administrative boundaries, from the higher to the smallest area: Region> District> Traditional Authorities (TA)> Enumeration Areas (EA). 
 
-- GADM maps and data, (gadm40_MWI_shp), https://gadm.org/download_country.html, The file for the EAs has some issues that lead some points in the lake. Hence, we found a different file with the Malawi boudaries, 
+- 1. GADM maps and data, (gadm40_MWI_shp), https://gadm.org/download_country.html, The file for the EAs has some issues that lead some points in the lake. Hence, we found a different file with the Malawi boudaries, 
 
-- Malawi NSO from HDX (Humanitarian datasets), (mwi_adm_nso_hotosm_20230329), https://data.humdata.org/dataset/cod-ab-mwi
+- 2. Malawi NSO from HDX (Humanitarian datasets), (mwi_adm_nso_hotosm_20230329), https://data.humdata.org/dataset/cod-ab-mwi
 
-- Population over Enumeration Areas NSO, (eas_bnd) https://www.masdap.mw/catalogue/#/dataset/126, This layer shows the distribution of the population over the country of Malawi on the basis of enumeration area boundary. Data producer is the National Statistical Office.
+- 3. Population over Enumeration Areas NSO, (eas_bnd) https://www.masdap.mw/catalogue/#/dataset/126, This layer shows the distribution of the population over the country of Malawi on the basis of enumeration area boundary. Data producer is the National Statistical Office.
 
-- Echo2 priritization, These files covered up to EAs. (depricated - Updated version: Population over Enumeration Areas NSO)
+- 4. Echo2 priritization, These files covered up to EAs. (depricated - Updated version: Population over Enumeration Areas NSO)
 
-- GeoBoundaries: It also has 3 level of boudaries: 1-region, 2-district, 3-TA. These files has no EA boundaries (depricated).
+- 5. GeoBoundaries: It also has 3 level of boudaries: 1-region, 2-district, 3-TA. These files has no EA boundaries (depricated).
 
 Other boundaries in Malawi, including agro-ecological zones, agricultural land, body water, national parks, etc. 
 
 We are not incluiding the AEZs boundaries because they are only 4 AEZs in Malawi, hence areas are too big to get any meanful spatial variation, and/or level of aggregation. Note: The AEZ can be found in the Scoping review (R project, data folder), and further inforamtion can be found in [here](https://climateknowledgeportal.worldbank.org/sites/default/files/2019-06/CSA%20_Profile_Malawi.pdf).
+
+Excluded boundaries: Agro-Ecological Zones, Traditional Authorities (more information on data exploration). 
 
 ### 4. Geo-referenced apparent food consumption in Malawi (Se intake)
 
@@ -315,45 +317,21 @@ Mean Annual Temperature (MAT) was used as enviromental covariates for the geospa
 
 ## 3) Malawi GPS data & country boundaries 
 
-We have found several shape files with the boundaries for Malawi. The issues is that not many of the files have the boundaries at EA level. 
+We have found several shape files with the boundaries for Malawi (1-5).
 
-This is due to the confidenciality as those are the cluster uses for most of the survey and are bases on the census data. 
+### Boundaries data issues
 
-One of good source of countries boundaries are GADM, we were using those boundaries the problem is that they include lake Malawi as part of the boundaries of the EA/district / state. Hence when using the boundaries to locate the HHs and/or maize it seems that part of the data is falling inside the lake. If we try to remove the lake area it leads to the missing of some observations. 
+The **first issue** that we encountered was that not many of the files have the boundaries at EA level. This is due to the confidenciality as those are the cluster uses for most of the survey and are bases on the census data. 
+
+The **second issue** was that some boundaries are not accurated/ well-defined. For instance, in the dataset 1 (GADM), which is a good source of countries boundaries. However, after we found a problem whith the boundaries as that they include lake Malawi as part of the boundaries of the EA/district / state. Hence when using the boundaries to locate the HHs and/or maize it seems that part of the data is falling inside the lake. If we try to remove the lake area it leads to the missing of some observations. 
 
 We are going to use other EA boundaries found [here]() from the World Bank and used previously by the NE Red Cross. 
 
-If those are also not valid, then we will try to use the lak boundaries to "close" the distric boundaries near the lake in the GADM boundaries, or we could do the buffered boundaries based on the EA centroids. 
+If those are also not valid, then we will try to use the lake boundaries to "close" the distric boundaries near the lake in the GADM boundaries, or we could do the buffered boundaries based on the EA centroids. 
 
-We have checked the new boundaries and they seemed correct, only that the areas when compared with the previous map are different. We are going to check that the distric reporoted in the DHS survey are the same as those allocated by binding the EA bounderies file. 
+The **third issue** that we found was inconsistency between datasets. Although boundaries 2 and 3 are apparently produced by the NSO the number of TA are different (n=`length(unique(ea_bnd$TA_CODE))`) and (n=`length(unique(ta_bnd$ADM3_PCODE))`). The dissagrement may be due to the inclusion of sub-divided TA (i.e., TSA) in the dataset 3, or due differences on the date of the datasets. There are are small differernce sin the codes used between the datasets which may yielded further inconsistencies between the two. Hence, we may not use this aggregation unit for further analysis. 
 
-For those that the district are missing (NA) in the DHS, we would check that those points fall within what would be consided the district that it's reported in the EA boundaries file. Same for those with discrepancies. 
-
-Then we will resolve accordingly. 
-
-We have checked the discrepancies between the echo2 boundaries and the DHS with the NSO boundaries, and DHS and NSO are showing the same district. In addition, when we plotted the mismatched district we could visually check that NSO & DHS were assigning the correct district. 
-
-Therefore, for district level we will use NSO boundaries. In addition, for the small scale units we are going to generate our own boundaries based on the centroids of the EAs. 
-
-To do so, we will:
-
-a) generate the centroids of each EA reprted in ECHO2 file.
-b) draw a 2km-radious boundary for each centrod.In the future, we may want to differenciate between Rural and Urban EAs. 
-
-After discussion with Claire (14/04/2023)
-
-The three set of boundaries we are using are:
-1) HH location based: We will draw buffers around the HHs of the WRA which donated blood for plasma Se. We will start with 5km buffer as it is the common displacement (geographic masking) used in rurar areas in DHS surveys. Then, we will create bigger buffer up to Admin boundaries and/or 100km radious (used for analisys of proximity to the market). 
-2) Admin. unit based: We will start with Traditional Authorities, since we could not get good EAs boundaries (See above) and we will aggregate up to District/Region. 
-3) Agro-eco based: Lastly, we will used the agro-ecological areas (also used in IHS4) to aggregate the data. 
-
-#REVIEW: We were thinking to use the soil type as well, but maybe we will have some kind of cofounding if we are using that as one of the covariates of the model. 
-
-Because of these tests should be run for all the datasets with boundaries. We have created a script where we are performing all these steps before the modelling, as this can be considered cleaning and processing previous the modelling. 
-
-Then we will save the outputs in the inter-output folder, and use them in the model. 
-
-After, we need to ask for the model that will provide an estimate (predicted-mean) of each area. The current model is only giving values for those areas with at least one observation. 
+- More info (on practical steps & tested thing on the notebook `Bondaries_notes.md`). 
 
 #### Household location-based aggregation
 

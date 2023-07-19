@@ -9,9 +9,9 @@
 # Loading libraries and functions
 
 library(dplyr) # data wrangling 
-library(plyr) # weighted data analysis
-library(ggplot2) # visualisation
-library(survey) # survey design
+#library(plyr) # weighted data analysis
+#library(ggplot2) # visualisation
+#library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 source(here::here("CEPHaStat_3.R")) #stat functions
@@ -62,6 +62,8 @@ summaplot(data.df$logSe)
 
 #REVIEW: Values of the final model, seemed quite low and high influenced by around the mean values
 
+#data.df  <- data.df[,-c(9, 10)]
+
 # fit the model: Maize Se
 model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
 
@@ -77,6 +79,8 @@ summaplot(residuals(model1,level=0))
 model2<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE, data=data.df, method = "ML")
 
 model3<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
+
+model3<-lme(logSe ~1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
 
 anova(model2, model3)
 
@@ -98,7 +102,7 @@ anova(model4, model5, model6)
 # check distribution of residuals
 summaplot(residuals(model6,level=0))
 
-model1  <- model0
+#model1  <- model0
 # output the results (model 1)
 summary(model1)
 fixef(model1) # fixed effects
@@ -114,15 +118,11 @@ names(re)[1]  <- "EACODE"
 names(re)[2]  <- "intercept"
 re$se_mean  <- exp(re$intercept+n)
 
-#re <- tibble::rownames_to_column(re, var = paste0("ID_", bn))
-#re <- tibble::rownames_to_column(re)
-#names(re)[1]  <- "NAME_1"
-#names(re)[1]  <- "NAME_1_ID_3"
-
 head(re)
 hist(re$se_mean)
 summary(re$se_mean)
 ea.df  <- re
+
 
 # output the results (model 3)
 summary(model3)
@@ -137,6 +137,11 @@ re$se_mean  <- exp(re$intercept+n)
 
 head(re)
 hist(re$se_mean)
+summary(re$se_mean)
+
+#Checking that all the TA in the data are there
+length(unique(re$TA_CODE))
+length(unique(data.df$TA_CODE))
 
 ta.df  <- re
 
@@ -154,6 +159,9 @@ re$se_mean  <- exp(re$intercept+n)
 head(re)
 hist(re$se_mean)
 summary(re$se_mean)
+
+length(unique(re$DISTRICT))
+length(unique(data.df$DISTRICT))
 
 dist.df  <- re
 

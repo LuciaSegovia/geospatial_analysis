@@ -21,6 +21,9 @@ See sensitivity analysis.
 
 Predicted-mean Se concentration in maize at different level of aggregation were calculated using a Linear Mixed Model using pH & MAT as covariates and the aggregation unit as the random effect. The covariates were selected following Gashu et al, (2019) method. The covariates that were selected (significant) for the maize Se map (kringing map) were mean atmospheric temperature (MAT) and pH. See: `Explora_Malawi_model.R`.
 
+#### Maize modelling issues (check notes:`Maize-model_notes.md`)
+ 
+
 
 
 ### . Other crops 

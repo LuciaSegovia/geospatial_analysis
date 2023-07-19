@@ -33,11 +33,16 @@ ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
 # TAs
-# ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
-# "mwi-boundaries", "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
+ ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries", "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
 
 # Explore the shapefile
 head(ea_bnd)
+
+table(sf::st_is_valid(ta_bnd))
+table(sf::st_is_valid(ea_bnd))
+
+ta_bnd <- st_make_valid(ta_bnd) # Check this
 
 # Getting the admin units (the one with the higher no of unique id/names)
 dim(ea_bnd) #9235
@@ -46,6 +51,18 @@ length(unique(ea_bnd$EACODE)) #9219
 length(unique(ea_bnd$DISTRICT)) #28/30 #dist code/ district
 length(unique(ea_bnd$TA_CODE)) #351/350 #ta code/ ta
 sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
+
+# Checking comparabiity between the two boundaries dataset
+# Even district are different
+sort(unique(ea_bnd$DISTRICT))
+sort(unique(ta_bnd$ADM2_EN))
+
+#Commenting maps generation for speeding the processing
+#tm_shape(ea_bnd) +
+#tm_polygons("DISTRICT", show.legend = FALSE) 
+#
+#tm_shape(ta_bnd) +
+#tm_polygons("ADM2_EN", show.legend = FALSE) 
 
 # Selecting only variables that are interesting. (EA code, EA area, TA code, district & geo)
 admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
@@ -68,11 +85,11 @@ sum(is.na(Se_admin$EACODE))
 missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
 
 #Checking missing values
-tm_shape(ea_bnd) +
-tm_polygons() +
-tm_shape(missing) +
-tm_symbols(col ="Se_mg", size =0.1)
-
+#tm_shape(ea_bnd) +
+#tm_polygons() +
+#tm_shape(missing) +
+#tm_symbols(col ="Se_mg", size =0.1)
+#
 st_join(missing[,1:5], admin, st_is_within_distance, 
             dist = units::set_units(4500, "m"))
 
@@ -111,19 +128,52 @@ Se_admin[82,]  <- st_join(missing[,1:5], admin, st_is_within_distance,
 
 (missing  <- Se_admin[which(is.na(Se_admin$EACODE)),])
 
+# Checking the areas
+sum(duplicated(Se_admin$EACODE))
+length(unique(Se_admin$EACODE)) #9219 --> 1121 (not all EAs were sampled)
+length(unique(Se_admin$DISTRICT)) #30 --> 26 (3 lakes + likoma island) # district
+length(unique(Se_admin$TA_CODE)) #351 --> #ta code
+sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
+
 # Converting back from spatial obj to dataframe
 data.df  <- Se_admin  %>% st_drop_geometry()  %>% 
            right_join(., data.df) 
 
 # Saving dataset with aggregation unit for modelling 
-#EA
+# Admin
 aggregation  <- "admin"
 file_name  <- paste0("mwi-maize-se_",aggregation, ".RDS")
 saveRDS(data.df, here::here("data", "inter-output", file_name))
 
 
+# Testing results accoring to different boundary choices:
 
+test  <- ea_bnd  %>% filter(!DISTRICT %in% unique(Se_admin$DISTRICT))
+length(unique(test$DISTRICT))
 
+#tm_shape(ea_bnd) +
+#tm_polygons() +
+#tm_shape(test) +
+#tm_polygons("DISTRICT") +
+#tm_shape(parks) +
+#tm_borders(col = "green")
+
+test  <- ea_bnd  %>% filter(!TA_CODE %in% unique(Se_admin$TA_CODE))
+test  <- ta_bnd  %>% 
+filter(!ADM3_PCODE %in% paste0("MW", unique(Se_admin$TA_CODE)))
+
+test$TA_CODE  <- as.character(test$TA_CODE)
+length(unique(test$TA_CODE))
+length(unique(test$ADM3_PCODE))
+length(unique(ta_bnd$ADM3_PCODE))
+
+#tm_shape(ta_bnd) +
+#tm_polygons() +
+#tm_shape(test) +
+#tm_polygons(col = "green", legend.show = FALSE) +
+#tmap_options(max.categories = 124) +
+#tm_shape(geodata.df) +
+#tm_symbols(size = 0.09, col = "red")
 
 names(dhs_se)
 class(maize_se)
@@ -158,14 +208,13 @@ parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
 View(ta_bnd)
 head(ea_bnd)
 
-table(sf::st_is_valid(ta_bnd))
-table(sf::st_is_valid(ea_bnd))
+
 
 plot(ta_bnd[, "ADM1_EN"])
 
 plot(ea_bnd[, "EACODE"])
 
-nso_bound  <- st_make_valid(ta_bnd) # Check this
+
 
 
 
