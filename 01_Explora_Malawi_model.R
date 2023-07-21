@@ -79,10 +79,10 @@ summaplot(mod$residuals)
 
 mod<-lm(log(Se_mg)~pH+BIO1,data=data.df)
 
-summary(mod)
-anova(mod)
 summa(mod$residuals)
 summaplot(mod$residuals)
+summary(mod)
+anova(mod)
 
 # There seems to be a corelation between pH & BIO1. 
 #REVIEW: Maybe dropping BIO1? If there is colinearity?

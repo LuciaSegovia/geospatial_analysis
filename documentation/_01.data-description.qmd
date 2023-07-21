@@ -255,6 +255,10 @@ After merging the datasets, some Wealth quintile were missing, hence following r
 
 For Plasma Se, we only have values for `r length(unique(EligibleDHS$sdist))`. This will condition the model choice.
 
+### 1.4) GPS location
+
+It is at the cluster level, hence we need to check the variation within cluster as this will affect our model selection and results. 
+
 ## 2) Maize Se concentration in Malawi
 
 ### 2.1) GeoNutrition (Gashu et al., 2019)

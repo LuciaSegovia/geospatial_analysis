@@ -6,8 +6,8 @@
 #   # Install INLA and dependencies (from CRAN)
 #install.packages("INLA", dep = TRUE)
 
-repos <- c(CRAN = "https://cloud.r-project.org", INLA = "https://inla.r-inla-download.org/R/stable")
-options(repos = repos)
+#repos <- c(CRAN = "https://cloud.r-project.org", INLA = "https://inla.r-inla-download.org/R/stable")
+#options(repos = repos)
 
 # Loading libraries and functions
 
@@ -17,6 +17,7 @@ library(sf) #spatial data manipulation
 library(rgdal)
 library(INLA) # Modelling
 library(gstat) # variogram
+source(here::here("CEPHaStat_3.R"))
 
 
 # Loading the datat
@@ -49,7 +50,7 @@ table(EligibleDHS$wealth_quintile, EligibleDHS$region)
 
 # BMI and selenium first before doing anything
 plot(x = EligibleDHS$BMI, 
-     y = EligibleDHS$selenium)
+     y = log(EligibleDHS$selenium))
 
 EligibleDHS$selenium[is.na(EligibleDHS$BMI)]
 # Collinearity
@@ -63,23 +64,74 @@ method = "kendall")
 cor(EligibleDHS$selenium,  EligibleDHS$Malaria_test_result, use = "complete.obs", 
 method = "kendall")
 
+sum(is.na(EligibleDHS$selenium))
 
+
+summaplot(log(EligibleDHS$selenium))
+
+# Checking the covariates
+sum(is.na(EligibleDHS$wealth_quintile))
+
+data.df  <- subset(EligibleDHS, !is.na(wealth_quintile)) # Remoing NA in wealth
+
+# Wealth Q
+mod<-lm(log(selenium)~wealth_quintile,data=data.df)
+
+summa(mod$residuals)
+summaplot(mod$residuals)
+summary(mod)
+anova(mod)
+
+# We are including it
+sum(is.na(EligibleDHS$BMI))
+data.df  <- subset(EligibleDHS, !is.na(wealth_quintile) & !is.na(BMI)) # Remoing NA in wealth
+
+# BMI 
+mod<-lm(log(selenium)~wealth_quintile+BMI,data=data.df)
+
+summa(mod$residuals)
+summaplot(mod$residuals)
+summary(mod)
+anova(mod)
+
+# Not including it
+
+# We are including it
+sum(is.na(EligibleDHS$Malaria_test_result))
+data.df  <- subset(EligibleDHS, !is.na(wealth_quintile) & !is.na(Malaria_test_result)) # Remoing NA in wealth
+
+# Malaria 
+mod<-lm(log(selenium)~wealth_quintile+Malaria_test_result,data=data.df)
+
+summa(mod$residuals)
+summaplot(mod$residuals)
+summary(mod)
+anova(mod)
+
+# Not including it
+
+# Se conc. vs MAT (downscaled/10)
+par(mar=c(5,5,2,2))
+plot(data.df$wealth_quintile,log(data.df$selenium),
+pch=16,xlab="Wealth Q",
+ylab=expression("Plasma Se/ mg ml"^{-1}),log="y")
+abline(h=mean(log(data.df$selenium)))
 
 # # Is the quality of the data good enough
-# to include interactions in the model?
+# to include interactions in the model? No -
 #Lowerdepth
 
- ggplot(data = EligibleDHS) + geom_point(
-                    aes(y = selenium , x = BMI),
+ ggplot(data = data.df) + geom_point(
+                    aes(y = log(selenium) , x = wealth_quintile),
                     shape = 1, 
                     size = 1) + 
-                    xlab("BMI") + ylab("Selenium")+ 
+                    xlab("Wealth Q") + ylab("Selenium")+ 
                     theme(text = element_text(size=15)) +
-                     geom_smooth(data = EligibleDHS, 
-                     aes(x = BMI, 
+                     geom_smooth(data = data.df, 
+                     aes(x = wealth_quintile, 
                          y = selenium),
                      method = "lm") +
-                      facet_grid(.~ wealth_quintile)
+                      facet_wrap(.~ sdist,ncol = 5)
 
 
 #########################################################

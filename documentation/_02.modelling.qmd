@@ -9,9 +9,16 @@ editor: source
 
 See model framework
 
-### . Household displacement
+### . Household location
 
-It is important that we think about the displacement of the household location and the potential impacts on the final results. For instance, when two houeholds are in the same EA, the maize Se value is the same for both households. 
+The coordenates for the HHs are only provided at cluster level (EAs). Hence, we need to check first the variability within cluster. 
+
+When we checked with boxplots (See 01_Explora_Malawi_model.R, line 258), the varibility of Plasma Se by EAs, we have realised two key things:
+1) In general, we could assume that there is "low" EAs variability in the Plasma Se.
+2) There is high variability within regions. As we can see by the scale of the plots, in northern region the scale ranged from 50-150nmol/mL, in central region from 0-300nmol/mL (#TODO:check the upper values here), with the highest values for Salima district (as expected), and the southern region ranged from 50-250nmol/mL.
+
+
+It is important that we think about the displacement of the household location and the potential impacts on the final results. For instance, when two households are in the same EA, the maize Se value is the same for both households. 
 
 See sensitivity analysis. 
 

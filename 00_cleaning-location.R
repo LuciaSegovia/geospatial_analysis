@@ -17,14 +17,16 @@ library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
-############################################################################################################## 
-# Loading the datat
-# Plasma Se & Maize Se conc. (cleaned from 00_cleaning-maize.R)
-# dhs_se  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
-data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
-# Explore the dataset
-head(data.df)
-names(data.df)
+
+###########################################################################################
+
+
+#    Shapefiles
+
+
+##########################################################################################
+
+# Loading Shapefilees 
 
 # Admin Boundaries for Malawi 
 
@@ -36,13 +38,38 @@ ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
 
+# National parks
+
+parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
+ 
 # Explore the shapefile
 head(ea_bnd)
 
 table(sf::st_is_valid(ta_bnd))
 table(sf::st_is_valid(ea_bnd))
+table(sf::st_is_valid(parks))
 
 ta_bnd <- st_make_valid(ta_bnd) # Check this
+
+sort(unique(ta_bnd$ADM2_PCODE))
+length(unique(ta_bnd$ADM2_PCODE))
+
+
+##################################################################################
+
+#    Maize Se conc. 
+
+############################################################################################################## 
+
+# Loading the datat
+#  Maize Se conc. (cleaned from 00_cleaning-maize.R)
+data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+# Explore the dataset
+head(data.df)
+names(data.df)
+
+
 
 # Getting the admin units (the one with the higher no of unique id/names)
 dim(ea_bnd) #9235
@@ -146,7 +173,7 @@ file_name  <- paste0("mwi-maize-se_",aggregation, ".RDS")
 saveRDS(data.df, here::here("data", "inter-output", file_name))
 
 
-# Testing results accoring to different boundary choices:
+# Testing results accoring to different shapefile choices:
 
 test  <- ea_bnd  %>% filter(!DISTRICT %in% unique(Se_admin$DISTRICT))
 length(unique(test$DISTRICT))
@@ -175,54 +202,69 @@ length(unique(ta_bnd$ADM3_PCODE))
 #tm_shape(geodata.df) +
 #tm_symbols(size = 0.09, col = "red")
 
-names(dhs_se)
-class(maize_se)
+##################################################################################
 
-sum(duplicated(dhs_se$unique_id))
-length(unique(dhs_se$survey_cluster1))
+#    Plasma Se conc. 
+
+############################################################################################################## 
+
+# Loading the datat
+# Plasma Se & Maize Se conc. (cleaned from 00_cleaning-maize.R)
+geodata.df  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
+
+# Explore the dataset
+head(geodata.df)
+names(geodata.df)
+
+# Admin Boundaries for Malawi 
+
+sum(duplicated(geodata.df$unique_id))
+length(unique(geodata.df$unique_id))
 
 #Removing values missing Plasma Se value (exc. 34)
-dhs_se  <-  subset(dhs_se, !is.na(selenium))
-length(unique(dhs_se$survey_cluster1))
+geodata.df <-  subset(geodata.df, !is.na(selenium))
+length(unique(geodata.df$survey_cluster1))
 
-#There are 28 that have no sdistrict. 
-count(is.na(dhs_se$sdist))
+#There are 29 that have no sdistrict. 
+sum(is.na(geodata.df$sdist))
+
+plot(geodata.df[, "selenium"])
+
+# Selecting only variables that are interesting. (EA code, EA area, TA code, district & geo)
+admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
+head(admin)
+
+# Getting info on the admin boudaries (EA/district level)
+# Allocating Se values to each admin unit
+
+#Se_admin = st_intersection(data.df, admin)
+Se_admin  <-  st_join(geodata.df, admin)
+
+dim(Se_admin)
+dim(geodata.df)
+sum(is.na(Se_admin$EACODE))
+unique(Se_admin$EACODE)
+length(unique(Se_admin$DISTRICT))
+length(unique(Se_admin$sdist))
+
+# Checking the areas
+sum(duplicated(Se_admin$EACODE))
+length(unique(Se_admin$EACODE)) #9219 --> 102 (not all EAs were sampled)
+length(unique(Se_admin$DISTRICT)) #30 --> 26 (3 lakes + likoma island) # district
+# length(unique(Se_admin$TA_CODE)) #351 --> 88 #ta code
+# sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
+
+# Converting back from spatial obj to dataframe
+data.df  <- Se_admin  %>% st_drop_geometry()  %>% 
+           right_join(., data.df) 
+
+# Saving dataset with aggregation unit for modelling 
+# Admin
+aggregation  <- "admin"
+file_name  <- paste0("mwi-plasma-se_",aggregation, ".RDS")
+saveRDS(data.df, here::here("data", "inter-output", file_name))
 
 
-names(ea_bnd)
-class(ea_bnd)
-
-# Mean area for each EA
-mean(ea_bnd$AREA_KM)
-sd(ea_bnd$AREA_KM)
-
-
-names(ta_bnd)
-class(ta_bnd)
-
-# National parks
-
-parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
-
-View(ta_bnd)
-head(ea_bnd)
-
-
-
-plot(ta_bnd[, "ADM1_EN"])
-
-plot(ea_bnd[, "EACODE"])
-
-
-
-
-
-#Se_check = st_intersection(Se.df, nso_bound)
-
-plot(Se_admin[, "Se_mg"])
-plot(data.df[, "Se_mg"])
-plot(data.df[, "Se_mg"])
 
 names(Se_check)
 names(Se_admin)
@@ -235,7 +277,7 @@ subset(Se_admin, grepl("Likoma", DISTRICT))
 subset(dhs_se, grepl("likoma", haven::as_factor(sdist)))
 length(unique(Se_admin$EACODE))
 
-boxplot(Se_mg ~ EACODE, Se_admin)
+boxplot(Se_mg ~ EACODE, data.df)
 boxplot(pH ~ EACODE, Se_admin)
 
 summary  <- Se_admin  %>% group_by(EACODE)  %>% 

@@ -24,6 +24,12 @@ library(numDeriv)
 
 ########################################################################
 
+##################################################################################
+
+#    Maize Se conc. 
+
+############################################################################################################## 
+
 
 # Loading the maize Se conc. dataset (cleaned from 01.cleaning-location.R)
 data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se_admin.RDS")) # cleaned geo-loc maize Se data
@@ -77,6 +83,8 @@ model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
 
 model1<-lme(logSe ~ pH + BIO1, random=~1|EACODE, data=data.df, method = "ML")
 
+# model1b<-lme(logSe ~ BIO1, random=~1|EACODE, data=data.df, method = "ML")
+
 anova(model0, model1)
 
 # Model 1: with covariates is performing better: Keeping cov.
@@ -110,38 +118,68 @@ anova(model4, model5, model6)
 # check distribution of residuals
 summaplot(residuals(model6,level=0))
 
-#model1  <- model0
+
+## Getting the resutls of the model prediction at diff aggregation/area
+
 # output the results (model 1)
+area  <- "EACODE"
+
 summary(model1)
 fixef(model1) # fixed effects
 n  <- fixef(model1)[1] # fixed effects (intercept) (-7.768999)
+pH_b  <- fixef(model1)[2] # beta (pH) (0.1940353)
+bio1_b  <- fixef(model1)[3] # beta (BIO1) (0.01346473)
 re <- ranef(model1) # random effects (log Se mean per EA)
-
-# output for nested outcome
-#re  <- re$NAME_1
-#re  <- re$ID_3
 re <- tibble::rownames_to_column(re)
 names(re)
-names(re)[1]  <- "EACODE"
+names(re)[1]  <- area
 names(re)[2]  <- "intercept"
-re$se_mean  <- exp(re$intercept+n)
+head(re)
+
+# Calculating the covariate means for predictions
+re_cov  <- data.df  %>% group_by(!!sym(area))  %>% 
+summarise(pH_mean = mean(pH), 
+          BIO1_mean = mean(BIO1))
+
+# Merging mean of the covariates w/ model results
+re  <- merge(re, re_cov)
+
+# Calculating the predicted-mean Se
+re$se_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+
 
 head(re)
 hist(re$se_mean)
 summary(re$se_mean)
+
+# Dataset for modelling
 ea.df  <- re
 
-
 # output the results (model 3)
+area  <- "TA_CODE"
+
 summary(model3)
 fixef(model3) # fixed effects
 n  <- fixef(model3)[1] # fixed effects (intercept) (-7.95739323)
-re <- ranef(model3b)[[2]] # random effects (log Se mean per TA)
+pH_b  <- fixef(model3)[2] # beta (pH) (0.0.20074824)
+bio1_b  <- fixef(model3)[3] # beta (BIO1) (0.01418672)
+re <- ranef(model3)[[1]] # random effects (log Se mean per TA)
 re <- tibble::rownames_to_column(re)
 names(re)
-names(re)[1]  <- "TA_CODE"
+names(re)[1]  <- area
 names(re)[2]  <- "intercept"
-re$se_mean  <- exp(re$intercept+n)
+
+# Calculating the covariate means for predictions
+re_cov  <- data.df  %>% group_by(!!sym(area))  %>% 
+summarise(pH_mean = mean(pH), 
+          BIO1_mean = mean(BIO1))
+
+# Merging mean of the covariates w/ model results
+re  <- merge(re, re_cov)
+
+# Calculating the predicted-mean Se
+re$se_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+
 
 head(re)
 hist(re$se_mean)
@@ -154,15 +192,29 @@ length(unique(data.df$TA_CODE))
 ta.df  <- re
 
 # output the results (model 6)
+area  <- "DISTRICT"
+
 summary(model6)
 fixef(model6) # fixed effects
 n  <- fixef(model6)[1] # fixed effects (intercept) (-7.95956540)
+pH_b  <- fixef(model6)[2] # beta (pH) (0.19218561)
+bio1_b  <- fixef(model6)[3] # beta (BIO1) (0.01449493)
 re <- ranef(model6)[[1]] # random effects (log Se mean per Dist)
 re <- tibble::rownames_to_column(re)
 names(re)
 names(re)[1]  <- "DISTRICT"
 names(re)[2]  <- "intercept"
-re$se_mean  <- exp(re$intercept+n)
+
+# Calculating the covariate means for predictions
+re_cov  <- data.df  %>% group_by(!!sym(area))  %>% 
+summarise(pH_mean = mean(pH), 
+          BIO1_mean = mean(BIO1))
+
+# Merging mean of the covariates w/ model results
+re  <- merge(re, re_cov)
+
+# Calculating the predicted-mean Se
+re$se_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
 
 head(re)
 hist(re$se_mean)
@@ -175,7 +227,81 @@ dist.df  <- re
 
 
 
-#################################### END ##################################################
+##################################################################################
+
+#    Plasma Se conc. 
+
+############################################################################################################## 
+
+
+# Loading the plasma Se conc. dataset (cleaned from 01.cleaning-location.R)
+data.df  <- readRDS(here::here("data", "inter-output","mwi-plasma-se_admin.RDS")) # cleaned geo-loc maize Se data
+
+# Checking missing values: 34 selenium, 13 wealth_quintile
+sum(is.na(data.df$selenium))
+sum(is.na(data.df$wealth_quintile))
+sum(is.na(data.df$BMI))
+data.df[which(is.na(data.df$wealth_quintile)),]
+data.df  <- subset(data.df, !is.na(selenium) &
+ !is.na(wealth_quintile)) # removing NA
+
+dim(data.df)
+# check for normality
+summaplot(data.df$selenium)
+summary(data.df$selenium)
+sum(is.na(data.df$selenium))
+sum(is.na(data.df$wealth_quintile))
+data.df$logSe<-log(data.df$selenium)
+summaplot(data.df$logSe)
+summary(data.df$selenium)
+
+# visualize the data - Checking variability w/i EA by region
+data.df  %>%  dplyr::filter(ADM1DHS == "3")  %>% 
+ggplot() + 
+  geom_boxplot(mapping = aes( y = selenium)) +
+  facet_wrap(~EACODE, ncol = 5) +
+  labs(#x = "Enumeration Area" , 
+       y = "Se conc. in palsma (nmol/mL)") + 
+       geom_hline(yintercept =mean(data.df$selenium), colour = "red")+
+  scale_x_continuous(breaks = 0:4 * 2) +
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+# There are three EAs in central reagion w/ "super high" Se checking if in Salima (YES) & Ntchisi
+# Central c("20501019", "20502023", "20304005")
+# The other EAs high-ish in the south were located in the districts of Chikwawa & Nsanje
+
+ data.df  %>% filter(EACODE %in% c("31002006", "31101010", "31106006", "31120704"))  %>% 
+ select(DISTRICT, EACODE, wealth_quintile)
+
+data.df  %>% group_by(EACODE)  %>% 
+summarise(variance = var(logSe))  %>% 
+arrange(desc(variance))  %>% plot()
+
+# fit the model: Plasma Se
+model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
+
+model1<-lme(logSe ~ wealth_quintile, random=~1|EACODE, data=data.df, method = "ML")
+
+anova(model0, model1)
+
+# check distribution of residuals
+summaplot(residuals(model0,level=0))
+
+model2<-lme(logSe ~1, random=~1|DISTRICT, data=data.df, method = "ML")
+
+model3<-lme(logSe ~1, random=~1|DISTRICT/EACODE, data=data.df, method = "ML")
+
+model3b<-lme(logSe ~ wealth_quintile, random=~1|DISTRICT/EACODE, data=data.df, method = "ML")
+
+
+anova(model2, model3, model3b)
+
+anova(model0, model2, model3)
+
+summary(model0)
+summary(model3)
+
 
 class(re$EACODE)
 admin$EACODE  <- as.character(admin$EACODE)
