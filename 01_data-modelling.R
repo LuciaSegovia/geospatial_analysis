@@ -237,6 +237,16 @@ dist.df  <- re
 # Loading the plasma Se conc. dataset (cleaned from 01.cleaning-location.R)
 data.df  <- readRDS(here::here("data", "inter-output","mwi-plasma-se_admin.RDS")) # cleaned geo-loc maize Se data
 
+
+# Checking BMI & wealth Q (co-linearity)
+EligibleDHS$wealth_quintile  <- haven::zap_labels(EligibleDHS$wealth_quintile)
+plot(EligibleDHS$selenium, EligibleDHS$BMI, col=EligibleDHS$wealth_quintile)
+ggplot(EligibleDHS, aes(BMI, selenium, col=wealth_quintile)) + geom_point()
+
+plot(EligibleDHS$wealth_quintile, EligibleDHS$BMI)
+ggplot(EligibleDHS, aes(BMI, wealth_quintile, col=selenium)) + geom_point()
+
+
 # Checking missing values: 34 selenium, 13 wealth_quintile
 sum(is.na(data.df$selenium))
 sum(is.na(data.df$wealth_quintile))

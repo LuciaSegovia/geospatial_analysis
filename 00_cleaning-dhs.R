@@ -1,4 +1,12 @@
 
+#######################################################################
+#
+#   Cleaning & exploring the DHS data from MNS in Malawi
+#     variables of interest: Plasma Se conc., wealth Q, BMI,
+#     # urbanity, HH location, district, region,
+#
+#####################################################################################################
+
 
 # Loading libraries and functions
 
@@ -6,7 +14,7 @@ library(dplyr) # data wrangling
 library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
 library(survey) # survey design
-options(survey.lonely.psu="adjust") # For Error of one PSU at stage 1
+#options(survey.lonely.psu="adjust") # For Error of one PSU at stage 1
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 source(here::here("CEPHaStat_3.R")) #stat functions
@@ -14,7 +22,6 @@ source(here::here("CEPHaStat_3.R")) #stat functions
 # Loading the datat
 dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) #survey data DHS
 Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data DHS
-GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) #GPS location DHS
 b_admin3  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_3.shp")) #EA boundaries
 b_admin1  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_1.shp")) #District boundaries
 
@@ -467,42 +474,29 @@ EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 
 
 # Saving Se dataset into R object
-saveRDS(EligibleDHS, 
- file=here::here("data", "inter-output","dhs.rds"))
+saveRDS(EligibleDHS,  file=here::here("data", "inter-output","dhs.rds"))
 
 EligibleDHS  <- readRDS(here::here("data","inter-output","dhs.rds")) 
 
-# Checking BMI & wealth Q (co-linearity)
-EligibleDHS$wealth_quintile  <- haven::zap_labels(EligibleDHS$wealth_quintile)
-plot(EligibleDHS$selenium, EligibleDHS$BMI, col=EligibleDHS$wealth_quintile)
-ggplot(EligibleDHS, aes(BMI, selenium, col=wealth_quintile)) + geom_point()
-
-plot(EligibleDHS$wealth_quintile, EligibleDHS$BMI)
-ggplot(EligibleDHS, aes(BMI, wealth_quintile, col=selenium)) + geom_point()
-
-
 # add GPS values
-# TODO: Add Malawi boundaries
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) #GPS location DHS
 GPS<-dplyr::rename(GPS, survey_cluster1='DHSCLUST')
-
-# Only for Se in the dataset
-GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist",  "selenium", "wealth_quintile", "region")], GPS, by='survey_cluster1')
-GPS_Se  <- st_as_sf(GPS_Se, crs = st_crs(4326), coords = c('LONGNUM', 'LATNUM'))
-
- # Saving Se dataset into R object
-saveRDS(GPS_Se, 
- file=here::here("data", "inter-output","dhs_se.rds"))
-
-
-# TODO: for the whole dataset
+dim(GPS)
+# Merging with the dataset
 EligibleDHS <- merge(EligibleDHS, GPS, by='survey_cluster1')
 
-EligibleDHS<-rename(EligibleDHS, latitude='LATNUM')
-EligibleDHS<-rename(EligibleDHS, longitude='LONGNUM')
-EligibleDHS<-rename(EligibleDHS, altitude_in_metres='ALT_GPS')
+EligibleDHS<-dplyr::rename(EligibleDHS, Latitude='LATNUM')
+ EligibleDHS<-dplyr::rename(EligibleDHS, Longitude='LONGNUM')
+EligibleDHS <- dplyr::rename(EligibleDHS, altitude_in_metres='ALT_GPS')
 
-GPS_Se  %>% 
-# st_as_sf(., coords = c('LONGNUM', 'LATNUM'))  %>% 
+# Only for Se in the dataset
+# GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist",  "selenium", "wealth_quintile", "region")], GPS, by='survey_cluster1')
+# GPS_Se  <- st_as_sf(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist", "urbanity",  "selenium", "survey_weight",
+ # "wealth_quintile", "BMI", "" "region")], crs = st_crs(4326), coords = c('LONGNUM', 'LATNUM'))
+ 
+ # Maps-testing: Visualising Se conc.
+EligibleDHS  %>% 
+ st_as_sf(., coords = c('Longitude', 'Latitude'))  %>% 
 ggplot() + 
   geom_sf(aes(color = selenium))
 
@@ -517,17 +511,32 @@ boundaries$shapeID[boundaries$shapeID == "60268647B1308848342151"]
   tm_polygons() +
   tm_shape(dhs_se) + 
   tm_symbols(col = "black", size = "selenium")
+ # Saving Se dataset into R object
+#saveRDS(GPS_Se, file=here::here("data", "inter-output","dhs_se.rds"))
 
+# Saving DHS + GPS dataset into R object
+saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs-gps.rds"))
 
 # Applying survey weight
-EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs.rds"))
+EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs-gps.rds"))
+sum(is.na(EligibleDHS$selenium))
+EligibleDHS  <- subset(EligibleDHS, !is.na(selenium))
 
-class(EligibleDHS$region)
+class(EligibleDHS$urbanity)
 
 EligibleDHS$survey_cluster1  <- as.factor(EligibleDHS$survey_cluster1)
-EligibleDHS$wealth_quintile  <- as.factor(EligibleDHS$wealth_quintile)
-EligibleDHS$sdist  <- as.factor(EligibleDHS$sdist)
-EligibleDHS$region  <- as.factor(EligibleDHS$region)
+EligibleDHS$wealth_quintile  <- as.factor(haven::zap_labels(EligibleDHS$wealth_quintile))
+EligibleDHS$sdist <- haven::zap_labels(EligibleDHS$sdist)
+EligibleDHS$region  <- haven::zap_labels(EligibleDHS$region)
+
+EligibleDHS$wealth_quintile <- factor(EligibleDHS$wealth_quintile,
+    levels=c (1,2,3,4,5), 
+                    labels=c('Lowest Wealth Q','Low Wealth Q',
+                     'Middle Wealth Q', "High Wealth Q", "Highest Wealth Q"), ordered=TRUE)
+
+
+table(EligibleDHS$urbanity)
+table(EligibleDHS$URBAN_RURA)
 
 # Complex sample design parameters
 
@@ -537,8 +546,9 @@ strata=EligibleDHS$survey_strata, #This strata
 
 
 # tabulate indicator by region
-
-svyby(~selenium, ~sdist,  DHSdesign, svymean, vartype=c("se","ci"))
+svyby(~selenium, ~wealth_quintile,  DHSdesign, svymean, vartype=c("se","ci"))
+svyby(~selenium, ~urbanity,  DHSdesign, svymean, vartype=c("se","ci"))
+svyby(~selenium, ~urbanity*wealth_quintile,  DHSdesign, svymean, vartype=c("se","ci"))
 
 svyhist(~selenium,   DHSdesign)
 
@@ -548,6 +558,4 @@ svyboxplot(selenium~sdist,   DHSdesign)
 svyboxplot(selenium~region,   DHSdesign)
 
 
-plot(EligibleDHS$wealth_quintile, EligibleDHS$region, 
-     main="Wealth vs Region",
-     xlab="Wealth Q", ylab="Region", pch=19)
+

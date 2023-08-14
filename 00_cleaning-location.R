@@ -1,7 +1,7 @@
 #######################################################################
 #
 #   Adding information of the level of aggregation for maize Se conc.
-#     in Malawi, info needed to calculate the [redicted-mean of Se conc.
+#     in Malawi, info needed to calculate the predicted-mean of Se conc.
 #   for future use and for modelling. 
 #
 #
@@ -65,6 +65,8 @@ length(unique(ta_bnd$ADM2_PCODE))
 # Loading the datat
 #  Maize Se conc. (cleaned from 00_cleaning-maize.R)
 data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
 # Explore the dataset
 head(data.df)
 names(data.df)
@@ -98,8 +100,10 @@ head(admin)
 # Generating the spatial object (geometry) from data
 geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
+ geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
 
-dim(geodata.df) #1282
+dim(geodata.df) #1282 - maize 804 plasma
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
 
