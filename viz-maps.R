@@ -39,13 +39,6 @@ class(x2)
 
 test_dif  <- setdiff(x1, x2)
 
-data.df  <- data.df  %>% 
-select(selenium, EACODE, survey_cluster1, unique_id, urbanity)  %>% 
-left_join(., maizedata.df, 
-by = c("EACODE"))
-
-View(data.df)
-
 sum(is.na(maizedata.df$Latitude))
 sum(is.na(data.df$Se_mg))
 
@@ -80,6 +73,8 @@ tm_symbols(shape = "urbanity",
 
 dist  <- unique(ea_bnd$DISTRICT)
 
+
+
 # Removing district 23 (Balaka), 25 (Likoma) bc no value w/o discrepancy & lakes
 dist  <- dist[c(1:22, 24, 26:27) ]
 
@@ -113,3 +108,38 @@ tm_layout( main.title = paste0(dist[i], " district"))
 tmap_save(map, filename=paste0("visuals/map_", dist[i], ".png"))
 
 }
+
+# # Loading the data
+grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
+"Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
+names(grain) # checking variables
+
+grain.df   <-  st_as_sf(grain , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
+
+grain.df   <-  grain.df  %>%
+ filter(!is.na(Se_triplequad))
+ 
+map  <- tm_shape(ea_bnd) +
+tm_polygons() +
+tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif]) +
+tm_polygons(col = "red") +
+tm_shape(grain.df) +
+tm_symbols(col = "Crop", 
+size =0.08) +
+tm_layout(legend.show = FALSE) 
+
+tmap_save(map, 
+filename=paste0("visuals/map_GeoNut_se.png"))
+
+data.df  <- data.df  %>% 
+select(selenium, EACODE, survey_cluster1, unique_id, urbanity)  %>% 
+left_join(., maizedata.df, 
+by = c("EACODE"))
+
+# Checking 
+nrow(grain)
+nrow(grain.df)
+sum(!is.na(grain$pH_Wa))
+sum(!is.na(grain$Zn))
+sum(!is.na(grain$Se_triplequad))
