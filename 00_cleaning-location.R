@@ -65,8 +65,7 @@ length(unique(ta_bnd$ADM2_PCODE))
 # Loading the datat
 #  Maize Se conc. (cleaned from 00_cleaning-maize.R)
 data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
-# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
-data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
+
 # Explore the dataset
 head(data.df)
 names(data.df)
@@ -100,8 +99,7 @@ head(admin)
 # Generating the spatial object (geometry) from data
 geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
- geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
+
 
 dim(geodata.df) #1282 - maize 804 plasma
 # Getting info on the admin boudaries (EA/district level)
@@ -213,24 +211,25 @@ length(unique(ta_bnd$ADM3_PCODE))
 ############################################################################################################## 
 
 # Loading the datat
-# Plasma Se & Maize Se conc. (cleaned from 00_cleaning-maize.R)
-geodata.df  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
-
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
 # Explore the dataset
-head(geodata.df)
-names(geodata.df)
+head(data.df)
+names(data.df)
 
 # Admin Boundaries for Malawi 
-
-sum(duplicated(geodata.df$unique_id))
-length(unique(geodata.df$unique_id))
+sum(duplicated(data.df$unique_id))
+length(unique(data.df$unique_id))
 
 #Removing values missing Plasma Se value (exc. 34)
-geodata.df <-  subset(geodata.df, !is.na(selenium))
-length(unique(geodata.df$survey_cluster1))
+data.df <-  subset(data.df, !is.na(selenium))
+length(unique(data.df$survey_cluster1))
+
+geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
 
 #There are 29 that have no sdistrict. 
-sum(is.na(geodata.df$sdist))
+sum(is.na(data.df$sdist))
 
 plot(geodata.df[, "selenium"])
 
@@ -280,8 +279,19 @@ sum(duplicated(Se_admin$unique_id))
 subset(Se_admin, grepl("Likoma", DISTRICT))
 subset(dhs_se, grepl("likoma", haven::as_factor(sdist)))
 length(unique(Se_admin$EACODE))
+length(unique(Se_admin$unique_id))
 
-boxplot(Se_mg ~ EACODE, data.df)
+
+boxplot(selenium ~ EACODE, Se_admin)
+
+class(Se_admin$EACODE)
+Se_admin$EACODE  <- as.integer(Se_admin$EACODE)
+
+ggplot(Se_admin, aes(EACODE, selenium)) + geom_point() +
+facet_wrap(vars(DISTRICT))
+
+Se_admin  %>% dplyr::count(DISTRICT, sdist, urbanity, EACODE)  %>% arrange(desc(DISTRICT))  %>% View()
+
 boxplot(pH ~ EACODE, Se_admin)
 
 summary  <- Se_admin  %>% group_by(EACODE)  %>% 
@@ -295,24 +305,12 @@ plot(summary[, "sd_logSe"])
 #Checking district that are different between reported in DHS
 # And assigned by geographic location. 
 
-check  <- setdiff(Se_admin$sdist, Se_admin$DIST_CODE)
 
 test  <- subset(Se_admin,
- haven::zap_labels(sdist) == "107", 
-# DIST_CODE == "105",
-select = c(unique_id, sdist, DIST_CODE, DISTRICT, selenium)) 
-
-test  <- subset(dhs_se,
  haven::zap_labels(sdist) == "105", 
- select = c(unique_id, sdist, selenium)) 
+# DIST_CODE == "105",
+select = c(unique_id, sdist, DISTRICT, selenium)) 
 
-#tm_shape(nso_bound) 
-
-ea_bnd  %>%  #filter(ADM2_EN == "Mzimba")  %>% 
-tm_shape() +
-tm_polygons() +
-tm_shape(data.df) +
-tm_symbols(size =0.3)
 
 check_location  <- subset(Se_admin, sdist %in% check, 
 select = c(unique_id))  %>%  st_drop_geometry()  %>% pull()
