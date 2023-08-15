@@ -261,6 +261,7 @@ DHSDATA<- dhs.df %>% dplyr::rename(
   education_level= "v106"
 )
 
+
 # Socio-economic data exploration:
 
 # wealth quintile poorest-richest == 1-5
@@ -537,6 +538,9 @@ EligibleDHS$wealth_quintile <- factor(EligibleDHS$wealth_quintile,
 
 table(EligibleDHS$urbanity)
 table(EligibleDHS$URBAN_RURA)
+table(EligibleDHS$had_malaria)
+table(EligibleDHS$Malaria_test_result)
+table(EligibleDHS$ANY_INFLAMMATION)
 
 # Complex sample design parameters
 

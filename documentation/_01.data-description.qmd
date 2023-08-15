@@ -79,6 +79,8 @@ a. Micronutrient survey data (MW_WRA). This dataset provided information on biom
 -   m436 (height)
 -   sel (Plasma Se (ng/ml))
 -   m415 (Took any kind of vitamin or mineral tablet/syrup/powder)
+-   m431 (Malaria test result)
+-   agp_crp_c1 (ANY_INFLAMMATION)
 
 b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
 
@@ -96,10 +98,17 @@ Variables of interest:
 -   v155 (Literacy)
 
 -   v190 (Wealth index)
+-   v190a (Wealth index for urban/rural) 
 
 -   v002 (Household number)
 
 -   v001 (Cluster number)
+
+-   v463a (is_smoker, Only cover cigarettes (other smoking variables))
+
+-   m420 (had_malaria)
+
+-   v150 (Relationship to household head)
 
 b.  MWGE7AFL (geographic data)  Variable: DHSCLUST (to be used w/ V001). 
 

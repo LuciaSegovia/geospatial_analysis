@@ -7,8 +7,9 @@
 #####################################################################################################
 
 # Loading libraries and functions
+install.packages("rgeos")
 
-library(dplyr) # data wrangling 
+library(dplyr) # data wrangling
 #library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
 #library(survey) # survey design
@@ -79,9 +80,9 @@ ggplot(data = data.df,
 #data.df$BIO1b  <- data.df$BIO1/10
 
 # fit the model: Maize Se
-model0<-lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
+model0 <- lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
 
-model1<-lme(logSe ~ pH + BIO1, random=~1|EACODE, data=data.df, method = "ML")
+model1 <-lme(logSe ~ pH + BIO1, random=~1|EACODE, data=data.df, method = "ML")
 
 # model1b<-lme(logSe ~ BIO1, random=~1|EACODE, data=data.df, method = "ML")
 
@@ -144,16 +145,19 @@ summarise(pH_mean = mean(pH),
 # Merging mean of the covariates w/ model results
 re  <- merge(re, re_cov)
 
+
 # Calculating the predicted-mean Se
-re$se_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+re$maizeSe_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
 
 
 head(re)
-hist(re$se_mean)
-summary(re$se_mean)
+hist(re$maizeSe_mean)
+summary(re$maizeSe_mean)
 
 # Dataset for modelling
 ea.df  <- re
+head(ea.df)
+saveRDS(ea.df, here::here("data", "inter-output", "maizeSe-mean-EA.RDS"))
 
 # output the results (model 3)
 area  <- "TA_CODE"
@@ -178,12 +182,12 @@ summarise(pH_mean = mean(pH),
 re  <- merge(re, re_cov)
 
 # Calculating the predicted-mean Se
-re$se_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+re$re$maizeSe_mean  <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
 
 
 head(re)
-hist(re$se_mean)
-summary(re$se_mean)
+hist(re$re$maizeSe_mean )
+summary(re$re$maizeSe_mean )
 
 #Checking that all the TA in the data are there
 length(unique(re$TA_CODE))
@@ -214,17 +218,18 @@ summarise(pH_mean = mean(pH),
 re  <- merge(re, re_cov)
 
 # Calculating the predicted-mean Se
-re$se_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+re$re$maizeSe_mean  <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
 
 head(re)
-hist(re$se_mean)
-summary(re$se_mean)
+hist(re$re$maizeSe_mean )
+summary(re$re$maizeSe_mean )
 
 length(unique(re$DISTRICT))
 length(unique(data.df$DISTRICT))
 
 dist.df  <- re
 
+saveRDS(dist.df, here::here("data", "inter-output", "maizeSe-mean-DIST.RDS"))
 
 
 ##################################################################################
