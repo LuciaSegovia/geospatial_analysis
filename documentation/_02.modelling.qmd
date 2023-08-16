@@ -23,7 +23,9 @@ It is important that we think about the displacement of the household location a
 See sensitivity analysis. 
 
 ## Parameter inclusion
+(2023/08/16)
 
+(2023/08/15)
 We run it without the smoking variable (`is_smoker`) first because it was providing some errors (bc the varible class). We could add it in the future, and/or combine with the other smoking variables. 
 
 
@@ -38,7 +40,11 @@ wealth_quintile + BMI + urbanity +
 
 ### Test 1: Irregular lattice model (areal data)
 
-At EA - level, it seemed that the random effect model was performing better than the spatial model, and convolution model.
+At EA level, it seemed that the random effect model was performing better than the spatial model, and convolution model.
+
+At district level, it seemd that the convolution model was performin the best, followed quite closely by the random effect. 
+
+For both aggregation levels, the likelihood models were showing opposite resutls as the other parameter. 
 
 ### Test 2: Point pattern model 
 

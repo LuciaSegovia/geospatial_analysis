@@ -1,12 +1,14 @@
+# Cleaning the environment
+rm(list = ls())
+
 # Loading libraries
 
 library(INLA) # Modelling (RINLA)
 library(sf) # spatial data manipulation
 library(spdep) # grid and neighbours
 library(dplyr) # data wrangling
-library(maptools)
-library(raster)
-library(rgeos)
+#library(maptools) #spatial data manipulation
+#library(rgeos)
 
 # Loading Shapefiles
 
@@ -17,22 +19,19 @@ ea_bnd <- st_read(here::here(
   "..", "PhD_geospatial-modelling", "data", "mwi-boundaries",
    "EN_NSO", "eas_bnd.shp"))
 
- ea  <-   readOGR(here::here(
-  "..", "PhD_geospatial-modelling", "data", "mwi-boundaries",
-   "EN_NSO", "eas_bnd.shp"))
-
 ea_bnd$EACODE <- as.integer(ea_bnd$EACODE)
 
-# Aggregating the values by district for the model
-dist <- aggregate(ea,  "DISTRICT")
-dist <- aggregate(ea) # Aggregate the whole country
+# District
+dist_bnd <- st_read(here::here(
+  "..", "PhD_geospatial-modelling", "data", "mwi-boundaries",
+   "EN_NSO", "dist_bnd.shp"))
 
 
-plot(dist)
+
 
 # Loading predicted mean
 maize_se <- readRDS(here::here("data", "inter-output",
-"maizeSe-mean-EA.RDS"))
+"maizeSe-mean-predicted.RDS"))
 
 maize_se$EACODE <- as.integer(maize_se$EACODE)
 
@@ -51,27 +50,37 @@ plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
 sum(duplicated(plasma_se$unique_id))
 names(plasma_se)
 
-test  <- plasma_se %>% select(-geometry)  %>% 
-left_join(., maize_se  %>% select(1:5, 22), 
-by = "EACODE")
-sum(is.na(test$maizeSe_mean))
+# Generating a dataset w/ plasma Se & maize Se at admin (area) level
+area  <- "DISTRICT"
 
-test  <- subset(test, !is.na(maizeSe_mean))
+maize_se  %>% filter(admin == area)  %>% 
+ select(1, 5)  %>%  dplyr::rename_at(vars(admin_id), ~area)  %>% 
+head()
+
+test  <- plasma_se %>% select(-geometry)  %>% 
+left_join(., maize_se %>% filter(admin == area)  %>% 
+ select(1, 5)  %>%  dplyr::rename_at(vars(admin_id), ~area))
+
+sum(is.na(test$maizeSe_mean))
+# test  <- subset(test, !is.na(maizeSe_mean))
+
 sum(duplicated(test$unique_id))
 nrow(test)
 names(test)
 class(test)
 
+test  <- left_join(test, dist_bnd)
+
 geom  <- st_geometry(test$geometry)
-class(geom)
 st_geometry(test)  <- geom
-
-
+class(test)
 
 test  <- subset(test, !is.na(Plasma_Se))
 test  <- subset(test, !is.na(wealth_quintile))
+test  <- subset(test, !is.na(BMI))
+test  <- subset(test, !is.na(had_malaria))
 test  <- subset(test, !is.na(ANY_INFLAMMATION))
-sum(is.na(test$urbanity))
+sum(is.na(test$ANY_INFLAMMATION))
 
 test.adj <- poly2nb(test)
 W.test <- nb2mat(test.adj, style = "B") 
@@ -139,6 +148,9 @@ malawi.bym <- inla(update(malawi.form, . ~ . + f(ID, model = "bym", graph = W.te
 
 summary(malawi.bym)
 
+par(mfrow = c(1, 2))
+plot(test[, "maizeSe_mean"])
+plot(test[, "Plasma_Se"])
 
 ## INLA for point data
 
@@ -148,3 +160,24 @@ geom <- data.df$geometry
 
 mesh <- inla.mesh.2d(loc = geom, max.edge = c(0.5, 1))
 
+names(plasma_se)
+
+test_mesh  <- cbind(plasma_se$Longitude, plasma_se$Latitude)
+
+min(test_mesh)
+max(test_mesh)
+
+
+mesh <- inla.mesh.2d(loc = test_mesh,  
+offset = c(-0.1, 0.4),          
+ max.edge = c(-20,1))
+
+plot(mesh)
+
+# the mwi bnd can be obtained in (00_cleaning-boundaries.R)
+mwi.mesh   <- inla.mesh.2d(boundary = malawi_bnd, 
+cutoff = 0.1,
+ offset = c(1, 0.5), 
+ max.edge = c(0.1, 0.5))
+
+plot(mwi.mesh)

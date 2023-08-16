@@ -7,7 +7,7 @@
 #####################################################################################################
 
 # Loading libraries and functions
-install.packages("rgeos")
+#install.packages("rgeos")
 
 library(dplyr) # data wrangling
 #library(plyr) # weighted data analysis
@@ -145,7 +145,6 @@ summarise(pH_mean = mean(pH),
 # Merging mean of the covariates w/ model results
 re  <- merge(re, re_cov)
 
-
 # Calculating the predicted-mean Se
 re$maizeSe_mean <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
 
@@ -156,8 +155,12 @@ summary(re$maizeSe_mean)
 
 # Dataset for modelling
 ea.df  <- re
+ea.df$admin  <- area
+names(ea.df)[names(ea.df) == area]  <- "admin_id"
+
 head(ea.df)
-saveRDS(ea.df, here::here("data", "inter-output", "maizeSe-mean-EA.RDS"))
+
+#saveRDS(ea.df, here::here("data", "inter-output", "maizeSe-mean-EA.RDS"))
 
 # output the results (model 3)
 area  <- "TA_CODE"
@@ -182,18 +185,21 @@ summarise(pH_mean = mean(pH),
 re  <- merge(re, re_cov)
 
 # Calculating the predicted-mean Se
-re$re$maizeSe_mean  <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+re$maizeSe_mean  <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
 
 
 head(re)
-hist(re$re$maizeSe_mean )
-summary(re$re$maizeSe_mean )
+hist(re$maizeSe_mean )
+summary(re$maizeSe_mean )
 
 #Checking that all the TA in the data are there
-length(unique(re$TA_CODE))
+length(unique(re$admin_id))
 length(unique(data.df$TA_CODE))
 
+# Dataset for modelling
 ta.df  <- re
+ta.df$admin  <- area
+names(ta.df)[names(ta.df) == area]  <- "admin_id"
 
 # output the results (model 6)
 area  <- "DISTRICT"
@@ -206,7 +212,7 @@ bio1_b  <- fixef(model6)[3] # beta (BIO1) (0.01449493)
 re <- ranef(model6)[[1]] # random effects (log Se mean per Dist)
 re <- tibble::rownames_to_column(re)
 names(re)
-names(re)[1]  <- "DISTRICT"
+names(re)[1]  <- area
 names(re)[2]  <- "intercept"
 
 # Calculating the covariate means for predictions
@@ -218,19 +224,22 @@ summarise(pH_mean = mean(pH),
 re  <- merge(re, re_cov)
 
 # Calculating the predicted-mean Se
-re$re$maizeSe_mean  <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+re$maizeSe_mean  <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
 
 head(re)
-hist(re$re$maizeSe_mean )
-summary(re$re$maizeSe_mean )
+hist(re$maizeSe_mean )
+summary(re$maizeSe_mean )
 
 length(unique(re$DISTRICT))
 length(unique(data.df$DISTRICT))
 
 dist.df  <- re
+dist.df$admin  <-  area
+names(dist.df)[names(dist.df) == area]  <- "admin_id"
 
-saveRDS(dist.df, here::here("data", "inter-output", "maizeSe-mean-DIST.RDS"))
+data.df  <-  do.call(rbind, list(ea.df, ta.df, dist.df))
 
+saveRDS(data.df, here::here("data", "inter-output", "maizeSe-mean-predicted.RDS"))
 
 ##################################################################################
 

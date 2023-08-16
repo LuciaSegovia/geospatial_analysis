@@ -130,7 +130,7 @@ ea_bnd  %>% dplyr::filter(EACODE %in% c("31008901", "31001043")) %>%
 tm_shape() +
 tm_polygons() +
 tm_shape(missing[1,]) +
-tm_symbols(col ="red", size =0.1)
+tm_symbols(col ="#df2020", size =0.1)
 
 # Manually fixing missing EACODES
 Se_admin[80,]
