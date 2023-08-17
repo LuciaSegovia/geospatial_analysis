@@ -30,7 +30,7 @@ ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
 
 # Loading Plasma Se with the EACODE allocated
 data.df  <- readRDS(here::here("data", "inter-output","mwi-plasma-se_admin.RDS"))
-maizedata.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se_admin.RDS"))
+maizedata.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS"))
 
 x1  <- subset(data.df, !is.na(selenium)) %>% distinct(EACODE)  %>% pull()
 x2  <- as.integer(unique(maizedata.df$EACODE))
@@ -79,6 +79,7 @@ dist  <- unique(ea_bnd$DISTRICT)
 dist  <- dist[c(1:22, 24, 26:27) ]
 
 dist[i]
+
 maizedata.df   <-  st_as_sf(maizedata.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
@@ -89,23 +90,23 @@ data.df   <-  st_as_sf(data.df , coords =c("Longitude", "Latitude"),
 
 for(i in 1:length(dist)){
 
-test  <- maizedata.df  %>% filter(DISTRICT == dist[i])
+test  <- Se_admin  %>% filter(DISTRICT == dist[i])
 test2  <- data.df  %>% filter(DISTRICT == dist[i])
 
 map  <- ea_bnd  %>% filter(DISTRICT == dist[i])  %>% 
 tm_shape() +
 tm_polygons() +
-tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif & ea_bnd$DISTRICT == dist[i]]) +
+tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% ea & ea_bnd$DISTRICT == dist[i]]) +
 tm_polygons(col = "red") +
 tm_shape(test) +
-tm_symbols(size = "Se_mg", 
+tm_symbols(size = "pred.Se",
 col = "blue") +
 tm_shape(test2) +
 tm_symbols(size = "selenium", 
 col = "green") +
 tm_layout( main.title = paste0(dist[i], " district"))
 
-tmap_save(map, filename=paste0("visuals/map_", dist[i], ".png"))
+tmap_save(map, filename=paste0("visuals/map-pred_", dist[i], ".png"))
 
 }
 

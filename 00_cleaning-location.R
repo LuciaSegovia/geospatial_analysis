@@ -64,7 +64,8 @@ length(unique(ta_bnd$ADM2_PCODE))
 
 # Loading the datat
 #  Maize Se conc. (cleaned from 00_cleaning-maize.R)
-data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+#data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+data.df  <- geodata.df # cleaned geo-loc maize Se data
 
 # Explore the dataset
 head(data.df)
@@ -101,7 +102,7 @@ geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
 
-dim(geodata.df) #1282 - maize 804 plasma
+dim(geodata.df) #1282 - maize 804 plasma # GeoNut 1802
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
 
@@ -113,12 +114,20 @@ sum(is.na(Se_admin$EACODE))
 
 missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
 
+# Fixint missing (Pred. Se values) 779
+# Se_admin[779, "EACODE"] 
+# Se_admin[779, ]  <-  st_join(missing[,1:13], admin, st_is_within_distance, 
+#             dist = units::set_units(90, "m")) 
+
 #Checking missing values
-#tm_shape(ea_bnd) +
-#tm_polygons() +
-#tm_shape(missing) +
-#tm_symbols(col ="Se_mg", size =0.1)
-#
+tm_shape(ea_bnd) +
+tm_polygons() +
+tm_shape(missing) +
+tm_symbols(col ="red", size =0.1)
+
+# st_join(missing[,1:13], admin, st_is_within_distance, 
+#             dist = units::set_units(90, "m"))  %>% pull(EACODE)
+
 st_join(missing[,1:5], admin, st_is_within_distance, 
             dist = units::set_units(4500, "m"))
 
@@ -267,6 +276,25 @@ aggregation  <- "admin"
 file_name  <- paste0("mwi-plasma-se_",aggregation, ".RDS")
 saveRDS(data.df, here::here("data", "inter-output", file_name))
 
+
+# Checking co-location at EA level for plasma and maize
+plasma_se  <- readRDS(here::here("data", "inter-output", "mwi-plasma-se_admin.RDS"))
+head(plasma_se)
+
+test  <- plasma_se %>% filter(!is.na(selenium))  %>% select(-geometry)  %>%  
+left_join(., Se_admin, by = "EACODE")
+
+sum(is.na(test$selenium))
+ea  <- unique(test$EACODE[is.na(test$pred.Se)])
+
+unique(test$EACODE)
+
+tm_shape(ea_bnd) +
+tm_polygons() +
+tm_shape(test$geometry[!is.na(test$pred.Se)]) +
+tm_symbols(col = "blue") +
+tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% ea]) +
+tm_polygons(col = "red")
 
 
 names(Se_check)
