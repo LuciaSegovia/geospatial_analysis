@@ -6,14 +6,14 @@
 #
 #
 #####################################################################################################
-
+# Cleaning the enviroment
+rm(list=ls())
 
 # Loading libraries and functions
 
 library(dplyr) # data wrangling 
 library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
-library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
@@ -62,10 +62,13 @@ length(unique(ta_bnd$ADM2_PCODE))
 
 ############################################################################################################## 
 
-# Loading the datat
+# Loading the data ----
 #  Maize Se conc. (cleaned from 00_cleaning-maize.R)
-#data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
-data.df  <- geodata.df # cleaned geo-loc maize Se data
+#file_name  <- "maize-se" # cleaned geo-loc maize Se data
+maize_values  <- "predicted-maizeSe" # cleaned  predicted maize Se data
+file_name  <- paste0("mwi-", maize_values, ".RDS")
+data.df  <- readRDS(here::here("data", "inter-output", file_name)) 
+
 
 # Explore the dataset
 head(data.df)
@@ -114,10 +117,16 @@ sum(is.na(Se_admin$EACODE))
 
 missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
 
-# Fixint missing (Pred. Se values) 779
-# Se_admin[779, "EACODE"] 
-# Se_admin[779, ]  <-  st_join(missing[,1:13], admin, st_is_within_distance, 
-#             dist = units::set_units(90, "m")) 
+# Fixint missing (Pred. Se values) 
+# First one (row = 779 at 90m, EACODE == 20907012)
+ Se_admin[779, "EACODE"] 
+ Se_admin[779, ]  <-  st_join(missing[,1:ncol(geodata.df)], admin, st_is_within_distance, 
+             dist = units::set_units(90, "m"))[1,] 
+
+# First one (rows = c(1803, 1804) at 300m, EACODE == 20701017) 
+ Se_admin[c(1803, 1804),  "EACODE"] 
+ Se_admin[c(1803, 1804), ]  <-  st_join(missing[,1:ncol(geodata.df)], admin, st_is_within_distance, 
+             dist = units::set_units(300, "m"))
 
 #Checking missing values
 tm_shape(ea_bnd) +
@@ -125,8 +134,9 @@ tm_polygons() +
 tm_shape(missing) +
 tm_symbols(col ="red", size =0.1)
 
-# st_join(missing[,1:13], admin, st_is_within_distance, 
-#             dist = units::set_units(90, "m"))  %>% pull(EACODE)
+#3 - 250> <300
+st_join(missing[,1:13], admin, st_is_within_distance, 
+             dist = units::set_units(190, "m"))  %>% pull(EACODE)
 
 st_join(missing[,1:5], admin, st_is_within_distance, 
             dist = units::set_units(4500, "m"))
@@ -174,13 +184,12 @@ length(unique(Se_admin$TA_CODE)) #351 --> #ta code
 sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
 
 # Converting back from spatial obj to dataframe
-data.df  <- Se_admin  %>% st_drop_geometry()  %>% 
-           right_join(., data.df) 
+data.df  <- Se_admin  %>% st_drop_geometry()  %>%  #removing geometry
+            right_join(., data.df)  # adding back the long/lat variable
 
 # Saving dataset with aggregation unit for modelling 
-# Admin
-aggregation  <- "admin"
-file_name  <- paste0("mwi-maize-se_",aggregation, ".RDS")
+# Admin 
+file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
 saveRDS(data.df, here::here("data", "inter-output", file_name))
 
 
@@ -285,9 +294,11 @@ test  <- plasma_se %>% filter(!is.na(selenium))  %>% select(-geometry)  %>%
 left_join(., Se_admin, by = "EACODE")
 
 sum(is.na(test$selenium))
-ea  <- unique(test$EACODE[is.na(test$pred.Se)])
+sum(is.na(test$pred.Se))
 
-unique(test$EACODE)
+ea  <- unique(test$EACODE[is.na(test$pred.Se)]) #64
+
+length(ea)/length(unique(test$EACODE))
 
 tm_shape(ea_bnd) +
 tm_polygons() +

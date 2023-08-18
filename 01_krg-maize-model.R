@@ -1,10 +1,14 @@
 
+# Cleaning the enviroment
+rm(list=ls())
+
+# Loading libraries ----
 library(dplyr)
 library("sp") # Spatial manipulation
 library("sf") # Spatial manipulation
 library("gstat") # Spatial modelling
 
-# Loading the data
+# Loading the data -----
 grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
 "Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
 
@@ -13,7 +17,7 @@ head(grain)
 summary(grain)
 class(grain)
 
-# Generating spatial dataset
+# Generating spatial dataset ----
 geodata.df  <- st_as_sf(grain, coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
@@ -26,14 +30,14 @@ sum(is.na(geodata.df$BIO1))
 sedata.df  <- na.omit(geodata.df) # No missing values
 geodata.df <- subset(geodata.df, !is.na(pH_Wa)&!is.na(BIO1)) # to add predicted values
 
-# Variogram and fit variogram
+# Variogram and fit variogram -----
 vgm <- variogram(log(Se_triplequad) ~ pH_Wa + BIO1, sedata.df)
 fit.vgm <- fit.variogram(vgm, vgm("Sph"))
 
 krg <- krige(log(Se_triplequad) ~ pH_Wa + BIO1, sedata.df , geodata.df, model = fit.vgm)
 
-## -----------------------------------------------------------------------------
-#Add estimates to geodata.df
+
+# Add estimates to geodata.df -----
 geodata.df$Se.krg <- krg$var1.pred
 geodata.df$Se.krg.sd <- sqrt(krg$var1.var)
 
@@ -47,7 +51,16 @@ sum(is.na(geodata.df$pred.Se))
 sum(is.na(geodata.df$Se_triplequad))
 
 head(geodata.df)
+names(geodata.df)
 
+
+# Converting back from spatial obj to dataframe
+grain.df  <- geodata.df  %>% st_drop_geometry()  %>%  #removing geometry
+            right_join(., grain)  # adding back the long/lat variable
+
+            
+# Saving the dataset -----
+saveRDS(grain.df, here::here("data", "inter-output", "mwi-predicted-maizeSe.RDS"))
 
 
 

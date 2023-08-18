@@ -110,9 +110,9 @@ Variables of interest:
 
 -   v150 (Relationship to household head)
 
-b.  MWGE7AFL (geographic data)  Variable: DHSCLUST (to be used w/ V001). 
+b.  MWGE7AFL (geographic data): Variable: DHSCLUST (to be used w/ V001). 
 
-GPS displacement within district. 
+GPS displacement within district. Also, according to the documentation the cluster "centre" recorded is the "center of the populated place in the cluster" (GPS_Displacement_README, DHS, 2014).
 
 #TODO: Check README and recommended readings to understand displacement and what it is possible and not possible for analysis. 
 
