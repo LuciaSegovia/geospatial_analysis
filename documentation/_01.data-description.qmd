@@ -16,12 +16,28 @@ The objectives of these exploratory analysis are:
 
 ### 1. Geo-referenced crop (maize) composition (Se in maize) in Malawi
 
+#### 1.1. Main dataset: GeoNutrition
+
+This dataset was obtained from this [open repository](https://doi.org/10.6084/m9.figshare.15911973), and it is described by Kumssa et al, (2022). We decided to use this dataset instead of the one reported below (see excluded data sources) because it provided the raw dataset, as well as more metadata.
+
+This repository contains a dataset with the raw values (i.e., as extracted from the analytical device), and a processed one, which has turned values which were not analysed (NM), below the limit of detection (<\LOD), or negative values into NAs.  This is problematic for our analysis as Se in Malawi was highly affected due to the very low values of Se in maize in that country. Therefore, some considerations were taken and are explained in the data exploration section (Section 2.x) as well as in the modelling section (Section 3.x). See also notes in Kumssa et al, (2022). 
+
+#### 1.2. Complementary dataset: Chilimba 
+
+b. Malawi maize grain and soil Se concentration dataset (2009-2010). It is publicly available [here](), but we obtained a more extensive dataset from the co-authors of the manuscript (L.A.) including the values of pH (in water) of the soil where samples were collected. 
+
+File name: data/maize/AllanChilimbaFieldData_forLucia_20230615.xlsx
+
+**Variables** 
+
+#### 1.3. Excluded sources of data
+
 a. Malawi maize grain and soil Se concentration dataset (2018). It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
 
 File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx 
 (data/maize/Malawi_Grain.csv)
 
-**Variables:** Those marked with (*) where included. 
+Variables: 
 
 -   Latitude/ Longitude*
 -   Crop
@@ -34,13 +50,8 @@ File name: GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx
 -   BIO12
 -   TIM
 
-b. Malawi maize grain and soil Se concentration dataset (2009-2010). It is publicly available [here](), but we obtained a more extensive dataset from the co-authors of the manuscript (L.A.) including the values of pH (in water) of the soil where samples were collected. 
 
-File name: data/maize/AllanChilimbaFieldData_forLucia_20230615.xlsx
-
-**Variables**:
-
-c. Malawi crops, including maize, mineral concentration dataset (2012-2013) and soil pH. It is publicly available [here](https://www.sciencedirect.com/science/article/pii/S0048969714014764). (Joy et al., 2014)(@ref) - **EXCLUDED** For more information check the section 2 (Cleaning and Exploratory analysis).
+b. Malawi crops, including maize, mineral concentration dataset (2012-2013) and soil pH. It is publicly available [here](https://www.sciencedirect.com/science/article/pii/S0048969714014764). (Joy et al., 2014)(@ref) - **EXCLUDED** For more information check the section 2 (Cleaning and Exploratory analysis).
 
 File source: Supplemantary data on https://www.sciencedirect.com/science/article/pii/S0048969714014764.
 
@@ -51,8 +62,6 @@ Tabs:1-10: Used in this analysis:
 - STable6: crop sample info (maize Se) and coordenates
 - STable5: Soil samples (soil pH)
 - STable10: Information on each crop and its corresponding soil sample (Sample_number, Soil_sample).
-
-**Variables:**
 
 **Cleaning script:** 00_cleaning_2012-Joy.R
 
@@ -270,13 +279,20 @@ It is at the cluster level, hence we need to check the variation within cluster 
 
 ## 2) Maize Se concentration in Malawi
 
-### 2.1) GeoNutrition (Gashu et al., 2019)
+### 2.1) GeoNutrition (Kumssa et al., 2022)
 
-We extracted the variables of interest from the dataset: Se conc. (only in maize), pH, MAT, and the coordenates. Then we are doing some data operations, for instance, removing NAs (values >999) in Se conc. and checking missing values for the covariates. 
+We extracted multiple variables of interest (including the LOD), which served to: 
+    a) check the NAs values in the dataset (and previously reported in the now excluded dataset in Gashu et al., 2021), and
+    b) to add those values as possible solution for accounting for the high number of missing Se conc. values.
 
-Two pH values were missing, hence we may exclude those values for the modelling, also there were three locations with missing MAT. This could be completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
+Six Se values was not measure ID == c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686") (see MWI_CropSoilData_Raw.csv), which needed to be transformed into `NA` in the variable `Se_std`. 
+
+Additionally, the MAT should be added to this dataset as it is not inclued, as this study only reproted analytical data carried as part of the GeoNutrition. These values were completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
+# REVIEW: For risk of bias (i.e., over-estimation and over-representation of high values).
 
 #### Spatial pre-liminary analysis
+
+a. The missing (i.e., <\LDO values) are spatially clustered, which probably will influence (unbalancing) our results (Kumssa et al, 2022). We hyposthesised that this is due to high concentration of very low Se conc. values in those affected regions. 
 
 There is a missmatch between the EAs and the maize Se conc. sampling. Resulting in 2200 () EAs without a maize Se conc. value. There are two potentital reasons for this to happen:
 
@@ -296,7 +312,7 @@ In order to minimise the impact on our model, and after checking that maize cons
 
 #### Fresh weight
 #REVIEW: Moisture assumptions
-Transforming Se in dry weight (mcg/kg DW) to Se in fresh weght (mcg/100g FW EP).
+Transforming Se in dry matter (mcg/kg DM) to Se in fresh weght (mcg/100g FW EP).
 
 Because, moisture content was not estimated, we are assuming same moisture content as the one measuere in the study of Hwang et al., (2016) for white maize. This is one of the assumptions that should be listed and tested, as for that study we have some data with their respective GPS, hence some extra analysis could be performed
 
@@ -314,7 +330,16 @@ When we combined both dataset we can see that, as expected, the Se conctration i
 For more inforamtion on that see the exploratory analysis and the variable selection for the model reported in Gashu et al., (2019) [@ref] and the analysis done by Lark et al. (2019), here are the [scripts](https://github.com/rmlark/GeoNutrition/blob/main/Soil_Crop_comparisons/Malawi/Malawi_model.R). 
 
 
-### 2.3) Mineral concentration in crops (Joy et al., 2014)
+### 2.3) Excluded datasets
+
+#### GeoNutrition (Gashu et al., 2021)
+
+We extracted the variables of interest from the dataset: Se conc. (only in maize), pH, MAT, and the coordenates. Then we are doing some data operations, for instance, removing NAs (values >999) in Se conc. and checking missing values for the covariates. 
+
+Two pH values were missing, hence we may exclude those values for the modelling, also there were three locations with missing MAT. This could be completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
+
+
+#### Mineral concentration in crops (Joy et al., 2014)
 
 This study collected data for various crops, hence we needed to clean the dataset to obtain only the information for Maize Grain. We also excluded maize flour to keep it consistent with our dataset. In addition, soil pH values were obtained to be used as model covariates. 
 

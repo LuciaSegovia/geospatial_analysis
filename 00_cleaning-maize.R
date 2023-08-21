@@ -5,7 +5,7 @@ library(sp)
 library(sf) # for reading in and writting shapefiles
 library(raster) # raster manipulation
 library(tmap)  #spatial data manipulation and visualisation
-library(sfheaders) # deconstructing’ and ‘reconstructing’ sf objects
+library(sfheaders) # 'deconstructing’ and ‘reconstructing’ sf objects
 
 #source("CEPHaStat_3.R")
 # Loading data 
@@ -19,6 +19,10 @@ names(maize)
 #Renaming variable & adding info on data source
 names(maize)[c(23, 28)]  <- c( "Se_mg", "pH")
 maize$survey  <- "Chilimba_2009"
+
+mean(maize$Se_mg, na.rm = TRUE)
+min(maize$Se_mg, na.rm = TRUE)
+max(maize$Se_mg, na.rm = TRUE)
 
 #Checking the spatial function
 cord.dec1  =  SpatialPoints(cbind( maize$Longitude_DD, maize$Latitude_DD), proj4string = CRS("+proj=longlat"))
@@ -167,3 +171,61 @@ sum(is.na(data.df$BIO1)) # completed
 # Saving dataset for modelling 
 
 saveRDS(data.df, here::here("data", "inter-output", "mwi-maize-se.RDS"))
+
+
+
+# Loading data (Kumssa - GeoNut) ----
+data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV",
+ "MWI_CropSoilData_NA.csv"))
+lod.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV",
+ "MWI_Crop_LOD_ByICPRun.csv"))
+
+head(lod.df)
+names(data.df)
+names(lod.df)
+names(lod.df)[25]  <- "Se_LOD"
+
+# Getting variables of interest 1:12 (sample descript), grain_se and pH
+data.df  <-  data.df[,c(1:12, 36, 95)]
+
+# Merging the LODs so we can add that info to the dataset
+
+data.df  <- data.df  %>% left_join(., lod.df[, c(1, 25)], 
+by = c("Crop_ICP_Run_Se" = "Crop_ICP_Run"))  %>% 
+mutate(Se_std = ifelse(!is.na(Se_grain), Se_grain, Se_LOD), # Generating a varible that change NA to LOD values
+LOD_Check = ifelse(Se_grain>Se_LOD, Se_grain, NA)) # Checking that all items below their LOD were converted into NA
+
+#Checking differences between the two
+sum(is.na(data.df$Se_grain))
+sum(is.na(data.df$LOD_Check)) # this being higher means that some below detection were included (also found in M.L GeoNut dataset)
+
+subset(data.df, !is.na(data.df$Se_grain) & is.na(data.df$LOD_Check)) # Double-checking that info above is correct
+
+# Other checks
+length(data.df$Se_std[is.na(data.df$Se_grain)])
+mean(data.df$Se_std[is.na(data.df$Se_grain)])
+min(data.df$Se_std[is.na(data.df$Se_grain)])
+min(data.df$Se_grain, na.rm = TRUE)
+min(data.df$Se_LOD, na.rm = TRUE)
+
+# Checking <LOD values
+data.df$Se_grain[data.df$Se_grain < 0.00269 & !is.na(data.df$Se_grain)]
+data.df$Crop[data.df$Se_grain < 0.00269 & !is.na(data.df$Se_grain)]
+
+mean(data.df$Se_std)
+
+# No analysed values (NM in MWI_CropSoilData_Raw)
+nm  <- c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686")
+
+subset(data.df, ID %in% nm)
+
+data.df$Se_std[data.df$ID %in% nm]  <-  NA
+
+
+# Generating spatial dataset
+geodata.df  <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
+
+ # Checking the NAs location
+ plot(geodata.df$geometry[!is.na(geodata.df$Se_grain)], col = "blue")
+ plot(geodata.df$geometry[is.na(geodata.df$Se_grain)], col = "red", add = TRUE)
