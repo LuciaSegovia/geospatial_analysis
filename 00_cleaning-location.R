@@ -26,7 +26,7 @@ library(tmap)  #spatial data manipulation and visualisation
 
 ##########################################################################################
 
-# Loading Shapefilees 
+# Loading Shapefiles 
 
 # Admin Boundaries for Malawi 
 
@@ -56,7 +56,7 @@ sort(unique(ta_bnd$ADM2_PCODE))
 length(unique(ta_bnd$ADM2_PCODE))
 
 
-##################################################################################
+#############################################################################################################
 
 #    Maize Se conc. 
 
