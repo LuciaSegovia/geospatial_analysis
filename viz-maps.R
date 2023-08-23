@@ -41,6 +41,8 @@ maize_values  <- "predicted-maizeSe" # cleaned  predicted maize Se data
 file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
 maizedata.df  <- readRDS(here::here("data", "inter-output", file_name))
 
+names(maizedata.df)
+
 x1  <- subset(data.df, !is.na(selenium)) %>% distinct(EACODE)  %>% pull()
 x2  <- as.integer(unique(maizedata.df$EACODE))
 
@@ -50,6 +52,11 @@ test_dif  <- setdiff(x1, x2)
 
 sum(is.na(maizedata.df$Latitude))
 sum(is.na(data.df$selenium))
+
+# Checking the number of Se values (grain samples) per EA
+maizedata.df %>% group_by(EACODE, AREA_KM) %>% dplyr::count()  %>% arrange(desc(n))  %>% 
+dplyr::filter(n > 1) # Checking those larger than one 
+
 
 # Transforming plasma se into a spatial dataset
 geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
@@ -239,3 +246,27 @@ leaflet() %>%
   addMeasure(primaryLengthUnit = "meters") %>% 
   addMarkers(data = dist_centroid) %>% 
   addPolygons(data = dist_buffer25)
+
+
+############################
+
+# Comparin predicted maize Se EA mean w/ single values 
+
+data.df  <- readRDS(here::here("data", "inter-output", "maizeSe-mean-predicted.RDS"))
+
+names(data.df)
+head(data.df)
+
+maizedata.df$EACODE  <- as.character(maizedata.df$EACODE)
+
+test  <- data.df  %>%  dplyr::filter(admin == "EACODE")  %>% 
+ left_join(., maizedata.df, by = c("admin_id" = "EACODE")) 
+ 
+ 
+ea  <- test %>% 
+ group_by(admin_id)  %>% dplyr::count(maizeSe_mean)  %>% 
+ dplyr::filter(n == 1)  %>% arrange(desc(n))  %>% pull(admin_id)
+
+
+ test  %>% filter(admin_id %in% ea)  %>% 
+ dplyr::select(maizeSe_mean, Se_triplequad, pred.Se)  %>% View()

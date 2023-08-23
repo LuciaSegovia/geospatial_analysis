@@ -31,15 +31,14 @@ data.df  <-  data.df[,c(1:12, 36, 95)]
 data.df$survey  <- "GeoNutrion_Kumssa"
 
 # Merging the LODs so we can add that info to the dataset
-
 data.df  <- data.df  %>% left_join(., lod.df[, c(1, 25)], # merging grain & LOD datasets 
 by = c("Crop_ICP_Run_Se" = "Crop_ICP_Run"))  %>%          # for Se
 mutate(Se_std = ifelse(!is.na(Se_grain), Se_grain, Se_LOD), # Generating a varible that change NA to LOD values
 LOD_Check = ifelse(Se_grain>Se_LOD, Se_grain, NA)) # Checking that all items below their LOD were converted into NA
 
 #Checking differences between the two Se w/ NA variable
-sum(is.na(data.df$Se_grain))
-sum(is.na(data.df$LOD_Check)) # this being higher means that some below detection were included (also found in M.L GeoNut dataset)
+sum(is.na(data.df$Se_grain)) # 418
+sum(is.na(data.df$LOD_Check)) # 427 this being higher means that some below detection were included (also found in M.L GeoNut dataset)
 
 subset(data.df, !is.na(data.df$Se_grain) & is.na(data.df$LOD_Check)) # Double-checking that info above is correct
 
@@ -77,7 +76,7 @@ geodata.df  <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
 
 
 # Subsetting only maize values (this step could be omitted if we want all crops)
-data.df  <- data.df  %>% filter(Crop == "Maize")
+#data.df  <- data.df  %>% filter(Crop == "Maize")
 
 # Loading data (Chilimba) ----
 maize  <- readxl::read_excel(here::here("data", "maize",
@@ -139,10 +138,11 @@ head(data.df)
 geodata.df  <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
- # Checking maize location
+ # Checking sample coverage location - Spatial pattern?
  plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "blue")
  plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & is.na(geodata.df$Crop)], col = "green", add = TRUE)
  plot(geodata.df$geometry[is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "red", add = TRUE)
+ plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop != "Maize"], col = "yellow", add = TRUE)
 
 
 # Adding covariate variable BIO1 (Mean Annual Temp - CHELSA dataset) ------
@@ -176,9 +176,11 @@ st_drop_geometry()  %>%  # dropping the geometry (spatial obj)
 right_join(., data.df) 
 
 #Chekcing again the data
-dim(data.df) # 1282
-sum(is.na(data.df$Se_grain)) # 411 (from GeoNut)
-sum(is.na(data.df$Se_std)) #  5 from GeoNut & 88 from Chilimba
+dim(data.df) # 1282 # 1900
+sum(!is.na(data.df$Crop) & data.df$Crop == "Rice")
+sum(is.na(data.df$Se_grain) & data.df$survey == "Chilimba") # 2
+sum(!is.na(data.df$Crop) & data.df$Crop != "Maize" & is.na(data.df$Se_grain)) # 409 (maize from GeoNut)
+sum(is.na(data.df$Se_std) & data.df$survey == "Chilimba") #  6 from GeoNut & 88 from Chilimba
 sum(is.na(data.df$pH_w)) # pH 1 missing values
 sum(is.na(data.df$BIO1)) # completed
 
@@ -189,8 +191,8 @@ sum(is.na(data.df$BIO1)) # completed
 
 
 # Saving dataset for modelling 
-
-saveRDS(data.df, here::here("data", "inter-output", "mwi-maize-se_LOD.RDS"))
+# saveRDS(data.df, here::here("data", "inter-output", "mwi-maize-se_LOD.RDS")) # only maize 
+saveRDS(data.df, here::here("data", "inter-output", "mwi-grain-se_LOD.RDS"))
 
 
 # Excluded datasets -----
