@@ -65,7 +65,7 @@ length(unique(ta_bnd$ADM2_PCODE))
 # Loading the data ----
 #  Maize Se conc. (cleaned from 00_cleaning-maize.R)
 #file_name  <- "maize-se" # cleaned geo-loc maize Se data
-maize_values  <- "predicted-maizeSe" # cleaned  predicted maize Se data
+maize_values  <- "predicted-maizeSe_LOD" # cleaned  predicted maize Se data (from 01_krg-maize-model.R)
 file_name  <- paste0("mwi-", maize_values, ".RDS")
 data.df  <- readRDS(here::here("data", "inter-output", file_name)) 
 
@@ -74,27 +74,6 @@ data.df  <- readRDS(here::here("data", "inter-output", file_name))
 head(data.df)
 names(data.df)
 
-
-
-# Getting the admin units (the one with the higher no of unique id/names)
-dim(ea_bnd) #9235
-sum(duplicated(ea_bnd$EACODE))
-length(unique(ea_bnd$EACODE)) #9219
-length(unique(ea_bnd$DISTRICT)) #28/30 #dist code/ district
-length(unique(ea_bnd$TA_CODE)) #351/350 #ta code/ ta
-sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
-
-# Checking comparabiity between the two boundaries dataset
-# Even district are different
-sort(unique(ea_bnd$DISTRICT))
-sort(unique(ta_bnd$ADM2_EN))
-
-#Commenting maps generation for speeding the processing
-#tm_shape(ea_bnd) +
-#tm_polygons("DISTRICT", show.legend = FALSE) 
-#
-#tm_shape(ta_bnd) +
-#tm_polygons("ADM2_EN", show.legend = FALSE) 
 
 # Selecting only variables that are interesting. (EA code, EA area, TA code, district & geo)
 admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
@@ -105,7 +84,7 @@ geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
 
-dim(geodata.df) #1282 - maize 804 plasma # GeoNut 1802
+dim(geodata.df) #1282 - maize 804 plasma # GeoNut 1900
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
 
@@ -115,18 +94,8 @@ Se_admin  <-  st_join(geodata.df, admin)
 dim(Se_admin)
 sum(is.na(Se_admin$EACODE))
 
+# 60   61  976 1893 1895
 missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
-
-# Fixint missing (Pred. Se values) 
-# First one (row = 779 at 90m, EACODE == 20907012)
- Se_admin[779, "EACODE"] 
- Se_admin[779, ]  <-  st_join(missing[,1:ncol(geodata.df)], admin, st_is_within_distance, 
-             dist = units::set_units(90, "m"))[1,] 
-
-# First one (rows = c(1803, 1804) at 300m, EACODE == 20701017) 
- Se_admin[c(1803, 1804),  "EACODE"] 
- Se_admin[c(1803, 1804), ]  <-  st_join(missing[,1:ncol(geodata.df)], admin, st_is_within_distance, 
-             dist = units::set_units(300, "m"))
 
 #Checking missing values
 tm_shape(ea_bnd) +
@@ -134,54 +103,40 @@ tm_polygons() +
 tm_shape(missing) +
 tm_symbols(col ="red", size =0.1)
 
-#3 - 250> <300
-st_join(missing[,1:13], admin, st_is_within_distance, 
-             dist = units::set_units(190, "m"))  %>% pull(EACODE)
+# Checkin the closest EA for those missing EA GPS loc. 
+st_join(missing[,1:ncol(geodata.df)-1], admin, st_is_within_distance, 
+             dist = units::set_units(4500, "m"))  # %>% pull(EACODE)
 
-st_join(missing[,1:5], admin, st_is_within_distance, 
-            dist = units::set_units(4500, "m"))
+#m <-  c(90, 200, 300, 4500)
+# Fixint missing (Pred. Se values) 
+Se_admin[which(is.na(Se_admin$EACODE)),]
+Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(missing[,1:ncol(geodata.df)-1], admin, st_is_within_distance, 
+             dist = units::set_units(m, "m"))
 
-# First one (row = 80 at 60m, EACODE == 31106023
-# Second one (row = 346 at 200m, EACODE == 20701017) 
-# Third one (row = 347 at 270m, EACODE == 20701017)
-# Forth one (row = 82 at 4500m. EACODE == 31008901)
-ea_bnd  %>% dplyr::filter(EACODE %in% c("31008901", "31001043")) %>% 
-tm_shape() +
-tm_polygons() +
-tm_shape(missing[1,]) +
-tm_symbols(col ="#df2020", size =0.1)
+#missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
 
-# Manually fixing missing EACODES
-Se_admin[80,]
-Se_admin[80,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
-            dist = units::set_units(60, "m"))[1,]
-
-missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
-
-Se_admin[346,]
-Se_admin[346,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
-            dist = units::set_units(200, "m"))[2,]
-
-missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
-
-Se_admin[347,]
-Se_admin[347,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
-            dist = units::set_units(270, "m"))[2,]
-
-missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
-
-Se_admin[82,]
-Se_admin[82,]  <- st_join(missing[,1:5], admin, st_is_within_distance, 
-            dist = units::set_units(4500, "m"))
-
-(missing  <- Se_admin[which(is.na(Se_admin$EACODE)),])
 
 # Checking the areas
 sum(duplicated(Se_admin$EACODE))
-length(unique(Se_admin$EACODE)) #9219 --> 1121 (not all EAs were sampled)
+length(unique(Se_admin$EACODE)) #9219 --> 1628 (not all EAs were sampled)
 length(unique(Se_admin$DISTRICT)) #30 --> 26 (3 lakes + likoma island) # district
 length(unique(Se_admin$TA_CODE)) #351 --> #ta code
 sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
+
+# Adding a variable for region (1>3 = N>S)
+Se_admin$region  <-  NA
+Se_admin$region[grepl("^1", Se_admin$EACODE)]  <- "1"
+Se_admin$region[grepl("^2", Se_admin$EACODE)]  <- "2"
+Se_admin$region[grepl("^3", Se_admin$EACODE)]  <- "3"
+
+par(mfrow=c(1,3))
+boxplot(log(Se_grain) ~ region, Se_admin)
+boxplot(log(pred.Se) ~ region, Se_admin)
+boxplot(log(Se_std) ~ region, Se_admin)
+Se_admin$survey[Se_admin$Se_grain>1.5]
+par(mfrow=c(1,2))
+boxplot(Se_grain[Se_admin$Se_grain<1.5] ~ region[Se_admin$Se_grain<1.5], Se_admin)
+boxplot(Se_std[Se_admin$Se_grain<1.5] ~ region[Se_admin$Se_grain<1.5], Se_admin)
 
 # Converting back from spatial obj to dataframe
 data.df  <- Se_admin  %>% st_drop_geometry()  %>%  #removing geometry
@@ -228,7 +183,25 @@ length(unique(ta_bnd$ADM3_PCODE))
 
 ############################################################################################################## 
 
-# Loading the datat
+# # Loading the data
+# maize 
+file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
+maize.df  <- readRDS(here::here("data", "inter-output", file_name))
+
+geomaize.df <- st_as_sf(maize.df , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
+
+geomaize.df <- st_join(ea_bnd[, "fid", "geometry"], geomaize.df)
+
+sum(is.na(geomaize.df$EACODE))
+
+dim(maize.df)
+dim(geomaize.df)
+names(geomaize.df)
+head(geomaize.df)
+geomaize.df <- subset(geomaize.df, !is.na(pH_w))
+
+# Loading the data
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
 data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
 # Explore the dataset
@@ -259,14 +232,75 @@ head(admin)
 # Allocating Se values to each admin unit
 
 #Se_admin = st_intersection(data.df, admin)
-Se_admin  <-  st_join(geodata.df, admin)
+# Se_admin  <-  st_join(geodata.df, admin)
+Se_admin  <-  st_join(geodata.df, geomaize.df)
+
+Se_admin[, c(1:5)]
 
 dim(Se_admin)
 dim(geodata.df)
 sum(is.na(Se_admin$EACODE))
+sum(is.na(Se_admin$pred.Se))
 unique(Se_admin$EACODE)
 length(unique(Se_admin$DISTRICT))
 length(unique(Se_admin$sdist))
+
+tm_shape(ea_bnd) +
+tm_polygons() +
+tm_shape(geomaize.df) +
+tm_polygons(col = "Se_grain") +
+tm_shape(Se_admin) +
+tm_symbols(size = "selenium", col = "blue")
+
+
+# 
+missing  <- Se_admin[which(is.na(Se_admin$EACODE)), c("unique_id")]
+
+missing$meters  <- NA
+
+#Checking missing values
+tm_shape(ea_bnd) +
+tm_polygons() +
+tm_shape(missing) +
+tm_symbols(col ="red", size =0.1)
+
+m  <- 10
+
+dataset[1,]  <- st_join(missing[1,], geomaize.df, st_is_within_distance, 
+             dist = units::set_units(m, "m"))   %>% 
+           #  dplyr::filter(!is.na(EACODE))  %>% 
+             mutate(meters = m)
+
+
+# Trying the loop
+
+for(i in 1:nrow(missing)){
+
+if(!is.na(dataset$EACODE[i])){
+
+next
+
+} 
+
+m  <- m + 10
+
+dataset[i,]  <- st_join(missing[i,], geomaize.df, st_is_within_distance, 
+             dist = units::set_units(m, "m"))   %>% 
+           #  dplyr::filter(!is.na(EACODE))  %>% 
+             mutate(meters = m)
+
+print(m)
+
+}
+
+
+
+#m <-  c(90, 200, 300, 4500)
+# Fixint missing (Pred. Se values) 
+Se_admin[which(is.na(Se_admin$EACODE)),]
+Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(missing[,1:ncol(geodata.df)-1], admin, st_is_within_distance, 
+             dist = units::set_units(m, "m"))
+
 
 # Checking the areas
 sum(duplicated(Se_admin$EACODE))

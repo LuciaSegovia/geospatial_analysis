@@ -22,6 +22,28 @@ library(tmap) # (spatial) visualisation
 ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
+
+# Getting the admin units (the one with the higher no of unique id/names)
+dim(ea_bnd) #9235
+sum(duplicated(ea_bnd$EACODE))
+length(unique(ea_bnd$EACODE)) #9219
+length(unique(ea_bnd$DISTRICT)) #28/30 #dist code/ district
+length(unique(ea_bnd$TA_CODE)) #351/350 #ta code/ ta
+sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
+
+# Checking comparabiity between the two boundaries dataset
+# Even district are different
+sort(unique(ea_bnd$DISTRICT))
+sort(unique(ta_bnd$ADM2_EN))
+
+#Commenting maps generation for speeding the processing
+#tm_shape(ea_bnd) +
+#tm_polygons("DISTRICT", show.legend = FALSE) 
+#
+#tm_shape(ta_bnd) +
+#tm_polygons("ADM2_EN", show.legend = FALSE) 
+
+
 # Loading EA boundaries data (shapefile) (as raster)
  ea  <-   rgdal::readOGR(here::here( "..", "PhD_geospatial-modelling",
   "data", "mwi-boundaries", "EN_NSO", "eas_bnd.shp"))

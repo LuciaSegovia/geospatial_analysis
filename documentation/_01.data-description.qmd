@@ -260,7 +260,7 @@ Because we are exploring how much Plasma Se variablity is explained by Maize Se 
 
 #TODO: Check the data
 What it would be important to check, it is wether the data is balance (e.g., highly skewed to one side and hence driving the model outcomes). 
-We checked wealth by region and it seemed that there is a slight unbalance for the lowest Q in the middle region and towards the highes Q in the Northern region. 
+We checked wealth by region and it seemed that there is a slight unbalance for the lowest Q in the middle region and towards the highest Q in the Northern region. 
 See `r table(dhs_se$wealth_quintile, dhs_se$region)`. 
 
 #TODO: Generate a dataset with districs and soil type, and proximity to the Lake Malawi (from the "centre of the district" to the lake) - Ask Liberty/ Louise whether that have been created previosly. 
@@ -289,6 +289,7 @@ We extracted multiple variables of interest (including the LOD), which served to
 Six Se values was not measure ID == c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686") (see MWI_CropSoilData_Raw.csv), which needed to be transformed into `NA` in the variable `Se_std`. 
 
 Additionally, the MAT should be added to this dataset as it is not inclued, as this study only reproted analytical data carried as part of the GeoNutrition. These values were completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
+
 # REVIEW: For risk of bias (i.e., over-estimation and over-representation of high values).
 
 #### Spatial pre-liminary analysis

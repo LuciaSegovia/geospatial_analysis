@@ -250,7 +250,7 @@ leaflet() %>%
 
 ############################
 
-# Comparin predicted maize Se EA mean w/ single values 
+# Comparing predicted maize Se EA mean w/ single values 
 
 data.df  <- readRDS(here::here("data", "inter-output", "maizeSe-mean-predicted.RDS"))
 
@@ -262,7 +262,7 @@ maizedata.df$EACODE  <- as.character(maizedata.df$EACODE)
 test  <- data.df  %>%  dplyr::filter(admin == "EACODE")  %>% 
  left_join(., maizedata.df, by = c("admin_id" = "EACODE")) 
  
- 
+# Counting maize values per EA
 ea  <- test %>% 
  group_by(admin_id)  %>% dplyr::count(maizeSe_mean)  %>% 
  dplyr::filter(n == 1)  %>% arrange(desc(n))  %>% pull(admin_id)

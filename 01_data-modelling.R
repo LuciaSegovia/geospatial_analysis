@@ -6,6 +6,9 @@
 #
 #####################################################################################################
 
+# Cleaning the environment
+rm(list = ls())
+
 # Loading libraries and functions
 #install.packages("rgeos")
 
@@ -33,12 +36,14 @@ library(numDeriv)
 
 
 # Loading the maize Se conc. dataset (cleaned from 01.cleaning-location.R)
-data.df  <- readRDS(here::here("data", "inter-output","mwi-maize-se_admin.RDS")) # cleaned geo-loc maize Se data
+data.df  <- readRDS(here::here("data", "inter-output",
+"mwi-predicted-maizeSe_LOD_admin.RDS")) # cleaned geo-loc maize Se data (00_cleaning-location.R)
 
+names(data.df)
 # Checking missing values: 2 pH
 sum(is.na(data.df$BIO1))
-data.df[which(is.na(data.df$pH)),]
-data.df  <- subset(data.df, !is.na(pH)) # removing NA
+data.df[which(is.na(data.df$pH_w)),]
+data.df  <- subset(data.df, !is.na(pH_w)) # removing NA
 
 #sum(duplicated(dhs_se$unique_id))
 #length(unique(dhs_se$survey_cluster1))
@@ -49,21 +54,23 @@ data.df  <- subset(data.df, !is.na(pH)) # removing NA
 #plot(dhs_se[, "wealth_quintile"])
 #table(dhs_se$wealth_quintile, dhs_se$region)
 
+# Selecting the Se variable to model
+var  <- "Se_grain"
 
-# Checking plasma values for the model
-#Rename your variable:
-#names(Se_admin)
-#names(Se_admin)[3]  <- "sdist" 
-#names(Se_admin)[4]  <- "selenium" 
-
+# Checking no. of EAs per (Se_grain (1123) vs pred.Se (1628))
+length(unique(data.df$EACODE[!is.na(data.df[, var])]))
 
 # check for normality
-summaplot(data.df$Se_mg)
-summary(data.df$Se_mg)
-sum(is.na(data.df$Se_mg))
-sum(is.na(data.df$pH))
-data.df$logSe<-log(data.df$Se_mg)
+summaplot(data.df[, var])
+summary(data.df[, var])
+sum(is.na(data.df[, var]))
+sum(is.na(data.df$pH_w))
+data.df$logSe<-log(data.df[, var])
 summaplot(data.df$logSe)
+
+par(mfrow=c(1,2))
+ plot(log(data.df$Se_grain), data.df$pH_w)
+ plot(log(data.df$Se_grain), data.df$BIO1)
 
 # visualize the data
 ggplot(data = data.df,
@@ -72,7 +79,6 @@ ggplot(data = data.df,
   facet_wrap(~DISTRICT, ncol = 5) +
   labs(x = "Se conc. in maize (log(mg/kg))", 
        y = "Downscaled MAT") + 
-  scale_x_continuous(breaks = 0:4 * 2) +
   theme(strip.text = element_text(size = 12),
         axis.text.y = element_text(size = 12))
 
