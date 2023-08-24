@@ -37,7 +37,7 @@ library(numDeriv)
 
 # Loading the maize Se conc. dataset (cleaned from 01.cleaning-location.R)
 data.df  <- readRDS(here::here("data", "inter-output",
-"mwi-predicted-maizeSe_LOD_admin.RDS")) # cleaned geo-loc maize Se data (00_cleaning-location.R)
+"mwi-grain-se_raw_admin.RDS")) # cleaned geo-loc maize Se data (00_cleaning-location.R)
 
 names(data.df)
 # Checking missing values: 2 pH
@@ -55,7 +55,7 @@ data.df  <- subset(data.df, !is.na(pH_w)) # removing NA
 #table(dhs_se$wealth_quintile, dhs_se$region)
 
 # Selecting the Se variable to model
-var  <- "Se_grain"
+var  <- "Se_raw"
 
 # Checking no. of EAs per (Se_grain (1123) vs pred.Se (1628))
 length(unique(data.df$EACODE[!is.na(data.df[, var])]))
@@ -64,9 +64,13 @@ length(unique(data.df$EACODE[!is.na(data.df[, var])]))
 summaplot(data.df[, var])
 summary(data.df[, var])
 sum(is.na(data.df[, var]))
+data.df  <- data.df %>%  dplyr::filter(!is.na(!!sym(var)))
 sum(is.na(data.df$pH_w))
 data.df$logSe<-log(data.df[, var])
 summaplot(data.df$logSe)
+sum(is.na(data.df$logSe))
+sum(data.df$logSe == "-Inf")
+data.df  <-data.df %>%  dplyr::filter(logSe != "-Inf")
 
 par(mfrow=c(1,2))
  plot(log(data.df$Se_grain), data.df$pH_w)
@@ -88,7 +92,7 @@ ggplot(data = data.df,
 # fit the model: Maize Se
 model0 <- lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
 
-model1 <-lme(logSe ~ pH + BIO1, random=~1|EACODE, data=data.df, method = "ML")
+model1 <-lme(logSe ~ pH_w + BIO1, random=~1|EACODE, data=data.df, method = "ML")
 
 # model1b<-lme(logSe ~ BIO1, random=~1|EACODE, data=data.df, method = "ML")
 
@@ -116,7 +120,8 @@ model4<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
 
 model5<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT/TA_CODE, data=data.df, method = "ML")
 
-model6<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "ML")
+model6<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, 
+data=data.df, method = "ML")
 
 anova(model4, model5, model6)
 
@@ -145,8 +150,10 @@ head(re)
 
 # Calculating the covariate means for predictions
 re_cov  <- data.df  %>% group_by(!!sym(area))  %>% 
-summarise(pH_mean = mean(pH), 
-          BIO1_mean = mean(BIO1))
+summarise(pH_mean = mean(pH_w), 
+          BIO1_mean = mean(BIO1),
+          Se_mean = mean(!!sym(var)),
+          Se_median = median(!!sym(var)))
 
 # Merging mean of the covariates w/ model results
 re  <- merge(re, re_cov)
@@ -165,6 +172,9 @@ ea.df$admin  <- area
 names(ea.df)[names(ea.df) == area]  <- "admin_id"
 
 head(ea.df)
+
+plot(ea.df$maizeSe_mean, ea.df$Se_mean)
+plot(ea.df$Se_median, ea.df$Se_mean)
 
 #saveRDS(ea.df, here::here("data", "inter-output", "maizeSe-mean-EA.RDS"))
 

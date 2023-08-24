@@ -5,7 +5,81 @@ library(sp)
 library(sf) # for reading in and writting shapefiles
 library(tmap) #visualising maps
 
-# Loading data 
+# Excluded datasets -----
+
+# Loading the data (Gashu - GeoNut)
+grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
+"Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
+names(grain) # checking variables
+
+# Subsetting variables of interest: coord., Se (only in Maize), pH and  MAT (BIO1).
+grain <- subset(grain, Crop == "Maize",
+select = c(Latitude, Longitude, Se_triplequad, pH_Wa, BIO1))
+
+#Checking data & removing NAs
+hist(grain$Se_triplequad)
+length(grain$Se_triplequad[grain$Se_triplequad > 200]) #408
+grain$Se_triplequad[grain$Se_triplequad > 200]  <- NA # Recoding NA
+grain.df  <- subset(grain, !is.na(Se_triplequad)) # Removing NAs
+
+#Checking the dataset
+head(grain.df)
+names(grain.df)
+
+# Renaming variable & adding info on data source
+grain.df   <- grain.df  %>% rename(Se_mg = "Se_triplequad", pH = "pH_Wa")
+grain.df$survey  <- "GeoNutrition_2018"
+names(grain.df) # Checkin the renaming
+
+# Saving sample sites
+cord.dec1b  =  SpatialPoints(cbind(grain.df$Longitude, grain.df$Latitude), proj4string = CRS("+proj=longlat"))
+
+# Checking sample site for both surveys
+par(mfrow = c(1, 2))
+plot(cord.dec1, axes = TRUE, main = "Chilimba Sample Sites", cex.axis = 0.95)
+plot(cord.dec1b, axes = TRUE, main = "GeoNutrition Sample Sites", col = "red", cex.axis = 0.95)
+
+# Generating spatial dataset
+#grain.df  <- st_as_sf(grain.df , coords =c("Longitude", "Latitude"),
+# crs = "EPSG:4326")
+
+# Adding MAT empty column to allow dataframes to merge
+data.df$BIO1  <- NA
+
+# Checking final dataset
+str(data.df)
+plot(data.df)
+par(mfrow = c(1, 2))
+hist(maize.df$Se_mg)
+hist(grain.df$Se_mg)
+hist(data.df$Se_mg)
+hist(data.df$pH)
+hist(log(data.df$Se_mg))
+
+# Missing values check 
+dim(data.df) # 1282
+sum(is.na(data.df$Se_mg))
+sum(is.na(data.df$pH)) # pH 2 missing values
+sum(is.na(data.df$BIO1)) # 89 missing (to be completed)
+#data.df$log_Se  <- log(data.df$Se_mg)
+
+
+# Checking that values are the same as those provided in GeoNutrition 
+BIOa  <- geodata.df$BIO1[!is.na(geodata.df$BIO1)]
+BIOb  <- geodata.df$BIO1b[!is.na(geodata.df$BIO1)]
+BIO_check  <- cbind(BIOa, BIOb)
+head(BIO_check)
+
+BIOa == BIOb
+setdiff(round(BIOa), BIOb)
+setdiff(BIOb, round(BIOa))
+round(BIO_check[c(166, 167), ]) #Only one was 1degree dif. due to rounding
+
+geodata.df  <- subset(geodata.df, select = -BIO1)  %>% # Removing BIO1 (orginal)
+dplyr::rename(BIO1 = "BIO1b")  # Renaming extracted BIO1b to BIO1
+
+
+# Loading data Joy et al 2012 -----
 crop  <- readxl::read_excel(here::here("data", 
 "maize", "2012_Joy-mwi-samples.xlsx"), sheet =6, skip =2)
 

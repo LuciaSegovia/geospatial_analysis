@@ -68,12 +68,14 @@ length(unique(ta_bnd$ADM2_PCODE))
 maize_values  <- "predicted-maizeSe_LOD" # cleaned  predicted maize Se data (from 01_krg-maize-model.R)
 file_name  <- paste0("mwi-", maize_values, ".RDS")
 data.df  <- readRDS(here::here("data", "inter-output", file_name)) 
+data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) 
 
 
 # Explore the dataset
 head(data.df)
 names(data.df)
 
+length(data.df$Se_raw[!is.na(data.df$Se_raw) & data.df$Crop == "Maize"])
 
 # Selecting only variables that are interesting. (EA code, EA area, TA code, district & geo)
 admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
@@ -107,14 +109,23 @@ tm_symbols(col ="red", size =0.1)
 st_join(missing[,1:ncol(geodata.df)-1], admin, st_is_within_distance, 
              dist = units::set_units(4500, "m"))  # %>% pull(EACODE)
 
-#m <-  c(90, 200, 300, 4500)
+m <-  c(90, 200, 300, 4500)
 # Fixint missing (Pred. Se values) 
 Se_admin[which(is.na(Se_admin$EACODE)),]
-Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(missing[,1:ncol(geodata.df)-1], admin, st_is_within_distance, 
-             dist = units::set_units(m, "m"))
+
+for(i in 1:length(m)){
+
+Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(Se_admin[which(is.na(Se_admin$EACODE)),1:ncol(geodata.df)-1], 
+    admin, st_is_within_distance,  dist = units::set_units(m[i], "m"))
+
+}
 
 #missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
 
+Se_admin$Se_raw[Se_admin$survey == "Chilimba"] 
+Se_admin$Se_raw[Se_admin$survey == "Chilimba"]  <- Se_admin$Se_grain[Se_admin$survey == "Chilimba"]
+Se_admin$Se_grain[Se_admin$survey == "Chilimba"]
+Se_admin$Crop[Se_admin$survey == "Chilimba"]  <-  "Maize"
 
 # Checking the areas
 sum(duplicated(Se_admin$EACODE))
@@ -129,14 +140,21 @@ Se_admin$region[grepl("^1", Se_admin$EACODE)]  <- "1"
 Se_admin$region[grepl("^2", Se_admin$EACODE)]  <- "2"
 Se_admin$region[grepl("^3", Se_admin$EACODE)]  <- "3"
 
+maize  <- subset(Se_admin, Crop=="Maize")
+
 par(mfrow=c(1,3))
-boxplot(log(Se_grain) ~ region, Se_admin)
-boxplot(log(pred.Se) ~ region, Se_admin)
-boxplot(log(Se_std) ~ region, Se_admin)
+#boxplot(log(Se_grain) ~ region, Se_admin)
+#boxplot(log(pred.Se) ~ region, Se_admin)
+#boxplot(log(Se_std) ~ region, Se_admin)
+boxplot(log(Se_grain) ~ region, maize)
+boxplot(log(Se_raw) ~ region, maize)
+boxplot(log(Se_std) ~ region, maize)
 Se_admin$survey[Se_admin$Se_grain>1.5]
 par(mfrow=c(1,2))
 boxplot(Se_grain[Se_admin$Se_grain<1.5] ~ region[Se_admin$Se_grain<1.5], Se_admin)
 boxplot(Se_std[Se_admin$Se_grain<1.5] ~ region[Se_admin$Se_grain<1.5], Se_admin)
+boxplot(Se_raw ~ region, maize)
+hist(maize$Se_raw)
 
 # Converting back from spatial obj to dataframe
 data.df  <- Se_admin  %>% st_drop_geometry()  %>%  #removing geometry
@@ -146,6 +164,7 @@ data.df  <- Se_admin  %>% st_drop_geometry()  %>%  #removing geometry
 # Admin 
 file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
 saveRDS(data.df, here::here("data", "inter-output", file_name))
+saveRDS(data.df, here::here("data", "inter-output", "mwi-grain-se_raw_admin.RDS"))
 
 
 # Testing results accoring to different shapefile choices:
@@ -207,6 +226,9 @@ data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned 
 # Explore the dataset
 head(data.df)
 names(data.df)
+
+data.df   %>% dplyr::select( selenium, wealth_quintile, BMI, urbanity,
+is_smoker, had_malaria, ANY_INFLAMMATION, unique_id, survey_cluster1, Longitude, Latitude)
 
 # Admin Boundaries for Malawi 
 sum(duplicated(data.df$unique_id))
@@ -273,6 +295,19 @@ dataset[1,]  <- st_join(missing[1,], geomaize.df, st_is_within_distance,
 
 
 # Trying the loop
+
+m <-  c(90, 200, 300, 4500)
+
+# Fixint missing (Pred. Se values) 
+Se_admin[which(is.na(Se_admin$EACODE)),]
+
+for(i in 1:length(m)){
+
+Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(Se_admin[which(is.na(Se_admin$EACODE)),1:ncol(geodata.df)-1], 
+    admin, st_is_within_distance,  dist = units::set_units(m[i], "m"))
+
+}
+
 
 for(i in 1:nrow(missing)){
 
@@ -615,3 +650,33 @@ tm_shape(parks)+
 tm_polygons(col = "green") +
 tm_shape(geoea.df) +
 tm_polygons(col = "se_mean")
+
+
+
+
+# Loading the data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
+
+data.df  <- data.df %>% dplyr::select( survey_cluster1, Longitude, Latitude)  %>% 
+distinct()
+
+head(data.df)
+
+
+
+
+for(i in 1:nrow(data.df)){
+
+ for (j in 1:nrow(data.df)) {
+        # skip the computation if the two locations are the same
+        if (i < j) {
+            # calculate the distance between the two locations in km using the Vincenty ellipsoid method
+            loc1 <- c(data.df$Longitude[i], data.df$Latitude[i])
+            loc2 <- c(data.df$Longitude[j], data.df$Latitude[j])
+            h[j] <- geosphere::distVincentySphere(loc1, loc2) / 1000 # distance converted to km
+        }
+ }
+      data.df[i]  <- list(h)
+
+ }

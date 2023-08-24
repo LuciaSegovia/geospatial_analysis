@@ -14,8 +14,10 @@ source("CEPHaStat_3.R")
 
 
 # Loading data (Kumssa - GeoNut) ----
+# data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Grain & soil chem data
+#  "MWI_CropSoilData_NA.csv"))
 data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Grain & soil chem data
- "MWI_CropSoilData_NA.csv"))
+ "MWI_CropSoilData_Raw.csv"))
 lod.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Minerals LOD data
  "MWI_Crop_LOD_ByICPRun.csv"))
 
@@ -30,24 +32,38 @@ data.df  <-  data.df[,c(1:12, 36, 95)]
 # Adding survey info
 data.df$survey  <- "GeoNutrion_Kumssa"
 
+# Checking non-measured (NM) & replacing to NA ----
+sum(grepl("NM",data.df$Se_grain))
+data.df$Se_grain <- gsub("NM", NA, data.df$Se_grain)
+# Transforming the variable into numeric
+data.df$Se_grain <- as.numeric(data.df$Se_grain)
+
+# Checking negative values & replacing to 0 ----
+length(data.df$Se_grain[data.df$Se_grain<0 & !is.na(data.df$Se_grain)])
+data.df$Se_grain[data.df$Se_grain<0 & !is.na(data.df$Se_grain)]  <-  0
+
+names(data.df)
 # Merging the LODs so we can add that info to the dataset
 data.df  <- data.df  %>% left_join(., lod.df[, c(1, 25)], # merging grain & LOD datasets 
 by = c("Crop_ICP_Run_Se" = "Crop_ICP_Run"))  %>%          # for Se
-mutate(Se_std = ifelse(!is.na(Se_grain), Se_grain, Se_LOD), # Generating a varible that change NA to LOD values
-LOD_Check = ifelse(Se_grain>Se_LOD, Se_grain, NA)) # Checking that all items below their LOD were converted into NA
+dplyr::rename(Se_raw = "Se_grain")  %>%                 # Renaming variable 
+mutate(Se_grain = ifelse(Se_raw>Se_LOD, Se_raw, NA))  %>%  # Exc. all values below their LOD (converted into NA)
+mutate(Se_std = ifelse(!is.na(Se_grain), Se_grain, Se_LOD)) # Generating a varible that change NA to LOD values
+
 
 #Checking differences between the two Se w/ NA variable
-sum(is.na(data.df$Se_grain)) # 418
-sum(is.na(data.df$LOD_Check)) # 427 this being higher means that some below detection were included (also found in M.L GeoNut dataset)
+sum(is.na(data.df$Se_raw))
+sum(is.na(data.df$Se_grain)) # 426 (NM+LOD) 
+sum(is.na(data.df$Se_std)) 
 
-subset(data.df, !is.na(data.df$Se_grain) & is.na(data.df$LOD_Check)) # Double-checking that info above is correct
+#subset(data.df, !is.na(data.df$Se_grain) & is.na(data.df$LOD_Check)) # Double-checking that info above is correct
 
 # Other checks
 length(data.df$Se_std[is.na(data.df$Se_grain)])
 mean(data.df$Se_std[is.na(data.df$Se_grain)])
 min(data.df$Se_std[is.na(data.df$Se_grain)])
+min(data.df$Se_raw, na.rm = TRUE)
 min(data.df$Se_grain, na.rm = TRUE)
-min(data.df$Se_LOD, na.rm = TRUE)
 
 # Checking <LOD values
 data.df$Se_grain[data.df$Se_grain < 0.00269 & !is.na(data.df$Se_grain)]
@@ -99,6 +115,8 @@ sum(is.na(maize$Se_mg)) # Only 2
 mean(maize$Se_mg, na.rm = TRUE)
 min(maize$Se_mg, na.rm = TRUE)
 max(maize$Se_mg, na.rm = TRUE)
+summaplot(maize$Se_mg)
+summaplot(log(maize$Se_mg))
 
 #Checking the spatial function
 cord.dec1  =  SpatialPoints(cbind( maize$Longitude_DD, maize$Latitude_DD), proj4string = CRS("+proj=longlat"))
@@ -192,78 +210,5 @@ sum(is.na(data.df$BIO1)) # completed
 
 # Saving dataset for modelling 
 # saveRDS(data.df, here::here("data", "inter-output", "mwi-maize-se_LOD.RDS")) # only maize 
-saveRDS(data.df, here::here("data", "inter-output", "mwi-grain-se_LOD.RDS"))
-
-
-# Excluded datasets -----
-
-# Loading the data (Gashu - GeoNut)
-grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
-"Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
-names(grain) # checking variables
-
-# Subsetting variables of interest: coord., Se (only in Maize), pH and  MAT (BIO1).
-grain <- subset(grain, Crop == "Maize",
-select = c(Latitude, Longitude, Se_triplequad, pH_Wa, BIO1))
-
-#Checking data & removing NAs
-hist(grain$Se_triplequad)
-length(grain$Se_triplequad[grain$Se_triplequad > 200]) #408
-grain$Se_triplequad[grain$Se_triplequad > 200]  <- NA # Recoding NA
-grain.df  <- subset(grain, !is.na(Se_triplequad)) # Removing NAs
-
-#Checking the dataset
-head(grain.df)
-names(grain.df)
-
-# Renaming variable & adding info on data source
-grain.df   <- grain.df  %>% rename(Se_mg = "Se_triplequad", pH = "pH_Wa")
-grain.df$survey  <- "GeoNutrition_2018"
-names(grain.df) # Checkin the renaming
-
-# Saving sample sites
-cord.dec1b  =  SpatialPoints(cbind(grain.df$Longitude, grain.df$Latitude), proj4string = CRS("+proj=longlat"))
-
-# Checking sample site for both surveys
-par(mfrow = c(1, 2))
-plot(cord.dec1, axes = TRUE, main = "Chilimba Sample Sites", cex.axis = 0.95)
-plot(cord.dec1b, axes = TRUE, main = "GeoNutrition Sample Sites", col = "red", cex.axis = 0.95)
-
-# Generating spatial dataset
-#grain.df  <- st_as_sf(grain.df , coords =c("Longitude", "Latitude"),
-# crs = "EPSG:4326")
-
-# Adding MAT empty column to allow dataframes to merge
-data.df$BIO1  <- NA
-
-# Checking final dataset
-str(data.df)
-plot(data.df)
-par(mfrow = c(1, 2))
-hist(maize.df$Se_mg)
-hist(grain.df$Se_mg)
-hist(data.df$Se_mg)
-hist(data.df$pH)
-hist(log(data.df$Se_mg))
-
-# Missing values check 
-dim(data.df) # 1282
-sum(is.na(data.df$Se_mg))
-sum(is.na(data.df$pH)) # pH 2 missing values
-sum(is.na(data.df$BIO1)) # 89 missing (to be completed)
-#data.df$log_Se  <- log(data.df$Se_mg)
-
-
-# Checking that values are the same as those provided in GeoNutrition 
-BIOa  <- geodata.df$BIO1[!is.na(geodata.df$BIO1)]
-BIOb  <- geodata.df$BIO1b[!is.na(geodata.df$BIO1)]
-BIO_check  <- cbind(BIOa, BIOb)
-head(BIO_check)
-
-BIOa == BIOb
-setdiff(round(BIOa), BIOb)
-setdiff(BIOb, round(BIOa))
-round(BIO_check[c(166, 167), ]) #Only one was 1degree dif. due to rounding
-
-geodata.df  <- subset(geodata.df, select = -BIO1)  %>% # Removing BIO1 (orginal)
-dplyr::rename(BIO1 = "BIO1b")  # Renaming extracted BIO1b to BIO1
+#saveRDS(data.df, here::here("data", "inter-output", "mwi-grain-se_LOD.RDS"))
+saveRDS(data.df, here::here("data", "inter-output", "mwi-grain-se_raw.RDS"))

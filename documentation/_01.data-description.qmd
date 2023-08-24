@@ -283,10 +283,13 @@ It is at the cluster level, hence we need to check the variation within cluster 
 ### 2.1) GeoNutrition (Kumssa et al., 2022)
 
 We extracted multiple variables of interest (including the LOD), which served to: 
-    a) check the NAs values in the dataset (and previously reported in the now excluded dataset in Gashu et al., 2021), and
+    a) check the NAs values (n=427) in the dataset (and previously reported in the now excluded dataset in Gashu et al., 2021), this being higher means that some below detection were included in the MWI_CropSoilData_NA.csv (also found in M.L GeoNut dataset).
     b) to add those values as possible solution for accounting for the high number of missing Se conc. values.
 
-Six Se values was not measure ID == c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686") (see MWI_CropSoilData_Raw.csv), which needed to be transformed into `NA` in the variable `Se_std`. 
+Cleaning steps:
+
+1. No measured: Six Se values were coded as not measured ("NM") (ID == c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686")) (see MWI_CropSoilData_Raw.csv), which were transformed into `NA`. 
+2. Negative values: 21 value were negative and converted to zero. 
 
 Additionally, the MAT should be added to this dataset as it is not inclued, as this study only reproted analytical data carried as part of the GeoNutrition. These values were completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
 

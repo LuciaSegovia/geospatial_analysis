@@ -73,7 +73,7 @@ a. Micronutrient survey data (MW_WRA). This dataset provided information on biom
 
 b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
 
-These variables provide information at indiviual level.
+These variables provide information at individual level.
 
 Variables of interest:
 

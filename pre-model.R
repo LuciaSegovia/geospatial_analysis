@@ -17,6 +17,7 @@ library(sf) #spatial data manipulation
 library(rgdal)
 library(INLA) # Modelling
 library(gstat) # variogram
+library(geosphere) # calculating distance between points. 
 source(here::here("CEPHaStat_3.R"))
 
 
@@ -186,12 +187,31 @@ abline(h = 0)
 boxplot(selenium ~ wealth_quintile, data = EligibleDHS)
 abline(h = 0)
 
+# Loading the data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
+
+data.df  <- data.df %>% dplyr::select( selenium, survey_cluster1,
+                                       Longitude, Latitude) %>% 
+  filter(!is.na(selenium))
+
+head(data.df)
+
+# Distance (Vincenty Sphere)
+points  <-  data.df %>% dplyr::select(Longitude, Latitude)
+
+dist_mat <- distm(points, fun = distVincentySphere)  # Apply distm function
+dist_mat <- dist_mat/1000 
+
+sum(dist_mat<50)
+sum(dist_mat>120)
 
 # Variogram  - changing coordinates lon/lat to nor/east
 
 #cord.dec  =  SpatialPoints(cbind(GPS$LONGNUM, -GPS$LATNUM), proj4string = CRS("+proj=longlat"))
 cord.dec  =  SpatialPoints(cbind( GPS$LONGNUM, GPS$LATNUM), proj4string = CRS("+proj=longlat"))
 cord.dec  =  SpatialPoints(cbind( EligibleDHS$longitud, EligibleDHS$latitud), proj4string = CRS("+proj=longlat"))
+cord.dec  =  SpatialPoints(cbind( data.df$Longitude, data.df$Latitude), proj4string = CRS("+proj=longlat"))
 
 
 
@@ -206,9 +226,22 @@ plot(cord.dec, axes = TRUE, main = "Lat-Long Coordinates", cex.axis = 0.95)
 plot(cord.UTM, axes = TRUE, main = "UTM Coordinates", col = "red", cex.axis = 0.95)
 
 
+
+
+
+# Loading the data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
+
+data.df  <- data.df %>% dplyr::select( selenium, survey_cluster1, urbanity, 
+                                       Longitude, Latitude) %>% 
+  filter(!is.na(selenium))
+
+
+
 # This is how you make a sample variogram  
 
-MyData <- data.frame(selenium = EligibleDHS$selenium, 
+MyData <- data.frame(selenium =data.df$selenium, 
                      Xkm = cord.UTM$coords.x1/1000, 
                      Ykm = cord.UTM$coords.x2 /1000)
 

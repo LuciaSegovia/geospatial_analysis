@@ -51,7 +51,7 @@ sum(duplicated(plasma_se$unique_id))
 names(plasma_se)
 
 # Generating a dataset w/ plasma Se & maize Se at admin (area) level
-area  <- "DISTRICT"
+area  <- "EACODE"
 
 maize_se  %>% filter(admin == area)  %>% 
  select(1, 5)  %>%  dplyr::rename_at(vars(admin_id), ~area)  %>% 
@@ -106,7 +106,8 @@ test$ID <- 1:nrow(test) # unique id for all cases (unique_id)
 # random effect (w/o spatial corr.)
 malawi.iid <- inla(update(malawi.form, . ~ . + f(ID, model = "iid")),
   data = as.data.frame(test),
-  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, return.marginals.predictor=TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, 
+  return.marginals.predictor=TRUE),
   control.predictor = list(compute = TRUE))
 
 summary(malawi.iid)
@@ -133,7 +134,8 @@ tmarg <- function(marginals) {
 test$IID <- tmarg(malawi.iid$marginals.fitted.values)
 
 #Besag's improper
-malawi.besag <- inla(update(malawi.form, . ~ . + f(ID, model = "besag", graph = W.test)),
+malawi.besag <- inla(update(malawi.form, . ~ . + f(ID, model = "besag",
+ graph = W.test)),
   data = as.data.frame(test),
   control.compute = list(dic = TRUE, waic = TRUE, cpo = TRUE, return.marginals.predictor=TRUE),
   control.predictor = list(compute = TRUE))
