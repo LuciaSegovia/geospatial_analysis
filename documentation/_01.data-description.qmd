@@ -51,7 +51,7 @@ Variables:
 -   TIM
 
 
-b. Malawi crops, including maize, mineral concentration dataset (2012-2013) and soil pH. It is publicly available [here](https://www.sciencedirect.com/science/article/pii/S0048969714014764). (Joy et al., 2014)(@ref) - **EXCLUDED** For more information check the section 2 (Cleaning and Exploratory analysis).
+b. Malawi crops, including maize, mineral concentration dataset (2012-2013) and soil pH. It is publicly available [here](https://www.sciencedirect.com/science/article/pii/S0048969714014764). (Joy et al., 2014)(@ref). For more information check the section 2 (Cleaning and Exploratory analysis).
 
 File source: Supplemantary data on https://www.sciencedirect.com/science/article/pii/S0048969714014764.
 
@@ -63,7 +63,7 @@ Tabs:1-10: Used in this analysis:
 - STable5: Soil samples (soil pH)
 - STable10: Information on each crop and its corresponding soil sample (Sample_number, Soil_sample).
 
-**Cleaning script:** 00_cleaning_2012-Joy.R
+**Cleaning script:** excluded/00_cleaning_excluded.R
 
 
 ### 2. Geo-referenced biomarkers data (Plasma Se in WRA) in Malawi 
@@ -283,13 +283,21 @@ It is at the cluster level, hence we need to check the variation within cluster 
 ### 2.1) GeoNutrition (Kumssa et al., 2022)
 
 We extracted multiple variables of interest (including the LOD), which served to: 
-    a) check the NAs values (n=427) in the dataset (and previously reported in the now excluded dataset in Gashu et al., 2021), this being higher means that some below detection were included in the MWI_CropSoilData_NA.csv (also found in M.L GeoNut dataset).
+    a) check the NAs values (n=427) in the dataset (and previously reported in the now excluded dataset in Gashu et al., 2021), this being higher means that some below limit of detection (BLOD) were included in the MWI_CropSoilData_NA.csv (also found in M.L GeoNut dataset).
     b) to add those values as possible solution for accounting for the high number of missing Se conc. values.
 
-Cleaning steps:
+Due to the high number of BLOD we have generated four Se variables to test sensitivity of the model.
+ - **Se_raw**: This variable contains the values as reported from the chemical analysis including the values BLOD. Cleaning steps: 
+    i). No measured: Six Se values were coded as not measured
+    ("NM") (ID == c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686")) (see MWI_CropSoilData_Raw.csv), which were transformed into `NA`. 
+    ii). Negative values: 21 value were negative and converted to zero. 
 
-1. No measured: Six Se values were coded as not measured ("NM") (ID == c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686")) (see MWI_CropSoilData_Raw.csv), which were transformed into `NA`. 
-2. Negative values: 21 value were negative and converted to zero. 
+ - **Se_std**: This variable contains Se values from analytical values, as above with an extra-step, where BLOD value were substituted with their respective LOD value (as per each round of test, see `Crop_ICP_Run_Se` & `Se_LOD` variable).
+ 
+  - **Se_std**: This variable contains the Se values as per above however, in order to test the sensitivity to the BLOD values, the values BLOD were substituted with zero. 
+  
+- **Se_grain**: This contains the Se values reported above the LOD, where values BLOD were excluded (i.e., converted into `NA`), as was previosly done by Gashu et al., 2020 and reported in the "MWI_CropSoilData_NA.csv" dataset in Kumssa et al, 2022. 
+
 
 Additionally, the MAT should be added to this dataset as it is not inclued, as this study only reproted analytical data carried as part of the GeoNutrition. These values were completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
 

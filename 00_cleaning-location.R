@@ -34,9 +34,6 @@ library(tmap)  #spatial data manipulation and visualisation
 ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
-# TAs
- ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
 
 # National parks
 
@@ -46,14 +43,8 @@ parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
 # Explore the shapefile
 head(ea_bnd)
 
-table(sf::st_is_valid(ta_bnd))
 table(sf::st_is_valid(ea_bnd))
 table(sf::st_is_valid(parks))
-
-ta_bnd <- st_make_valid(ta_bnd) # Check this
-
-sort(unique(ta_bnd$ADM2_PCODE))
-length(unique(ta_bnd$ADM2_PCODE))
 
 
 #############################################################################################################
@@ -65,9 +56,9 @@ length(unique(ta_bnd$ADM2_PCODE))
 # Loading the data ----
 #  Maize Se conc. (cleaned from 00_cleaning-maize.R)
 #file_name  <- "maize-se" # cleaned geo-loc maize Se data
-maize_values  <- "predicted-maizeSe_LOD" # cleaned  predicted maize Se data (from 01_krg-maize-model.R)
-file_name  <- paste0("mwi-", maize_values, ".RDS")
-data.df  <- readRDS(here::here("data", "inter-output", file_name)) 
+# maize_values  <- "predicted-maizeSe_LOD" # cleaned  predicted maize Se data (from 01_krg-maize-model.R)
+# file_name  <- paste0("mwi-", maize_values, ".RDS")
+# data.df  <- readRDS(here::here("data", "inter-output", file_name)) 
 data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) 
 
 
@@ -116,16 +107,13 @@ Se_admin[which(is.na(Se_admin$EACODE)),]
 for(i in 1:length(m)){
 
 Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(Se_admin[which(is.na(Se_admin$EACODE)),1:ncol(geodata.df)-1], 
-    admin, st_is_within_distance,  dist = units::set_units(m[i], "m"))
+    admin, st_is_within_distance,  dist = units::set_units(m[i], "m")) 
 
 }
 
 #missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
 
-Se_admin$Se_raw[Se_admin$survey == "Chilimba"] 
-Se_admin$Se_raw[Se_admin$survey == "Chilimba"]  <- Se_admin$Se_grain[Se_admin$survey == "Chilimba"]
-Se_admin$Se_grain[Se_admin$survey == "Chilimba"]
-Se_admin$Crop[Se_admin$survey == "Chilimba"]  <-  "Maize"
+
 
 # Checking the areas
 sum(duplicated(Se_admin$EACODE))
@@ -147,8 +135,9 @@ par(mfrow=c(1,3))
 #boxplot(log(pred.Se) ~ region, Se_admin)
 #boxplot(log(Se_std) ~ region, Se_admin)
 boxplot(log(Se_grain) ~ region, maize)
-boxplot(log(Se_raw) ~ region, maize)
 boxplot(log(Se_std) ~ region, maize)
+boxplot(log(Se_raw) ~ region, maize)
+
 Se_admin$survey[Se_admin$Se_grain>1.5]
 par(mfrow=c(1,2))
 boxplot(Se_grain[Se_admin$Se_grain<1.5] ~ region[Se_admin$Se_grain<1.5], Se_admin)
@@ -162,9 +151,10 @@ data.df  <- Se_admin  %>% st_drop_geometry()  %>%  #removing geometry
 
 # Saving dataset with aggregation unit for modelling 
 # Admin 
-file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
-saveRDS(data.df, here::here("data", "inter-output", file_name))
-saveRDS(data.df, here::here("data", "inter-output", "mwi-grain-se_raw_admin.RDS"))
+#file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
+#saveRDS(data.df, here::here("data", "inter-output", file_name))
+saveRDS(data.df, here::here("data", "inter-output", 
+                            "mwi-grain-se_raw_admin.RDS"))
 
 
 # Testing results accoring to different shapefile choices:
@@ -204,13 +194,28 @@ length(unique(ta_bnd$ADM3_PCODE))
 
 # # Loading the data
 # maize 
-file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
-maize.df  <- readRDS(here::here("data", "inter-output", file_name))
+# file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
+# maize.df  <- readRDS(here::here("data", "inter-output", file_name))
+maize.df  <- readRDS(here::here("data", "inter-output",
+                                "mwi-grain-se_raw_admin.RDS"))
 
-geomaize.df <- st_as_sf(maize.df , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
+names(maize.df)
+# Selecting only values measured in maize
+unique(maize.df$Crop)
+maize.df  <- subset(maize.df, Crop == "Maize")
 
-geomaize.df <- st_join(ea_bnd[, "fid", "geometry"], geomaize.df)
+maize.df %>% left_join(., ea_bnd) %>% dplyr::filter(is.na(EACODE))  
+
+geomaize.df <- maize.df %>% left_join(., ea_bnd) %>%
+  dplyr::select(EACODE, DISTRICT, region, geometry)
+
+class(geomaize.df)
+
+geomaize.df <- st_as_sf(geomaize.df)
+
+crs(geomaize.df$geometry)
+
+geomaize.df <- geometry(geomaize.df$geometry)
 
 sum(is.na(geomaize.df$EACODE))
 
@@ -227,28 +232,35 @@ data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned 
 head(data.df)
 names(data.df)
 
-data.df   %>% dplyr::select( selenium, wealth_quintile, BMI, urbanity,
+data.df  <- data.df   %>% dplyr::select( selenium, wealth_quintile, BMI, urbanity,
 is_smoker, had_malaria, ANY_INFLAMMATION, unique_id, survey_cluster1, Longitude, Latitude)
 
 # Admin Boundaries for Malawi 
 sum(duplicated(data.df$unique_id))
 length(unique(data.df$unique_id))
 
-#Removing values missing Plasma Se value (exc. 34)
-data.df <-  subset(data.df, !is.na(selenium))
-length(unique(data.df$survey_cluster1))
-
-geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
-
 #There are 29 that have no sdistrict. 
 sum(is.na(data.df$sdist))
 
-plot(geodata.df[, "selenium"])
+plot(data.df[, "selenium"])
+
+#Removing values missing Plasma Se value (exc. 34)
+geodata.df <-  subset(data.df, !is.na(selenium) ,
+                     select = c(survey_cluster1, Longitude, Latitude)) %>% 
+  distinct()
+
+length(unique(geodata.df$survey_cluster1)) # After removing NA in plasma se (3 less clusters)
+dim(geodata.df)
+
+sum(duplicated(geodata.df$survey_cluster1))
+
+geodata.df <- st_as_sf(geodata.df , coords =c("Longitude", "Latitude"),
+ crs = "EPSG:4326")
+
 
 # Selecting only variables that are interesting. (EA code, EA area, TA code, district & geo)
-admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
-head(admin)
+# admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
+# head(admin)
 
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
@@ -256,29 +268,128 @@ head(admin)
 #Se_admin = st_intersection(data.df, admin)
 # Se_admin  <-  st_join(geodata.df, admin)
 Se_admin  <-  st_join(geodata.df, geomaize.df)
+dim(Se_admin)
+
+sum(duplicated(Se_admin$survey_cluster1))
+
+# Removing duplicates
+Se_admin  <- distinct(Se_admin)
 
 Se_admin[, c(1:5)]
 
 dim(Se_admin)
 dim(geodata.df)
 sum(is.na(Se_admin$EACODE))
-sum(is.na(Se_admin$pred.Se))
 unique(Se_admin$EACODE)
 length(unique(Se_admin$DISTRICT))
 length(unique(Se_admin$sdist))
 
+missing  <- Se_admin %>% filter(is.na(Se_admin$EACODE)) %>% 
+  mutate(meter = NA)
+
+#Checking missing values
 tm_shape(ea_bnd) +
-tm_polygons() +
-tm_shape(geomaize.df) +
-tm_polygons(col = "Se_grain") +
-tm_shape(Se_admin) +
-tm_symbols(size = "selenium", col = "blue")
+  tm_polygons() +
+  tm_shape(missing) +
+  tm_symbols(col ="red", size =0.1)
+
+# Checking the closest EA for those missing EA GPS loc. 
+ st_join(missing[,1:ncol(geodata.df)-1], geomaize.df, st_is_within_distance, 
+        dist = units::set_units(4970, "m"))  %>% #filter(!is.na(EACODE)) %>% 
+ filter(survey_cluster1 == "459")
 
 
-# 
-missing  <- Se_admin[which(is.na(Se_admin$EACODE)), c("unique_id")]
 
-missing$meters  <- NA
+m <- 30
+
+for(i in 1:385){
+  
+  m <-  m+20
+  print(m)
+  
+  }
+
+
+for(i in 1:385){
+  
+  m <- m + 20
+  
+ test <-  st_join(missing[which(is.na(missing$EACODE)), 1:ncol(geodata.df)-1], 
+              geomaize.df, st_is_within_distance,  
+              dist = units::set_units(m, "m"))
+  
+  if(dim(test)[1]>0) {
+  
+    missing[which(is.na(missing$EACODE)),]  <-  st_join(missing[which(is.na(missing$EACODE)), 1:ncol(geodata.df)-1], 
+                                                        geomaize.df, st_is_within_distance,  
+                                                        dist = units::set_units(m, "m")) %>% 
+    mutate(meter = m)
+  }
+  
+  print(i)
+  print(m)
+  
+}
+
+
+
+sum(is.na(missing$EACODE))
+sum(is.na(missing$meter))
+sum(duplicated(missing$survey_cluster1))
+no_missing <- distinct(missing)
+
+id <- unique(missing$survey_cluster1)
+
+missing  <- Se_admin %>% filter(is.na(Se_admin$EACODE) & 
+                                  !survey_cluster1 %in% id) %>% 
+  mutate(meter = NA)
+
+missing2 <- rbind(no_missing, distinct(missing)) 
+
+Se_admin %>% st_drop_geometry() %>% 
+  left_join(.,missing2 %>% st_drop_geometry(), by = "survey_cluster1") %>% 
+  filter(is.na(EACODE.x) & is.na(EACODE.y)) # %>% 
+ # pull(survey_cluster1)
+
+Se_admin %>% filter(is.na(EACODE)) %>% rbind(., missing2) %>% duplicated()
+
+sum(is.na(Se_admin$EACODE))
+
+sum(duplicated(Se_admin$survey_cluster1))
+dim(Se_admin)
+
+
+cluster <- Se_admin$survey_cluster1
+cluster1 <- geodata.df$survey_cluster1
+
+Se_admin[which(Se_admin$survey_cluster1 %in% id2),]
+
+#1800[3], 3500[2], 5800 [1]
+Se_admin$meter <- NA
+m <- 1800
+st_join(Se_admin[which(Se_admin$survey_cluster1 %in% id2),1:ncol(geodata.df)-1],
+geomaize.df, st_is_within_distance, 
+dist = units::set_units(m, "m")) %>%  mutate(meters = m)
+
+
+Se_admin[which(is.na(Se_admin$EACODE)),]
+
+# Fixing missing (EACODE values) 
+Se_admin[which(Se_admin$survey_cluster1 %in% id2[3]),] <- st_join(Se_admin[which(Se_admin$survey_cluster1 %in% id2), 
+                                                                  1:ncol(geodata.df)-1],
+                                                    geomaize.df, st_is_within_distance, 
+                                                    dist = units::set_units(m, "m"))[3,] %>%  mutate(meters = m)
+
+data <- data.df %>% left_join(., Se_admin %>% st_drop_geometry()) 
+
+
+# Getting the EACODE for each plasma cluster & its centroid.
+
+
+# Drawing buffers around them (10km)
+
+
+
 
 #Checking missing values
 tm_shape(ea_bnd) +

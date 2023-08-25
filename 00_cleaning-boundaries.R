@@ -18,10 +18,31 @@ library(tmap) # (spatial) visualisation
 
 # Admin Boundaries for Malawi 
 
+# TAs
+ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+                              "mwi-boundaries", "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
+
+
 # EAs
 ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
+# National parks
+
+parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
+                              "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
+
+# Explore the shapefile
+head(ea_bnd)
+
+table(sf::st_is_valid(ta_bnd))
+table(sf::st_is_valid(ea_bnd))
+table(sf::st_is_valid(parks))
+
+ta_bnd <- st_make_valid(ta_bnd) # Check this
+
+sort(unique(ta_bnd$ADM2_PCODE))
+length(unique(ta_bnd$ADM2_PCODE))
 
 # Getting the admin units (the one with the higher no of unique id/names)
 dim(ea_bnd) #9235

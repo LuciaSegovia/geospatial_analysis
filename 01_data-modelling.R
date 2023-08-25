@@ -40,6 +40,12 @@ data.df  <- readRDS(here::here("data", "inter-output",
 "mwi-grain-se_raw_admin.RDS")) # cleaned geo-loc maize Se data (00_cleaning-location.R)
 
 names(data.df)
+
+# Selecting only values measured in maize
+unique(data.df$Crop)
+data.df$Crop[data.df$survey == "Chilimba"]  <-  "Maize"
+data.df  <- subset(data.df, Crop == "Maize")
+
 # Checking missing values: 2 pH
 sum(is.na(data.df$BIO1))
 data.df[which(is.na(data.df$pH_w)),]
@@ -57,37 +63,54 @@ data.df  <- subset(data.df, !is.na(pH_w)) # removing NA
 # Selecting the Se variable to model
 var  <- "Se_raw"
 
-# Checking no. of EAs per (Se_grain (1123) vs pred.Se (1628))
+#Checking missing values
+sum(is.na(data.df[, var]))
+data.df  <- data.df %>%  dplyr::filter(!is.na(!!sym(var)))
+
+# Checking no. of EAs per (Se_grain (1123) vs pred.Se (1628) vs raw (1393))
 length(unique(data.df$EACODE[!is.na(data.df[, var])]))
 
 # check for normality
 summaplot(data.df[, var])
 summary(data.df[, var])
-sum(is.na(data.df[, var]))
-data.df  <- data.df %>%  dplyr::filter(!is.na(!!sym(var)))
 sum(is.na(data.df$pH_w))
+
 data.df$logSe<-log(data.df[, var])
+sum(data.df$logSe == "-Inf")
+data.df <- data.df %>%  dplyr::filter(logSe != "-Inf")
 summaplot(data.df$logSe)
 sum(is.na(data.df$logSe))
-sum(data.df$logSe == "-Inf")
-data.df  <-data.df %>%  dplyr::filter(logSe != "-Inf")
 
 par(mfrow=c(1,2))
- plot(log(data.df$Se_grain), data.df$pH_w)
- plot(log(data.df$Se_grain), data.df$BIO1)
+ plot(log(data.df[, var]), data.df$pH_w)
+ plot(log(data.df[, var]), data.df$BIO1)
 
 # visualize the data
 ggplot(data = data.df,
-       mapping = aes(x = logSe, y = BIO1/10)) + 
+       mapping = aes(x = BIO1/10, y =logSe)) + 
   geom_point() +
   facet_wrap(~DISTRICT, ncol = 5) +
-  labs(x = "Se conc. in maize (log(mg/kg))", 
-       y = "Downscaled MAT") + 
+  labs(x = "Downscaled MAT", 
+       y = "Se conc. in maize (log(mg/kg))") + 
   theme(strip.text = element_text(size = 12),
         axis.text.y = element_text(size = 12))
 
+data.df$EACODE  <- as.character(data.df$EACODE)
+
+ggplot(data = data.df,
+ mapping = aes(x = BIO1/10, y =logSe, colour = EACODE)) +
+  geom_point(size = 2) +
+ # theme_classic() +
+  facet_wrap(~DISTRICT, ncol = 5) +
+  labs(x = "Downscaled MAT", 
+       y = "Se conc. in maize (log(mg/kg))") + 
+  theme(legend.position = "none")
+
 #data.df  <- data.df[,-c(9, 10)]
 #data.df$BIO1b  <- data.df$BIO1/10
+
+#data.df$pH_w  <- scale(data.df$pH_w, center = TRUE, scale = TRUE)
+#data.df$BIO1  <- scale(data.df$BIO1, center = TRUE, scale = TRUE)
 
 # fit the model: Maize Se
 model0 <- lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
@@ -95,35 +118,45 @@ model0 <- lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
 model1 <-lme(logSe ~ pH_w + BIO1, random=~1|EACODE, data=data.df, method = "ML")
 
 # model1b<-lme(logSe ~ BIO1, random=~1|EACODE, data=data.df, method = "ML")
-
-anova(model0, model1)
+summary(model1)
+anova(model0, model1) # model 1 has the lowest AIC (& p-value <.0001)
 
 # Model 1: with covariates is performing better: Keeping cov.
 
 # check distribution of residuals
 summaplot(residuals(model1,level=0))
 
-model2<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE, data=data.df, method = "ML")
+model2<-lme(logSe ~ pH_w + BIO1, random=~1|TA_CODE, data=data.df, method = "ML")
 
-model3<-lme(logSe ~ pH + BIO1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
+model3<-lme(logSe ~ pH_w + BIO1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
 
 model3b<-lme(logSe ~1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
 
 anova(model2, model3, model3b)
+anova(model3b, model3)
 
 # Model 3: w/ nested random effect is better
 
 # check distribution of residuals
 summaplot(residuals(model3,level=0))
 
-model4<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
+model4<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
 
-model5<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT/TA_CODE, data=data.df, method = "ML")
+#model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE, data=data.df, method = "ML")
 
-model6<-lme(logSe ~ pH + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, 
-data=data.df, method = "ML")
+model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/EACODE, data=data.df, method = "ML")
+model5b<-lme(logSe ~ 1, random=~1|DISTRICT/EACODE, data=data.df, method = "ML")
 
-anova(model4, model5, model6)
+model6<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "ML")
+model6b<-lme(logSe ~ 1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "ML")
+
+anova(model5b, model5) # model 5 has the lowest AIC (& p-value <.0001)
+anova(model6b, model6) # model 6 has the lowest AIC (& p-value <.0001)
+
+model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/EACODE, data=data.df, method = "REML")
+model6<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "REML")
+
+anova(model5, model6)
 
 # Model 6: w/ full nested random effect is better
 
@@ -194,8 +227,10 @@ names(re)[2]  <- "intercept"
 
 # Calculating the covariate means for predictions
 re_cov  <- data.df  %>% group_by(!!sym(area))  %>% 
-summarise(pH_mean = mean(pH), 
-          BIO1_mean = mean(BIO1))
+summarise(pH_mean = mean(pH_w), 
+          BIO1_mean = mean(BIO1),
+          Se_mean = mean(!!sym(var)),
+          Se_median = median(!!sym(var)))
 
 # Merging mean of the covariates w/ model results
 re  <- merge(re, re_cov)
@@ -233,8 +268,10 @@ names(re)[2]  <- "intercept"
 
 # Calculating the covariate means for predictions
 re_cov  <- data.df  %>% group_by(!!sym(area))  %>% 
-summarise(pH_mean = mean(pH), 
-          BIO1_mean = mean(BIO1))
+summarise(pH_mean = mean(pH_w), 
+          BIO1_mean = mean(BIO1),
+          Se_mean = mean(!!sym(var)),
+          Se_median = median(!!sym(var)))
 
 # Merging mean of the covariates w/ model results
 re  <- merge(re, re_cov)

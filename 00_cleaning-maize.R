@@ -48,7 +48,9 @@ data.df  <- data.df  %>% left_join(., lod.df[, c(1, 25)], # merging grain & LOD 
 by = c("Crop_ICP_Run_Se" = "Crop_ICP_Run"))  %>%          # for Se
 dplyr::rename(Se_raw = "Se_grain")  %>%                 # Renaming variable 
 mutate(Se_grain = ifelse(Se_raw>Se_LOD, Se_raw, NA))  %>%  # Exc. all values below their LOD (converted into NA)
-mutate(Se_std = ifelse(!is.na(Se_grain), Se_grain, Se_LOD)) # Generating a varible that change NA to LOD values
+mutate(Se_std = ifelse(!is.na(Se_grain), Se_grain, Se_LOD), # Generating a variable that change NA to LOD values
+       Se_zero = ifelse(is.na(Se_grain), 0, Se_grain))  # Getting the replaced to zero variable
+
 
 
 #Checking differences between the two Se w/ NA variable
@@ -77,8 +79,9 @@ hist(data.df$Se_std, na.rm = TRUE)
 # No analysed values (NM in MWI_CropSoilData_Raw)
 nm  <- c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686")
 subset(data.df, ID %in% nm)
-# Changing LOD values for NA for non-analysed valeus
+# Changing LOD values for NA for non-analysed values
 data.df$Se_std[data.df$ID %in% nm]  <-  NA
+data.df$Se_zero[data.df$ID %in% nm]  <-  NA
 
 # Data exploration
 
@@ -193,7 +196,7 @@ data.df  <- geodata.df %>%
 st_drop_geometry()  %>%  # dropping the geometry (spatial obj)
 right_join(., data.df) 
 
-#Chekcing again the data
+#Checking again the data
 dim(data.df) # 1282 # 1900
 sum(!is.na(data.df$Crop) & data.df$Crop == "Rice")
 sum(is.na(data.df$Se_grain) & data.df$survey == "Chilimba") # 2
@@ -207,6 +210,17 @@ sum(is.na(data.df$BIO1)) # completed
 #dplyr::rename(Longitude = "Longitude_DD",  Latitude = "Latitude_DD")  %>% 
 #select = c(Se_mg, pH, BIO1, survey, Longitude, Latitude)
 
+# Finalising the dataset
+# Adding Chilimba Se data to variables: _raw and _std & Crop info
+sum(is.na(data.df$Se_raw) & data.df$survey == "Chilimba")
+sum(is.na(data.df$Se_std) & data.df$survey == "Chilimba")
+data.df$Se_grain[data.df$survey == "Chilimba"] 
+data.df$Se_raw[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey == "Chilimba"]
+data.df$Se_std[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey == "Chilimba"]
+data.df$Se_zero[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey == "Chilimba"]
+data.df$Crop[data.df$survey == "Chilimba"] <-  "Maize"
+
+sum(is.na(data.df$Se_zero))
 
 # Saving dataset for modelling 
 # saveRDS(data.df, here::here("data", "inter-output", "mwi-maize-se_LOD.RDS")) # only maize 
