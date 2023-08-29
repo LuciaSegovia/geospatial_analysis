@@ -403,4 +403,11 @@ Test 1: Drawing a 10km buffer around the HH: we generate 10km buffer around each
 
 Test 2: [Non-overalpping join](https://r.geocompx.org/spatial-operations.html#non-overlapping-joins), which are based on proximity. We are merging DHS dataset with the GeoNutrition dataset using two functions: `st_join()` and `st_is_within_distance()`. It doesn't work because it use all the data in maize Se dataset.
 
-If we are going to do a prediction we need to build the boudaries. Hence, ideally we should be able to calculate an area size, instead of a buffer. 
+If we are going to do a prediction we need to build the boundaries. Hence, ideally we should be able to calculate an area size, instead of a buffer. 
+
+### Co-location
+
+Samples, both maize and plasma, were supposed to be co-located (i.e., collected at the same EA) as per documentation on Gashu et al, (2021). However, due to the EA displacement performed within the DHS protocol (see XX), around 60% of our sample did not share the same EA. Hence, we decided to use the EAs where maize sample were collected (at the were not displaced), and to co-locate (by closest distance possible) the plasma cluster location (See script 00_cleaning-location.R).
+
+We added the distance (in m) at which the co-location was found, when we studied the distance for rural clusters, we can see that only one cluster, corresponding to 8WRA reported location, where within higher distance (>5km) of the displacement. This corresponded to 1.23% of the sample of rural household which is below the reported, 10% displacement of 10km. 
+

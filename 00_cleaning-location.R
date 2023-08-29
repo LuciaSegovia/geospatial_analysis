@@ -11,8 +11,8 @@ rm(list=ls())
 
 # Loading libraries and functions
 
+#library(plyr) # weighted data analysis
 library(dplyr) # data wrangling 
-library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
@@ -51,9 +51,10 @@ table(sf::st_is_valid(parks))
 
 #    Maize Se conc. 
 
-############################################################################################################## 
+################################################################################
 
-# Loading the data ----
+## Loading the data ----
+
 #  Maize Se conc. (cleaned from 00_cleaning-maize.R)
 #file_name  <- "maize-se" # cleaned geo-loc maize Se data
 # maize_values  <- "predicted-maizeSe_LOD" # cleaned  predicted maize Se data (from 01_krg-maize-model.R)
@@ -186,11 +187,11 @@ length(unique(ta_bnd$ADM3_PCODE))
 #tm_shape(geodata.df) +
 #tm_symbols(size = 0.09, col = "red")
 
-##################################################################################
+################################################################################
 
 #    Plasma Se conc. 
 
-############################################################################################################## 
+################################################################################
 
 # # Loading the data
 # maize 
@@ -213,17 +214,17 @@ class(geomaize.df)
 
 geomaize.df <- st_as_sf(geomaize.df)
 
-crs(geomaize.df$geometry)
+#crs(geomaize.df$geometry)
 
-geomaize.df <- geometry(geomaize.df$geometry)
+#geomaize.df <- geometry(geomaize.df$geometry)
 
 sum(is.na(geomaize.df$EACODE))
 
 dim(maize.df)
-dim(geomaize.df)
-names(geomaize.df)
-head(geomaize.df)
-geomaize.df <- subset(geomaize.df, !is.na(pH_w))
+#dim(geomaize.df)
+#names(geomaize.df)
+#head(geomaize.df)
+#geomaize.df <- subset(geomaize.df, !is.na(pH_w))
 
 # Loading the data
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
@@ -240,7 +241,7 @@ sum(duplicated(data.df$unique_id))
 length(unique(data.df$unique_id))
 
 #There are 29 that have no sdistrict. 
-sum(is.na(data.df$sdist))
+#sum(is.na(data.df$sdist))
 
 plot(data.df[, "selenium"])
 
@@ -344,58 +345,173 @@ missing  <- Se_admin %>% filter(is.na(Se_admin$EACODE) &
                                   !survey_cluster1 %in% id) %>% 
   mutate(meter = NA)
 
-missing2 <- rbind(no_missing, distinct(missing)) 
+# Repeat the loop
 
+no_missing2 <- distinct(missing)
+
+id <- unique(missing$survey_cluster1)
+
+id <- c(id, unique(no_missing$survey_cluster1))
+
+missing  <- Se_admin %>% filter(is.na(Se_admin$EACODE) & 
+                                  !survey_cluster1 %in% id) %>% 
+  mutate(meter = NA)
+
+# Repeat the loop (if needed)
+
+missing2 <- rbind(no_missing, no_missing2, distinct(missing)) 
+
+# Checking duplicates
+
+dupli <- missing2 %>% dplyr::count(survey_cluster1) %>% filter(n>1) %>% 
+  pull(survey_cluster1)
+
+# Removing (and manually adding (below)) duplicates
+
+missing2 <- subset(missing2, !survey_cluster1 %in% dupli)
+
+# Checking missing values 
 Se_admin %>% st_drop_geometry() %>% 
   left_join(.,missing2 %>% st_drop_geometry(), by = "survey_cluster1") %>% 
   filter(is.na(EACODE.x) & is.na(EACODE.y)) # %>% 
  # pull(survey_cluster1)
 
+# Getting the ids of the missing values (to be added manually, this includes the removed duplicates)
+ids <- Se_admin %>% st_drop_geometry() %>% 
+  left_join(.,missing2 %>% st_drop_geometry(), by = "survey_cluster1") %>% 
+  filter(is.na(EACODE.x) & is.na(EACODE.y)) %>% 
+pull(survey_cluster1)
+
+# Checks
 Se_admin %>% filter(is.na(EACODE)) %>% rbind(., missing2) %>% duplicated()
-
 sum(is.na(Se_admin$EACODE))
-
 sum(duplicated(Se_admin$survey_cluster1))
 dim(Se_admin)
 
+#cluster <- Se_admin$survey_cluster1
+#cluster1 <- geodata.df$survey_cluster1
 
-cluster <- Se_admin$survey_cluster1
-cluster1 <- geodata.df$survey_cluster1
+Se_admin[which(Se_admin$survey_cluster1 %in% id),]
 
-Se_admin[which(Se_admin$survey_cluster1 %in% id2),]
+missing2 %>% filter(survey_cluster1 == "571")
+missing2 %>% filter(meter> 6000)
 
-#1800[3], 3500[2], 5800 [1]
-Se_admin$meter <- NA
-m <- 1800
-st_join(Se_admin[which(Se_admin$survey_cluster1 %in% id2),1:ncol(geodata.df)-1],
+
+#  571 10302002 (5000m)
+# 464 10501056 (4000m)
+# 468 30805017 (2980m)
+# 832 20908050 (1600m)
+# 813 10102005 (3200m)
+# 832 20908050 (1000m)
+
+# 5800 [1]
+Se_admin$meter <- NA # Adding variable to store distance (m)
+# Checking
+m <- 1000
+st_join(Se_admin[which(Se_admin$survey_cluster1 %in% ids),1:ncol(geodata.df)-1],
 geomaize.df, st_is_within_distance, 
-dist = units::set_units(m, "m")) %>%  mutate(meters = m)
+dist = units::set_units(m, "m")) 
 
+m <- 7600
+st_join(Se_admin[which(Se_admin$survey_cluster1 %in% "497"),1:ncol(geodata.df)-1],
+        geomaize.df, st_is_within_distance, 
+        dist = units::set_units(m, "m")) 
 
 Se_admin[which(is.na(Se_admin$EACODE)),]
 
-# Fixing missing (EACODE values) 
-Se_admin[which(Se_admin$survey_cluster1 %in% id2[3]),] <- st_join(Se_admin[which(Se_admin$survey_cluster1 %in% id2), 
+m <- c(4000, 2980, 5000, 3200, 1000)
+# Fixing missing (EACODE values) with a loop
+
+for(i in seq_along(m)){
+Se_admin[which(Se_admin$survey_cluster1 %in% ids[i]),] <- st_join(Se_admin[which(Se_admin$survey_cluster1 %in% ids[i]), 
                                                                   1:ncol(geodata.df)-1],
                                                     geomaize.df, st_is_within_distance, 
-                                                    dist = units::set_units(m, "m"))[3,] %>%  mutate(meters = m)
+                                                    dist = units::set_units(m[i], "m"))[1,] %>%  mutate(meters = m[i])
 
-data <- data.df %>% left_join(., Se_admin %>% st_drop_geometry()) 
+}
 
+# Checking the loop was effective
+Se_admin[which(Se_admin$survey_cluster1 %in% ids),]
+
+# Binding all values and distances (every cluster has a colocated EA w/ maize)
+geocluster <- Se_admin %>% filter(!is.na(EACODE)) %>% rbind(., missing2) 
+
+# merging with plasma Se dataset and removing missing Se
+data <- data.df %>% left_join(., geocluster  %>% st_drop_geometry()) %>% 
+  filter(!is.na(selenium)) #34 missing values (double check w/ original data)
+
+# Saving plasma data with their EAs  (colocated with maize)
+saveRDS(data, here::here("data", "inter-output", 
+                            "mwi-plasma-se_maize-admin.RDS"))
+
+## Loading data
+
+data <- readRDS(here::here("data", "inter-output", 
+                           "mwi-plasma-se_maize-admin.RDS"))
+
+#Checking distances
+hist(data$meter[data$urbanity == "2"])
+sum(!is.na(data$meter) & data$urbanity == "2" & data$meter >5000) # 8 rural living WRA were located in EA >5km apart
+table(data$urbanity)
+count(data$survey_cluster1[!is.na(data$meter) & data$urbanity == "2" & data$meter >5000]) # 8 WRA in the same cluster were located in EA >5km apart
+data$unique_id[data$survey_cluster1 == "497"]
+data$meter[data$survey_cluster1 == "497"]
+
+# checking cluster were either rural or urban
+table(data$urbanity, data$survey_cluster1)
+data$survey_cluster1[data$urbanity == 1 & data$urbanity == 2]
+rural_id <- unique(data$survey_cluster1[data$urbanity == 2])
+
+# Checking that all ids w/ Se values has a "co-located" EACODE. 
+data %>% select(unique_id, EACODE) %>% left_join(., maize.df, 
+                                                 by = "EACODE")
 
 # Getting the EACODE for each plasma cluster & its centroid.
 
+# Binding plasma EAs with EA boundaries file
+plasma_bnd <- data %>% select(survey_cluster1, EACODE) %>% distinct() %>% 
+  left_join(., ea_bnd) 
 
-# Drawing buffers around them (10km)
+# Transforming the object into a spatial obj
+plasma_bnd <- st_as_sf(plasma_bnd)
+
+# Getting the centroids of each EA
+plasma_centroid <-  st_centroid(plasma_bnd) 
+plasma_centroidR <-  st_centroid(plasma_bnd) %>% filter(survey_cluster1 %in% rural_id)
+
+# Drawing buffers around them (10km & 15km)
+## should be smaller than district median (31km)
+## 
+
+plasma_buffer10 <- st_buffer(plasma_centroidR, dist = units::set_units(10000, "m"))
+plasma_buffer15 <- st_buffer(plasma_centroidR, dist = units::set_units(15000, "m"))
 
 
 
-
-#Checking missing values
+#Checking centroids
 tm_shape(ea_bnd) +
-tm_polygons() +
-tm_shape(missing) +
-tm_symbols(col ="red", size =0.1)
+tm_polygons(col = "DISTRICT", legend.show = FALSE) +
+tm_shape(plasma_buffer15) +
+tm_polygons(col = "green", alpha = 0.5) +
+tm_shape(plasma_buffer10) +
+tm_polygons(col = "yellow", alpha = 0.5) +
+  tm_shape(plasma_centroid) +
+  tm_symbols(col ="red", size =0.1) +
+  tm_shape(geodata.df$geometry[geodata.df$survey_cluster1 %in% rural_id]) +
+  tm_symbols(col ="blue", size =0.1) 
+
+# Check how many EAs per district (around 4 (1-8))
+plasma_bnd %>% dplyr::count(DISTRICT)
+
+# Check mean/median per district (around 4159.4(3093) (20-29185) 
+ea_bnd %>% st_drop_geometry() %>%
+   dplyr::group_by(DISTRICT) %>% 
+  dplyr::summarise(area = sum(AREA_KM)) %>% 
+  pull(area) %>% hist()
+
+#Checking max buffer based on median district area.
+area <-  3093
+sqrt(area/pi)
 
 m  <- 10
 
