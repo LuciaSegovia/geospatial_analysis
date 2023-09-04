@@ -10,8 +10,8 @@
 
 # Loading libraries and functions
 
-library(dplyr) # data wrangling 
 library(plyr) # weighted data analysis
+library(dplyr) # data wrangling 
 library(ggplot2) # visualisation
 library(survey) # survey design
 #options(survey.lonely.psu="adjust") # For Error of one PSU at stage 1

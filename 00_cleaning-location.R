@@ -488,17 +488,17 @@ plasma_buffer15 <- st_buffer(plasma_centroidR, dist = units::set_units(15000, "m
 
 
 
-#Checking centroids
+# Checking centroids
 tm_shape(ea_bnd) +
 tm_polygons(col = "DISTRICT", legend.show = FALSE) +
 tm_shape(plasma_buffer15) +
 tm_polygons(col = "green", alpha = 0.5) +
 tm_shape(plasma_buffer10) +
 tm_polygons(col = "yellow", alpha = 0.5) +
-  tm_shape(plasma_centroid) +
-  tm_symbols(col ="red", size =0.1) +
-  tm_shape(geodata.df$geometry[geodata.df$survey_cluster1 %in% rural_id]) +
-  tm_symbols(col ="blue", size =0.1) 
+tm_shape(plasma_centroid) +
+tm_symbols(col ="red", size =0.1) +
+tm_shape(geodata.df$geometry[geodata.df$survey_cluster1 %in% rural_id]) +
+tm_symbols(col ="blue", size =0.1) 
 
 # Check how many EAs per district (around 4 (1-8))
 plasma_bnd %>% dplyr::count(DISTRICT)
@@ -509,7 +509,7 @@ ea_bnd %>% st_drop_geometry() %>%
   dplyr::summarise(area = sum(AREA_KM)) %>% 
   pull(area) %>% hist()
 
-#Checking max buffer based on median district area.
+# Checking max buffer based on median district area.
 area <-  3093
 sqrt(area/pi)
 
@@ -558,7 +558,7 @@ print(m)
 
 
 #m <-  c(90, 200, 300, 4500)
-# Fixint missing (Pred. Se values) 
+# Fixing missing (Pred. Se values) 
 Se_admin[which(is.na(Se_admin$EACODE)),]
 Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(missing[,1:ncol(geodata.df)-1], admin, st_is_within_distance, 
              dist = units::set_units(m, "m"))
