@@ -72,9 +72,7 @@ Malawi DHS - MNS 2015-2016. Access need to be requested to DHS data [here](https
 
 **File of interest & variables**:
 
-a. Micronutrient survey data (MW_WRA). This dataset provided information on biomarker data and other biological data for women of reproductive age in Malawi. 
-
-#TODO: Find the variable for CRP levels
+a. Micronutrient survey data (MW_WRA). This dataset provided information on biomarker data and other biological data for women of reproductive age in Malawi. The recode and all information about the variable descitption can be found [here](~\MW_2015-16_DHS_09262022_949_164775.zip\MWOB7ASV).
 
 -   mregion (region) [1-3 = N->S]
 -   mtype (urban/rural) [U-R = 1-2] 
@@ -83,13 +81,24 @@ a. Micronutrient survey data (MW_WRA). This dataset provided information on biom
 -   mnumber (husehold number)
 -   mweight (Micro nutrient survey household weight (6 decimals))
 -   m01 (line number - individual ID within HH)
--   m07 (age)
+-   m07 (age) (age in years)
 -   m435 (weight)
 -   m436 (height)
 -   sel (Plasma Se (ng/ml))
 -   m415 (Took any kind of vitamin or mineral tablet/syrup/powder)
--   m431 (Malaria test result)
--   agp_crp_c1 (ANY_INFLAMMATION)
+-   m431 (Malaria test result)*
+-   agp_crp_c1 (ANY_INFLAMMATION, Any inflammation (AGP >1 g/L or CRP >5 mg/L)
+-   agp (AGP 'Alpha-1-Acid Glycoprotein (g/L), (inflammation biomarker))
+-   crp (CRP C-Reactive Protein (mg/L), (inflammation biomarker))
+
+*Malaria test recode: Final result of malaria from blood smear test  
+ 2 Negative (in recode manual = 0)
+ 1 Positive
+ 6 Test undetermined (4)
+ 7 Sample not found in lab database (6)
+ (m) 9 Missing
+ (na) Not applicable
+
 
 b. Questionnaire data (MWIR7). This dataset provided inforamtion on socioeconomic factors. We downloaded both the .dat and .dta file because the file with .dat extansion was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode doucmentation. 
 
@@ -200,11 +209,29 @@ Secuence: Raster>Extraction>Clip Raster by Extend...>Clipping extent>Calculate f
 
 There are `r sum(!is.na(EligibleDHS$selenium))` entries for plasma Se in the dataset.
 
+Main cleaning assumptions/ decisions:
+
+- Age: Included WRA with age outside the range (n=8 younger women) but included as covariate
+- Gender: One "male" was recoded as "female"
+- Pregnancy: Pregnan women and those recorded as `NA` were excluded. (n=)
+- Malaria test recode: 2 (0) == Negative, 1 == Positive, all other `NA`. Exclude?
+- Supplementation: Excluded (see below)
+
+#### Malaria test 
+
+We needed to recode other values than positive/ negative into NA, also we did not follow the recode manual (we are not putting 0 for negative, but keeping 2). This variable has high number of missing values which would reduce the sample size for Se by `sum(is.na(Malawi_WRA$Malaria_test_result) & !is.na(Malawi_WRA$selenium))`. Hence, we may exclude this variable.
+
+#### Supplementation
+
+Similarly, as with the Malaria test, we found high number of missing values which would reduce the sample size for Se by `sum(is.na(Malawi_WRA$supple) & !is.na(Malawi_WRA$selenium))`, and also only few reported consuming supplement (n=13), thus, we decided to exclude this variable.
+
 #### Age
--  There are some observation (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
+
+-  There are some observations (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49)`) that are below the age range for WRA. 
 In addition, mean (and median) were higher in the northern region compared with southern and center. Whereas, mean/median age were higher in rural areas. We applied survey weights when calculating them. 
 
 #### Gender & Pregnancy
+
 - There is one entry labelled as "male" while the dataset should only contain women.  
 
 #### Height & Weight
@@ -223,11 +250,28 @@ What it is interesting is that while the Northern-urban WRA had higher Se, than 
 
 We extracted the socio-economic information from the DHS survey, however, we are only interested in the data that has Plasma Se values. 
 
-According to the NSO (2017) report: Malawi Micronutrient Survey 2015-2016. There were significative differences between the number of indiviudals in each wealth quintile when disaggregated by rural/urban residency. 
+According to the NSO (2017) report: Malawi Micronutrient Survey 2015-2016. There were significative differences between the number of individuals in each wealth quintile when disaggregated by rural/urban residency. 
 #TODO: Would that impact our results? Probably yes. Check what that would mean for our analysis. 
 
 In the same report, inflamation was reported around 12% but it was consistent across age groups, residency, and wealth Q. However, malaria prevalence was higher in rural areas and for the different wealth Q, w/ lowest WQ being 6-times higher than the highes WQ. Since, these two variables seemed to be also related to Plasma Se status. Can we identify if malaria is influencing Se status?
-#TODO: Check correlation between malaria and Se status. 
+
+#### Wealth Quintile
+
+When plotted the Wealth Q per region, we can see that the central and southern region have a more or less even distribution of the wealth Q, however the northern region has predominately highest and higher wealth Q, accounting for more than 60% of the population in the northern region, unweighted. 
+
+#### Education
+
+We could se when those two variables plotted together that most of the people with higher education was in the highest wealth Q. Hence, we excluded this variable as it could possibly be confounding effect. 
+
+```{r}
+
+plot(DHSDATA$wealth_quintile, DHSDATA$education_level, 
+     main="Wealth vs Education",
+     xlab="Wealth Q", ylab="Education level", pch=19)
+
+```
+
+Similarly, when we plotted the Education by region, we could see the same trend as in the wealth Q. 
 
 When plotting wealth quintiles we can see that were more HH on the highest wealth Q. 
 

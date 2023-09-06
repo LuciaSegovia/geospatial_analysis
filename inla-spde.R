@@ -2,7 +2,6 @@
 rm(list = ls())
 
 # Loading libraries
-
 library(INLA) # Modelling (RINLA)
 library(sf) # spatial data manipulation
 library(spdep) # grid and neighbours
@@ -13,6 +12,7 @@ library(dplyr) # data wrangling
 # Loading the plasma Se conc. dataset (cleaned from 01.cleaning-location.R)
 plasma_se <- readRDS(here::here("data", "inter-output",
                                 "mwi-plasma-se_admin.RDS" )) # cleaned geo-loc maize Se data
+
 # Checking co-location at EA level for plasma and maize
 head(plasma_se)
 
@@ -27,14 +27,14 @@ names(plasma_se)
 
 #Check
 # Change `had_malaria` for `Malaria_test_results`, and
-# ANY_INFLAMATION for `crp` and `rbp` 
+# ANY_INFLAMATION for biomakers of infam: `crp` and `agp` 
 # HIV check again
 
 # Creating the mesh using the point data. (Not sure if it works)
 data.df <- plasma_se %>% 
   select(Plasma_Se, wealth_quintile, BMI, urbanity,
          is_smoker, Malaria_test_result, AGE_IN_YEARS,
-         crp, rbp,  unique_id, region, survey_cluster1,  
+         crp, agp,  unique_id, region, survey_cluster1,  
          EACODE, region, Latitude,  Longitude, geometry)
 
 
@@ -42,7 +42,7 @@ data.df <- plasma_se %>%
 
 covs <- plasma_se %>% select(wealth_quintile, BMI, urbanity,
                              is_smoker, Malaria_test_result, AGE_IN_YEARS,
-                             crp, rbp) %>% as.list()
+                             crp, agp) %>% as.list()
 
 # Intercept for spatial model
 #covs$b0 <- rep(1, nv + n) # Becario precario
@@ -136,7 +136,7 @@ join.stack <- inla.stack(stack, stack.pred)
 form <- log(y) ~ 0 + b0 + # log(maizeSe_mean) +
   wealth_quintile + BMI + urbanity + #is_smoker +
  Malaria_test_result + AGE_IN_YEARS +
-  crp + rbp + f(spatial.field, model = spde)
+  crp + agp + f(spatial.field, model = spde)
 
 # inla calculations
 
@@ -158,14 +158,16 @@ proj <- inla.mesh.projector(mesh, xlim = rang[ , 1],
 
 mean_s <- inla.mesh.project(proj, 
                                m1$summary.random$spatial.field$mean)
-sd_s <- inla.mesh.project( proj, 
+sd_s <- inla.mesh.project(proj, 
                              m1$summary.random$spatial.field$sd)
+
 df <- expand.grid(x = proj$x, y = proj$y)
 df$mean_s <- as.vector(mean_s)
 df$sd_s <- as.vector(sd_s)
 
 # Mapping the spatial results
- ggplot(df, aes(x = x, y = y, fill = sd_s)) + geom_raster() +
+ ggplot(df, aes(x = x, y = y, fill = sd_s)) +
+   geom_raster() +
   scale_fill_viridis_b(na.value = "transparent") +
   coord_fixed(ratio = 1) + theme_bw()
 
