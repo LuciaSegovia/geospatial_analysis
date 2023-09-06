@@ -229,6 +229,7 @@ dim(maize.df)
 # Loading the data
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
 data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
+# for future test if works with (dhs_se_gps.rds)
 # Explore the dataset
 head(data.df)
 names(data.df)
@@ -448,6 +449,9 @@ saveRDS(data, here::here("data", "inter-output",
 
 data <- readRDS(here::here("data", "inter-output", 
                            "mwi-plasma-se_maize-admin.RDS"))
+
+# TODO Getting the new dhs dataset with the location (Admin)
+#dhs_se_gps.rds
 
 #Checking distances
 hist(data$meter[data$urbanity == "2"])

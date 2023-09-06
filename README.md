@@ -15,5 +15,15 @@ To generate the cleaned version of the maize Se concentration used in this analy
 And, run the following script in the outlined order:
 
 00_cleaning-maize.R 
-01_krg-maize-model.R (optional)
+00_cleaning-location.R
+
+To generate the cleaned version of the plasma Se concentration used in this analysis you need access the data from DHS website, and to get the following datasets:
+
+1) DHS Survey data (MWIR7AFL.dta)
+2) DHS Biomarkers data (MW_WRA.dta)
+3) DHS GPS location ("MWGE7AFL.shp")
+
+And, run the following script in the outlined order:
+
+00_cleaning-dhs.R 
 00_cleaning-location.R

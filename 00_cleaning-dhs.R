@@ -604,6 +604,21 @@ EligibleDHS$wealth_quintile[
 #subset(EligibleDHS, !is.na(selenium), 
 #select = c(v005, survey_weight))
 
+## Malaria vs wealth & urbanity
+plot(EligibleDHS$wealth_quintile, EligibleDHS$Malaria_test_result)
+plot(EligibleDHS$urbanity, EligibleDHS$Malaria_test_result)
+
+boxplot(selenium ~ Malaria_test_result*urbanity, data = EligibleDHS, 
+        main="Plasma Se by Residency & Malaria test",
+        xlab="Residency", ylab="plasma Se (ng/ml)", pch=19, 
+        col = c("white", "steelblue"), frame = FALSE)
+
+boxplot(selenium ~ Malaria_test_result*wealth_quintile, data = EligibleDHS, 
+        main="Plasma Se by Wealth Q & Malaria test",
+        xlab="Wealth Q", ylab="plasma Se (ng/ml)", pch=19, 
+        col = c("white", "steelblue"), frame = FALSE)
+
+
 # Defining Se deficiency
 EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
 EligibleDHS$LOW_SEL_IDI <- ifelse(EligibleDHS$selenium<64.8,1,0)
@@ -656,7 +671,7 @@ ggplot() +
 saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
 
 # Survey analysis: Applying survey weight ----
-EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs-gps.rds"))
+EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
 sum(is.na(EligibleDHS$selenium))
 EligibleDHS  <- subset(EligibleDHS, !is.na(selenium))
 
