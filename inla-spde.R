@@ -11,7 +11,7 @@ library(dplyr) # data wrangling
 
 # Loading the plasma Se conc. dataset (cleaned from 01.cleaning-location.R)
 plasma_se <- readRDS(here::here("data", "inter-output",
-                                "mwi-plasma-se_admin.RDS" )) # cleaned geo-loc maize Se data
+                                "raw-maizeSe_plasma-se_ea.RDS" )) # cleaned geo-loc maize Se data
 
 # Checking co-location at EA level for plasma and maize
 head(plasma_se)
@@ -38,11 +38,23 @@ data.df <- plasma_se %>%
          EACODE, region, Latitude,  Longitude, geometry)
 
 
-# Assign values of covariates to points using value of nearest pixel
+var <- "maizeSe_mean"
 
-covs <- plasma_se %>% select(wealth_quintile, BMI, urbanity,
-                             is_smoker, Malaria_test_result, AGE_IN_YEARS,
-                             crp, agp) %>% as.list()
+sum(is.na(plasma_se[, var]))
+hist(plasma_se[, var])
+
+plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0]
+plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- NA
+min(plasma_se$maizeSe_mean[!is.na(plasma_se$maizeSe_mean)])
+plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- 0.002367136
+
+plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
+                      !is.na(crp))
+
+# Assign values of covariates to points using value of nearest pixel
+# excluding (for now) is_smoker, Malaria_test_result
+covs <- plasma_se %>% select(wealth_quintile, BMI, urbanity, maizeSe_mean, 
+                              AGE_IN_YEARS, crp, agp) %>% as.list()
 
 # Intercept for spatial model
 #covs$b0 <- rep(1, nv + n) # Becario precario
@@ -68,9 +80,13 @@ max(coord)
 #                      cutoff = 24)
 
 
+#mesh <- inla.mesh.2d(loc = coord, 
+#                      max.edge = c(.5, 3), 
+#                      cutoff = c(0.03))
+
 mesh <- inla.mesh.2d(loc = coord, 
-                      max.edge = c(1, 5), 
-                      cutoff = c(0.01))
+                     max.edge = c(.5, 3), 
+                     cutoff = c(0.001))
 
 # Best one in Righetto et al., 2020 (simulated data)
 #mesh2 <- inla.mesh.2d(loc = geom, max.edge = c(0.09, 0.3), 
@@ -132,10 +148,13 @@ join.stack <- inla.stack(stack, stack.pred)
 #formula <− y ~ 0 + b0 + alt + temp + prec + hum + pop +
 # aqua + f(s, model = spde)
 
+#wealth_quintile, BMI, urbanity, maizeSe_mean, 
+#AGE_IN_YEARS, crp, agp
+
 # Plasma Se model
-form <- log(y) ~ 0 + b0 + # log(maizeSe_mean) +
-  wealth_quintile + BMI + urbanity + #is_smoker +
- Malaria_test_result + AGE_IN_YEARS +
+form <- log(y) ~ 0 + b0 +  log(maizeSe_mean) +
+  wealth_quintile + BMI + urbanity + #is_smoker + Malaria_test_result +
+   AGE_IN_YEARS +
   crp + agp + f(spatial.field, model = spde)
 
 # inla calculations
@@ -166,10 +185,12 @@ df$mean_s <- as.vector(mean_s)
 df$sd_s <- as.vector(sd_s)
 
 # Mapping the spatial results
- ggplot(df, aes(x = x, y = y, fill = sd_s)) +
+sd <-  ggplot(df, aes(x = x, y = y, fill = sd_s)) +
    geom_raster() +
   scale_fill_viridis_b(na.value = "transparent") +
   coord_fixed(ratio = 1) + theme_bw()
+
+cowplot::plot_grid(mean, sd)
 
  # Points (location) for INLA
 

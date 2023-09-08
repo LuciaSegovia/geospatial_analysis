@@ -43,13 +43,19 @@ names(data.df)
 
 # Selecting only values measured in maize
 unique(data.df$Crop)
-data.df$Crop[data.df$survey == "Chilimba"]  <-  "Maize"
+#data.df$Crop[data.df$survey == "Chilimba"]  <-  "Maize"
 data.df  <- subset(data.df, Crop == "Maize")
 
 # Checking missing values: 2 pH
 sum(is.na(data.df$BIO1))
 data.df[which(is.na(data.df$pH_w)),]
 data.df  <- subset(data.df, !is.na(pH_w)) # removing NA
+
+# Checking EACODES
+
+subset(data.df, EACODE %in% c("10320707", "30106072"))
+
+data.df[data.df$EACODE == "30106072"]
 
 #sum(duplicated(dhs_se$unique_id))
 #length(unique(dhs_se$survey_cluster1))
@@ -79,6 +85,7 @@ data.df$logSe<-log(data.df[, var])
 sum(data.df$logSe == "-Inf")
 data.df <- data.df %>%  dplyr::filter(logSe != "-Inf")
 summaplot(data.df$logSe)
+summa(data.df$logSe) # 2 outliers after log
 sum(is.na(data.df$logSe))
 
 par(mfrow=c(1,2))
@@ -97,8 +104,8 @@ ggplot(data = data.df,
 
 data.df$EACODE  <- as.character(data.df$EACODE)
 
-ggplot(data = data.df,
- mapping = aes(x = BIO1/10, y =logSe, colour = EACODE)) +
+ggplot(data = data.df, # %>% filter(grepl("^3", EACODE)), # for viewing by region
+ mapping = aes(x = BIO1/10, y =logSe, colour = EACODE, alpha = 0.5)) +
   geom_point(size = 2) +
  # theme_classic() +
   facet_wrap(~DISTRICT, ncol = 5) +
@@ -113,6 +120,8 @@ ggplot(data = data.df,
 #data.df$BIO1  <- scale(data.df$BIO1, center = TRUE, scale = TRUE)
 
 # fit the model: Maize Se
+
+# Fitting at EA level
 model0 <- lme(logSe~1, random=~1|EACODE, data=data.df, method = "ML")
 
 model1 <-lme(logSe ~ pH_w + BIO1, random=~1|EACODE, data=data.df, method = "ML")
@@ -126,6 +135,7 @@ anova(model0, model1) # model 1 has the lowest AIC (& p-value <.0001)
 # check distribution of residuals
 summaplot(residuals(model1,level=0))
 
+# These model for aggregation at TA (excluding)
 model2<-lme(logSe ~ pH_w + BIO1, random=~1|TA_CODE, data=data.df, method = "ML")
 
 model3<-lme(logSe ~ pH_w + BIO1, random=~1|TA_CODE/EACODE, data=data.df, method = "ML")
@@ -140,12 +150,14 @@ anova(model3b, model3)
 # check distribution of residuals
 summaplot(residuals(model3,level=0))
 
-model4<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
+## District level
+#model4<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
 
 #model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE, data=data.df, method = "ML")
 
 model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/EACODE, data=data.df, method = "ML")
 model5b<-lme(logSe ~ 1, random=~1|DISTRICT/EACODE, data=data.df, method = "ML")
+summary(model5b)
 
 model6<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "ML")
 model6b<-lme(logSe ~ 1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "ML")
@@ -292,7 +304,14 @@ names(dist.df)[names(dist.df) == area]  <- "admin_id"
 
 data.df  <-  do.call(rbind, list(ea.df, ta.df, dist.df))
 
-saveRDS(data.df, here::here("data", "inter-output", "maizeSe-mean-predicted.RDS"))
+# Checking predicted mean value vs calculated mean/median values
+
+plot(data.df$maizeSe_mean, data.df$Se_median)
+plot(data.df$maizeSe_mean, data.df$Se_mean)
+plot(data.df$maizeSe_mean[data.df$admin == "DISTRICT"],
+     data.df$Se_mean[data.df$admin == "DISTRICT"])
+
+saveRDS(data.df, here::here("data", "inter-output", "raw_maizeSe-mean-predicted.RDS"))
 
 ##################################################################################
 

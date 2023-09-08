@@ -445,30 +445,7 @@ data <- data.df %>% left_join(., geocluster  %>% st_drop_geometry()) %>%
 saveRDS(data, here::here("data", "inter-output", 
                             "mwi-plasma-se_maize-admin.RDS"))
 
-## Loading data
 
-data <- readRDS(here::here("data", "inter-output", 
-                           "mwi-plasma-se_maize-admin.RDS"))
-
-# TODO Getting the new dhs dataset with the location (Admin)
-#dhs_se_gps.rds
-
-#Checking distances
-hist(data$meter[data$urbanity == "2"])
-sum(!is.na(data$meter) & data$urbanity == "2" & data$meter >5000) # 8 rural living WRA were located in EA >5km apart
-table(data$urbanity)
-count(data$survey_cluster1[!is.na(data$meter) & data$urbanity == "2" & data$meter >5000]) # 8 WRA in the same cluster were located in EA >5km apart
-data$unique_id[data$survey_cluster1 == "497"]
-data$meter[data$survey_cluster1 == "497"]
-
-# checking cluster were either rural or urban
-table(data$urbanity, data$survey_cluster1)
-data$survey_cluster1[data$urbanity == 1 & data$urbanity == 2]
-rural_id <- unique(data$survey_cluster1[data$urbanity == 2])
-
-# Checking that all ids w/ Se values has a "co-located" EACODE. 
-data %>% select(unique_id, EACODE) %>% left_join(., maize.df, 
-                                                 by = "EACODE")
 
 # Getting the EACODE for each plasma cluster & its centroid.
 
@@ -570,9 +547,9 @@ Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(missing[,1:ncol(geodata.df
 
 # Checking the areas
 sum(duplicated(Se_admin$EACODE))
-length(unique(Se_admin$EACODE)) #9219 --> 102 (not all EAs were sampled)
-length(unique(Se_admin$DISTRICT)) #30 --> 26 (3 lakes + likoma island) # district
-# length(unique(Se_admin$TA_CODE)) #351 --> 88 #ta code
+length(unique(Se_admin$EACODE)) # 9219 --> 102 (not all EAs were sampled)
+length(unique(Se_admin$DISTRICT)) # 30 --> 26 (3 lakes + likoma island) # district
+# length(unique(Se_admin$TA_CODE)) # 351 --> 88 #ta code
 # sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
 
 # Converting back from spatial obj to dataframe
@@ -587,7 +564,8 @@ saveRDS(data.df, here::here("data", "inter-output", file_name))
 
 
 # Checking co-location at EA level for plasma and maize
-plasma_se  <- readRDS(here::here("data", "inter-output", "mwi-plasma-se_admin.RDS"))
+plasma_se  <- readRDS(here::here("data", "inter-output", 
+                                 "mwi-plasma-se_admin.RDS"))
 head(plasma_se)
 
 test  <- plasma_se %>% filter(!is.na(selenium))  %>% select(-geometry)  %>%  
