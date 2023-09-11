@@ -108,6 +108,7 @@ Malawi_WRA$sex  <- as.factor(Malawi_WRA$sex)
 
 # Urbanity
 class(Malawi_WRA$urbanity)
+table(Malawi_WRA$urbanity)
 Malawi_WRA$urbanity  <- as.factor(Malawi_WRA$urbanity)
 sum(is.na(Malawi_WRA$urbanity))
 

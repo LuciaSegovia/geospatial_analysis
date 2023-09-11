@@ -7,6 +7,7 @@ rm(list=ls())
 library(dplyr) # data wrangling 
 library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
+library(scales) # visualisation - colours
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
@@ -270,3 +271,80 @@ ea  <- test %>%
 
  test  %>% filter(admin_id %in% ea)  %>% 
  dplyr::select(maizeSe_mean, Se_triplequad, pred.Se)  %>% View()
+ 
+ 
+ ### Visualising EA data ----
+ 
+ # Loading the plasma Se conc. dataset (cleaned from 01.cleaning-location.R)
+ data.df <- readRDS(here::here("data", "inter-output",
+                                 "raw-maizeSe_plasma-se_ea.RDS" )) #
+ 
+names(data.df)
+data.df$EACODE  <- as.character(data.df$EACODE)
+
+
+sum(is.na(data.df$dist_name))
+
+ggplot(data = data.df # %>% filter(region == 1) 
+       ,
+       mapping = aes(x = !!sym(var_x), y =!!sym(var_y), colour = EACODE, alpha = 0.5)) +
+  geom_point(size = 2) +
+  theme_bw() +
+  facet_wrap(~DISTRICT) +
+  labs(
+    x = var_x, 
+    y = var_y) + 
+  theme(legend.position = "none")
+
+
+var_x <- "agp"
+var_y <- "selenium"
+
+
+# Visualising data per region ----
+ ggplot(data = data.df,
+         mapping = aes(x = !!sym(var_x), y =!!sym(var_y), colour = EACODE, alpha = 0.5)) +
+   geom_point(size = 2) +
+   theme_bw() +
+   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+                                     `2` = "Central", 
+                                     `3` = "Southern"))) +
+   labs(
+        x = var_x, 
+        y = var_y) + 
+   theme(legend.position = "none")
+ 
+# Boxplots per EA for each district ----
+ 
+ var_x <- "EACODE"
+ var_y <- "selenium" 
+ var_col <- "urbanity"
+ 
+n_breaks <- unique(data.df[, var_col])
+show_col(hue_pal()(3))
+
+col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
+ 
+unique(data.df$DISTRICT)
+unique(data.df$DISTRICT[data.df$urbanity=="1"])
+ 
+ plot_dist <- list()
+ 
+ for(i in 1:length(unique(data.df$DISTRICT))){
+ 
+ plot_dist[[i]] <- ggplot(data = data.df  %>% filter(DISTRICT %in%  unique(data.df$DISTRICT)[i]) # for viewing by region
+        ,
+        mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
+                      colour = !!sym(var_col))) +
+   geom_boxplot() +
+   theme_light() +
+   scale_colour_manual(values =  col_break) +
+   labs(title =  unique(data.df$DISTRICT)[i],
+     x = var_x, 
+     y = var_y) # + 
+   #theme(legend.position = "none")
+
+ }
+
+ print(plot_dist[[4]])
+ 

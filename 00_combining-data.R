@@ -21,7 +21,7 @@ maize.df <- readRDS(here::here("data", "inter-output",
 
 data_id <- readRDS(here::here("data", "inter-output", 
                               "mwi-plasma-se_maize-admin.RDS")) %>% 
-  select(unique_id, survey_cluster1, EACODE, meter)
+  select(unique_id, survey_cluster1, EACODE, DISTRICT, meter)
 
 #  Getting the new dhs dataset with the location (Admin)
 
