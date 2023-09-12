@@ -302,7 +302,7 @@ plot(Malawi_WRA$selenium, Malawi_WRA$BMI,
      main="Selenium by BMI",
      xlab="Selenium", ylab="BMI", pch=19)
 
-# Selenium & CRP/ AGP (Inflamation) - log them bc very skewness (check line 250)
+# Selenium & CRP/ AGP (Inflammation) - log them bc very skewness (check line 250)
 plot(log(Malawi_WRA$selenium) ~ log(Malawi_WRA$crp))
 plot(log(Malawi_WRA$selenium) ~ log(Malawi_WRA$agp))
 

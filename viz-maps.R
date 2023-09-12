@@ -280,6 +280,19 @@ ea  <- test %>%
                                  "raw-maizeSe_plasma-se_ea.RDS" )) #
  
 names(data.df)
+
+# Boxplot log(CRP)/(AGP)/(selenium) ~ Malaria
+boxplot(log(selenium) ~ Malaria_test_result, data = data.df,
+         frame = FALSE)
+
+data.df <- data.df %>% st_drop_geometry()
+
+plot(log(data.df$selenium) ~ log(data.df$crp))
+plot(log(data.df$selenium) ~ log(data.df$agp))
+
+lm(log(data.df$selenium) ~ log(data.df$crp))
+lm(log(data.df$selenium) ~ log(data.df$agp))
+
 data.df$EACODE  <- as.character(data.df$EACODE)
 
 

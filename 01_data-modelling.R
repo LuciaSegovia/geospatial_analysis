@@ -55,7 +55,6 @@ data.df  <- subset(data.df, !is.na(pH_w)) # removing NA
 
 subset(data.df, EACODE %in% c("10320707", "30106072"))
 
-data.df[data.df$EACODE == "30106072"]
 
 #sum(duplicated(dhs_se$unique_id))
 #length(unique(dhs_se$survey_cluster1))
@@ -69,8 +68,11 @@ data.df[data.df$EACODE == "30106072"]
 # Selecting the Se variable to model
 var  <- "Se_raw"
 
-#Checking missing values
-sum(is.na(data.df[, var]))
+#Checking missing values & zero (which were negatives)
+sum(is.na(data.df[, var])) #7
+sum(is.na(data.df[, var]) | data.df[, var] == 0) #30
+sum(is.na(data.df[, var]) | data.df[, var] == 0)/ nrow(data.df)*100
+
 data.df  <- data.df %>%  dplyr::filter(!is.na(!!sym(var)))
 
 # Checking no. of EAs per (Se_grain (1123) vs pred.Se (1628) vs raw (1393))
