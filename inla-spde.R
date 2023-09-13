@@ -51,10 +51,16 @@ plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- 0.002367136
 plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
                       !is.na(crp))
 
+# Dataset for excluding urban WRA
+plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
+                      !is.na(crp) & urbanity == "2")
+
+table(plasma_se$URBAN_RURA)
+dim(plasma_se)
 
 # Assign values of covariates to points using value of nearest pixel
 # excluding (for now) is_smoker, Malaria_test_result
-covs <- plasma_se %>% select(wealth_quintile, BMI,  urbanity, 
+covs <- plasma_se %>% select(wealth_quintile, BMI, # urbanity, 
                              maizeSe_mean, 
                               AGE_IN_YEARS, crp, agp) %>% as.list()
 
@@ -126,12 +132,14 @@ Ap <- inla.spde.make.A(mesh = mesh , loc = coord) # Moraga (should be from pred.
 #                           effects = list(spde.index, covs),
 #                           tag = "obs")
 
+# IMPORTANT NOTE: order is important!!
 stack <- inla.stack(data  = list(y = plasma_se$Plasma_Se),
                     A = list(A, 1),
-                    effects = list(c(spde.index,
-                                   list(Intercept  =1)),
-                                   covs),
+                    effects = list(c(spde.index, list (Intercept = 1)),
+                                  X=covs)
+                   , 
                     tag = "obs")
+
 
 # stk.e <- inla.stack(tag = "est" , 
 #                     data = list(y = plasma_se$Plasma_Se,
@@ -174,7 +182,7 @@ join.stack <- inla.stack(stack, stack.pred)
 #  log(crp) + log(agp) + f(spatial.field, model = spde)
 
 form <- log(y) ~ -1 + Intercept +  log(maizeSe_mean) +
-  wealth_quintile + BMI + urbanity + #is_smoker + Malaria_test_result +
+  wealth_quintile + BMI + # urbanity + #is_smoker + Malaria_test_result +
   AGE_IN_YEARS +
   log(crp) + log(agp) + f(spatial.field, model = spde)
 
@@ -352,3 +360,51 @@ stack <- inla.stack(data = list(y = y.pp, e = e.pp),
                     A = list(A.pp, 1), 
                     effects = list(spde.index, covs),
                     tag = "pp")
+
+## Following Claire script - Easy model test for spatial dependency
+# Way better with spatial effect...
+# Ex15_09C_IrishpH_INLA_V4.R - line 673
+
+# Define sample size
+N <- nrow(plasma_se)
+
+StackFit <- inla.stack(tag = "obs", data = list(y = plasma_se$Plasma_Se),  
+                       A = list(1, 1, A),                  
+                       effects = list(   
+                         Intercept = rep(1, N),
+                         X = covs,
+                         w = spde.index))
+
+
+
+f2a <- log(y) ~ -1 + Intercept +  log(maizeSe_mean) +
+  wealth_quintile + BMI + # urbanity + #is_smoker + Malaria_test_result +
+  AGE_IN_YEARS +
+  log(crp) + log(agp) 
+
+f2b <- log(y) ~ -1 + Intercept +  log(maizeSe_mean) +
+  wealth_quintile + BMI + # urbanity + #is_smoker + Malaria_test_result +
+  AGE_IN_YEARS +
+  log(crp) + log(agp) + f(spatial.field, model = spde)
+
+# inla calculations
+
+
+# First we run the model without spatial dependency.
+IM2a <- inla(f2a,
+             family = "gaussian", 
+             data = inla.stack.data(StackFit),
+             control.compute = list(dic = TRUE),
+             control.predictor = list(A = inla.stack.A(StackFit)))
+summary(IM2a)
+
+# And this is the model with the spatial field
+IM2b <- inla(f2b,
+             family = "gaussian", 
+             data=inla.stack.data(StackFit),
+             control.compute = list(dic = TRUE),
+             control.predictor = list(A = inla.stack.A(StackFit)))
+
+summary(IM2b)
+# Compare them
+c(IM2a$dic$dic, IM2b$dic$dic)
