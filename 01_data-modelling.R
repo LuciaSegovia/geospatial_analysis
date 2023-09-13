@@ -80,12 +80,20 @@ length(unique(data.df$EACODE[!is.na(data.df[, var])]))
 
 # check for normality
 summaplot(data.df[, var])
+summaplot(log(data.df[, var]))
 summary(data.df[, var])
 sum(is.na(data.df$pH_w))
 
-data.df$logSe<-log(data.df[, var])
+data.df$logSe <-log(data.df[, var])
+data.df$logSe<- gsub(0.002, "-Inf", data.df$logSe )
 sum(data.df$logSe == "-Inf")
 data.df <- data.df %>%  dplyr::filter(logSe != "-Inf")
+data.df <- data.df %>%  
+  mutate(logSe = ifelse("-Inf", 0.002,logSe ))
+
+#SD w/ and w/o 
+data.df$logSe[data.df$logSe == "-Inf"] <- 0.002367136
+
 summaplot(data.df$logSe)
 summa(data.df$logSe) # 2 outliers after log
 sum(is.na(data.df$logSe))

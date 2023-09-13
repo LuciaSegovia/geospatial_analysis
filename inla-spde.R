@@ -51,14 +51,16 @@ plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- 0.002367136
 plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
                       !is.na(crp))
 
+
 # Assign values of covariates to points using value of nearest pixel
 # excluding (for now) is_smoker, Malaria_test_result
-covs <- plasma_se %>% select(wealth_quintile, BMI, urbanity, maizeSe_mean, 
+covs <- plasma_se %>% select(wealth_quintile, BMI,  urbanity, 
+                             maizeSe_mean, 
                               AGE_IN_YEARS, crp, agp) %>% as.list()
 
 # Intercept for spatial model
 #covs$b0 <- rep(1, nv + n) # Becario precario
-covs$b0 <- rep(1, nrow(plasma_se)) # Similar to moraga
+#covs$b0 <- rep(1, nrow(plasma_se)) # Similar to moraga
 
 
 ## INLA for point data
@@ -119,22 +121,36 @@ Ap <- inla.spde.make.A(mesh = mesh , loc = coord) # Moraga (should be from pred.
 # Organise the data (stack)
 
 # Create data structure
-stack <- inla.stack(data  = list(y = plasma_se$Plasma_Se),
-                          A = list(A, 1),
-                          effects = list(spde.index, covs),
-                          tag = "obs")
+# stack <- inla.stack(data  = list(y = plasma_se$Plasma_Se),
+#                           A = list(A, 1),
+#                           effects = list(spde.index, covs),
+#                           tag = "obs")
 
-stk.e <- inla.stack(tag = "est" , 
-                    data = list(y = plasma_se$Plasma_Se,
-                    ids = plasma_se$survey_cluster1),
-                    A = list(1 , A),
-                    effects = list(spde.index, covs))
+stack <- inla.stack(data  = list(y = plasma_se$Plasma_Se),
+                    A = list(A, 1),
+                    effects = list(c(spde.index,
+                                   list(Intercept  =1)),
+                                   covs),
+                    tag = "obs")
+
+# stk.e <- inla.stack(tag = "est" , 
+#                     data = list(y = plasma_se$Plasma_Se,
+#                     ids = plasma_se$survey_cluster1),
+#                     A = list(1 , A),
+#                     effects = list(spde.index, covs))
 
 #Create data structure for prediction
+# stack.pred <- inla.stack(data = list(y = NA),
+#                                A = list(Ap, 1),
+#                                effects = list(spde.index, covs),
+#                                tag = "pred")
+
 stack.pred <- inla.stack(data = list(y = NA),
-                               A = list(Ap, 1),
-                               effects = list(spde.index, covs),
-                               tag = "pred")
+                         A = list(Ap, 1),
+                         effects = list(c(spde.index,
+                                          list(Intercept =1)),
+                                        covs),
+                         tag = "pred")
 
 
 # Join the stacks
@@ -152,10 +168,15 @@ join.stack <- inla.stack(stack, stack.pred)
 #AGE_IN_YEARS, crp, agp
 
 # Plasma Se model
-form <- log(y) ~ 0 + b0 +  log(maizeSe_mean) +
+#form <- log(y) ~ 0 + b0 +  log(maizeSe_mean) +
+#  wealth_quintile + BMI + #urbanity + #is_smoker + Malaria_test_result +
+#   AGE_IN_YEARS +
+#  log(crp) + log(agp) + f(spatial.field, model = spde)
+
+form <- log(y) ~ -1 + Intercept +  log(maizeSe_mean) +
   wealth_quintile + BMI + urbanity + #is_smoker + Malaria_test_result +
-   AGE_IN_YEARS +
-  crp + agp + f(spatial.field, model = spde)
+  AGE_IN_YEARS +
+  log(crp) + log(agp) + f(spatial.field, model = spde)
 
 # inla calculations
 
@@ -165,11 +186,12 @@ family = "gaussian",
 control.predictor = list(A = inla.stack.A(join.stack), compute = TRUE),
 control.compute = list(cpo = TRUE, dic = TRUE))
 
-#Summary of results
+# Summary of results
 summary(m1)
 
 
 # Checking the residual spatial variation 
+
 rang <-  apply(mesh$loc[, c(1,2)], 2 , range)
 proj <- inla.mesh.projector(mesh, xlim = rang[ , 1],
                             ylim = rang[ , 2],
@@ -184,15 +206,26 @@ df <- expand.grid(x = proj$x, y = proj$y)
 df$mean_s <- as.vector(mean_s)
 df$sd_s <- as.vector(sd_s)
 
+
 # Mapping the spatial results
-sd <-  ggplot(df, aes(x = x, y = y, fill = sd_s)) +
+mean <-  ggplot(df, aes(x = x, y = y, fill = mean_s)) +
    geom_raster() +
+  scale_fill_viridis_b(na.value = "transparent") +
+  coord_fixed(ratio = 1) + theme_bw()
+
+sd <-  ggplot(df, aes(x = x, y = y, fill = sd_s)) +
+  geom_raster() +
   scale_fill_viridis_b(na.value = "transparent") +
   coord_fixed(ratio = 1) + theme_bw()
 
 cowplot::plot_grid(mean, sd)
 
- # Points (location) for INLA
+
+ 
+
+
+
+# Points (location) for INLA
 
 # Points from the mesh
 mesh.pts <- as.matrix(mesh$loc[,1:2])
