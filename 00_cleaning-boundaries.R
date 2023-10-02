@@ -45,7 +45,7 @@ sort(unique(ta_bnd$ADM2_PCODE))
 length(unique(ta_bnd$ADM2_PCODE))
 
 # Getting the admin units (the one with the higher no of unique id/names)
-dim(ea_bnd) #9235
+dim(ea_bnd) # 9235
 sum(duplicated(ea_bnd$EACODE))
 length(unique(ea_bnd$EACODE)) #9219
 length(unique(ea_bnd$DISTRICT)) #28/30 #dist code/ district
@@ -71,7 +71,7 @@ sort(unique(ta_bnd$ADM2_EN))
 
 
 # Generating the district raster layer by 
-#Aggregating the values by district and at country level for the model
+# Aggregating the values by district and at country level for the model
 dist_bnd <- raster::aggregate(ea,  "DISTRICT") # Aggregate boundaries at district level
 malawi_bnd <- raster::aggregate(ea) # Aggregate boundariesthe whole country
 
@@ -86,7 +86,7 @@ head(ea_bnd)
 ## Checking the mean area of EAs (km^2) and min buffer (2km radius = 12.57km^2) (area circ. = pi * r^2)
 mean(ea_bnd$AREA_KM) # 13.51 
 summary(ea_bnd$AREA_KM) # 3-10 sq. km
-hist(ea_bnd$AREA_KM) # 13.51 
+hist(ea_bnd$AREA_KM[ea_bnd$AREA_KM < 100]) # 13.51 
 unique(ea_bnd$DISTRICT[ea_bnd$AREA_KM > 314.1593]) 
 ea_bnd$EACODE[ea_bnd$AREA_KM > 314.1593] # 16 EAs including two major lakes and national parks
 
@@ -120,4 +120,28 @@ here::here("..", "PhD_geospatial-modelling",   #folder for storing (all) shapefi
 "data", "mwi-boundaries",   "EN_NSO"),   
    "dist_bnd",  # Name of the shapefile 
     driver="ESRI Shapefile")  # type of file (shapefile)
+
+
+
+## Buffers
+
+# centroids of all EAs
+ea_cent  <- st_centroid(ea_bnd)
+
+# Buffers
+
+buffer_10  <- st_buffer(ea_cent, dist = units::set_units(10000, "m"))
+
+tm_shape(ea_bnd$geometry[grep("^1", ea_bnd$EACODE)]) +
+tm_polygons() +
+tm_shape(buffer_10$geometry[grep("^1", buffer_10$EACODE)]) +
+tm_borders(col = "red")
+
+
+subset(ea_bnd, grepl("Likoma", DISTRICT))
+
+sqrt(1/pi)*1000
+
+
+pi*(0.8^2)
 

@@ -1,7 +1,7 @@
 #######################################################################
 #
-#   Adding information of the level of aggregation for maize Se conc.
-#     in Malawi, info needed to calculate the predicted-mean of Se conc.
+#   Adding information of the admin units for each maize Se conc. sample location
+#     in Malawi, info needed to calculate the predicted-mean Se conc.
 #   for future use and for modelling. 
 #
 #
