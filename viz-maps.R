@@ -28,6 +28,9 @@ library(tmap)  #spatial data manipulation and visualisation
 ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
+dist_bnd <- st_read(here::here("..", "PhD_geospatial-modelling",   #folder for storing (all) shapefiles 
+           "data", "mwi-boundaries",   "EN_NSO", "dist_bnd.shp"))
+
 # ea_bnd[which(duplicated(ea_bnd$EACODE)),]  %>% View()
 # 
 # ea_bnd[which(duplicated(ea_bnd$EACODE)),]  %>%
@@ -63,6 +66,11 @@ dplyr::filter(n > 1) # Checking those larger than one
 geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
+# Selecting the Se variable to model
+var  <- "logSe"
+
+plot(geodata.df[, var], main = "Se conc. in maize (log(mg/kg))")
+
 # Transforming predicted maize Se into a spatial dataset
 maizedata.df   <-  st_as_sf(maizedata.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
@@ -77,15 +85,39 @@ maizedata.df   <-  st_as_sf(maizedata.df , coords =c("Longitude", "Latitude"),
 # Checking buffer of EAs w/o co-located values
 data  <- subset(ea_bnd, EACODE %in% test_dif, select =c(EACODE, DISTRICT, geometry))
 test_centroid  <- st_centroid(data) 
-test_buffer2  <- st_buffer(test_centroid, dist =2000) #2km (2Km urban, 5-10km rural)
-test_buffer5  <- st_buffer(test_centroid, dist =5000) #5km (2Km urban, 5-10km rural)
-test_buffer10  <- st_buffer(test_centroid, dist =10000) #10km (2Km urban, 5-10km rural)
+test_buffer2  <- st_buffer(test_centroid, dist = 2000) #2km (2Km urban, 5-10km rural)
+test_buffer5  <- st_buffer(test_centroid, dist = 5000) #5km (2Km urban, 5-10km rural)
+test_buffer10  <- st_buffer(test_centroid, dist = 10000) #10km (2Km urban, 5-10km rural)
 
 # ea_bnd$fid[ea_bnd$EACODE == "10203024"] 
 
-ea_bnd  %>%  
-tm_shape() +
-tm_polygons(col = "DISTRICT")
+## MAP: Malawi (EA) ======
+
+ea_bnd$EACODE <- as.character(ea_bnd$EACODE )
+
+ea_bnd %>% select(geometry, EACODE) %>% 
+  left_join(., data.df %>% filter(admin == "EADIST") %>%  select(admin_id,  maizeSe_mean),
+            by = c("EACODE" = "admin_id")) %>% 
+  tm_shape() +
+  tm_polygons(col = "maizeSe_mean")
+
+## MAP: Malawi (DISTRICT) ======
+
+dist_bnd  %>% 
+  left_join(., data.df %>% filter(admin == "DISTRICT") %>%  select(admin_id,  maizeSe_mean),
+            by = c("DISTRICT" = "admin_id")) %>% 
+  tm_shape() +
+  tm_polygons(col = "maizeSe_mean") +
+  tm_layout(legend.outside = TRUE)
+
+dist_bnd  %>% 
+  left_join(., data.df %>% filter(admin == "DISTRICT") %>%  select(admin_id,  Se_mean),
+            by = c("DISTRICT" = "admin_id")) %>% 
+  tm_shape() +
+  tm_polygons(col = "Se_mean") +
+  tm_layout(legend.outside = TRUE)
+
+
 
 ("Chikwawa", "Blantyre", "Thyolo", "Zomba", "Kasungu", "Mwanza")
 grepl("^3", EACODE)
@@ -281,13 +313,26 @@ ea  <- test %>%
  
 names(data.df)
 
+data.df <- dplyr::rename(data.df, urbanicity = "urbanity")
+
+# Transforming plasma se into a spatial dataset
+geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+                       crs = "EPSG:4326")
+
+geodata.df$logSe <- log(geodata.df$selenium)
+
+plot(geodata.df[, "logSe"])
+
+
 # Boxplot log(CRP)/(AGP)/(selenium) ~ Malaria
 boxplot(log(selenium) ~ Malaria_test_result, data = data.df,
          frame = FALSE)
 
-data.df <- data.df %>% st_drop_geometry()
+#data.df <- data.df %>% st_drop_geometry()
 
+plot(log(data.df$selenium) ~ data.df$AGE_IN_YEARS)
 plot(log(data.df$selenium) ~ log(data.df$crp))
+
 plot(log(data.df$selenium) ~ log(data.df$agp))
 
 lm(log(data.df$selenium) ~ log(data.df$crp))
@@ -310,28 +355,31 @@ ggplot(data = data.df # %>% filter(region == 1)
   theme(legend.position = "none")
 
 
-var_x <- "agp"
+var_x <- "AGE_IN_YEARS"
 var_y <- "selenium"
+var_col <- "EACODE"
 
 
 # Visualising data per region ----
+
  ggplot(data = data.df,
-         mapping = aes(x = !!sym(var_x), y =!!sym(var_y), colour = EACODE, alpha = 0.5)) +
-   geom_point(size = 2) +
+         mapping = aes(x = !!sym(var_x), y =!!sym(var_y), colour = !!sym(var_col))) +
+   geom_point(size = 2, alpha = 0.5) +
    theme_bw() +
    facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
                                      `2` = "Central", 
                                      `3` = "Southern"))) +
-   labs(
-        x = var_x, 
-        y = var_y) + 
-   theme(legend.position = "none")
+  labs(x = "Age (years)", 
+       y = expression(paste("Plasma Se conc. (ng ",  mL^{-1}, ")"))) + 
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12), 
+        legend.position = "none")
  
 # Boxplots per EA for each district ----
  
  var_x <- "EACODE"
  var_y <- "selenium" 
- var_col <- "urbanity"
+ var_col <- "urbanicity"
  
 n_breaks <- unique(data.df[, var_col])
 show_col(hue_pal()(3))
@@ -360,4 +408,36 @@ unique(data.df$DISTRICT[data.df$urbanity=="1"])
  }
 
  print(plot_dist[[4]])
+ 
+ 
+ var_x <- "urbanicity"
+ var_y <- "selenium" 
+ var_col <- "urbanicity"
+ 
+ 
+ n_breaks <- unique(data.df[, var_col])
+ show_col(hue_pal()(3))
+ 
+ col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
+ 
+ # Custom X-axis labels 
+ labels <- c("Urban", "Rural")
+ 
+ 
+ ggplot(data = data.df 
+        ,
+        mapping = aes(x = !!sym(var_col), y =!!sym(var_y),
+                      colour = !!sym(var_col))) +
+   geom_boxplot() +
+   theme_classic() +
+   scale_colour_manual(values =  col_break) +
+   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+                                                `2` = "Central", 
+                                                `3` = "Southern"))) +
+   scale_x_discrete(label = labels) +
+   labs(
+        y = expression(paste("Plasma Se conc. (ng ",  mL^{-1}, ")"))) + 
+   theme(strip.text = element_text(size = 12),
+         axis.text.y = element_text(size = 12))
+
  

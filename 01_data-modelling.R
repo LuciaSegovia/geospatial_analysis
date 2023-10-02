@@ -78,6 +78,17 @@ data.df  <- data.df %>%  dplyr::filter(!is.na(!!sym(var)))
 # Checking no. of EAs per (Se_grain (1123) vs pred.Se (1628) vs raw (1393))
 length(unique(data.df$EACODE[!is.na(data.df[, var])]))
 
+# Checking the min.
+summary(data.df[, var])
+min(data.df$Se_raw[data.df$Se_raw>0], na.rm = TRUE)
+min(data.df$Se_LOD, na.rm = TRUE)
+# Changing 0 values to min (above zero)
+
+#SD w/ and w/o  - This option generate problems
+#data.df$Se_raw[data.df$Se_raw == 0] <- 0.00009
+data.df$Se_raw[data.df$Se_raw == 0] <- 0.00269
+
+
 # check for normality
 summaplot(data.df[, var])
 summaplot(log(data.df[, var]))
@@ -85,26 +96,38 @@ summary(data.df[, var])
 sum(is.na(data.df$pH_w))
 
 data.df$logSe <-log(data.df[, var])
-data.df$logSe<- gsub(0.002, "-Inf", data.df$logSe )
-sum(data.df$logSe == "-Inf")
-data.df <- data.df %>%  dplyr::filter(logSe != "-Inf")
-data.df <- data.df %>%  
-  mutate(logSe = ifelse("-Inf", 0.002,logSe ))
 
-#SD w/ and w/o 
-data.df$logSe[data.df$logSe == "-Inf"] <- 0.002367136
+#data.df$logSe<- gsub(0.002, "-Inf", data.df$logSe )
+#sum(data.df$logSe == "-Inf")
+#data.df <- data.df %>%  dplyr::filter(logSe != "-Inf")
+#data.df <- data.df %>%  
+#  mutate(logSe = ifelse("-Inf", 0.002,logSe ))
+#
+##SD w/ and w/o 
+#data.df$logSe[data.df$logSe == "-Inf"] <- 0.002367136
 
 summaplot(data.df$logSe)
 summa(data.df$logSe) # 2 outliers after log
 sum(is.na(data.df$logSe))
 
-par(mfrow=c(1,2))
- plot(log(data.df[, var]), data.df$pH_w)
- plot(log(data.df[, var]), data.df$BIO1)
+#Create a function to generate a continuous color palette
+rbPal <- colorRampPalette(c('yellow', "red" , "purple" , 'blue'))
 
+#This adds a column of color values
+# based on the y values
+data.df$Col <- rbPal(10)[cut(data.df$logSe,breaks = 10)]
+
+par(mfrow=c(1,2))
+ plot( data.df$pH_w, data.df$logSe,  cex.axis=2, cex.lab=2, 
+      xlab="Soil pH", ylab="Se conc.")
+ plot(data.df$BIO1/10, data.df$logSe,  cex.axis=2, cex.lab=2, 
+      xlab="Downscaled MAT", ylab="Se conc.")
+ 
+ 
+ 
 # visualize the data
 ggplot(data = data.df,
-       mapping = aes(x = BIO1/10, y =logSe)) + 
+       mapping = aes(x = BIO1/10, y =logSe, fill = EACODE)) + 
   geom_point() +
   facet_wrap(~DISTRICT, ncol = 5) +
   labs(x = "Downscaled MAT", 
@@ -113,6 +136,15 @@ ggplot(data = data.df,
         axis.text.y = element_text(size = 12))
 
 data.df$EACODE  <- as.character(data.df$EACODE)
+
+ggplot(data = data.df, # %>% filter(grepl("^3", EACODE)), # for viewing by region
+       mapping = aes(x = BIO1/10, y =logSe, colour = logSe), alpha = 0.5) +
+  geom_point(size = 2) +
+  labs(x = "Downscaled MAT", 
+       y = "Se conc. in maize (log(mg/kg))") + 
+  theme_classic()+
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12)) 
 
 ggplot(data = data.df, # %>% filter(grepl("^3", EACODE)), # for viewing by region
  mapping = aes(x = BIO1/10, y =logSe, colour = EACODE, alpha = 0.5)) +
@@ -161,7 +193,7 @@ anova(model3b, model3)
 summaplot(residuals(model3,level=0))
 
 ## District level
-#model4<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
+model4<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT, data=data.df, method = "ML")
 
 #model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE, data=data.df, method = "ML")
 
@@ -175,8 +207,8 @@ model6b<-lme(logSe ~ 1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method 
 anova(model5b, model5) # model 5 has the lowest AIC (& p-value <.0001)
 anova(model6b, model6) # model 6 has the lowest AIC (& p-value <.0001)
 
-model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/EACODE, data=data.df, method = "REML")
-model6<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "REML")
+#model5<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/EACODE, data=data.df, method = "REML")
+#model6<-lme(logSe ~ pH_w + BIO1, random=~1|DISTRICT/TA_CODE/EACODE, data=data.df, method = "REML")
 
 anova(model5, model6)
 
@@ -185,7 +217,12 @@ anova(model5, model6)
 # check distribution of residuals
 summaplot(residuals(model6,level=0))
 
+summaplot(residuals(model5,level=1))
+summaplot(residuals(model5,level=2))
 
+
+#anova(model1, model4, model5)
+anova(model1, model4)
 ## Getting the resutls of the model prediction at diff aggregation/area
 
 # output the results (model 1)
@@ -312,7 +349,65 @@ dist.df  <- re
 dist.df$admin  <-  area
 names(dist.df)[names(dist.df) == area]  <- "admin_id"
 
-data.df  <-  do.call(rbind, list(ea.df, ta.df, dist.df))
+### 
+
+# output the results (model 5) nested =====
+#area  <- "DISTRICT"
+area  <- "EACODE"
+
+summary(model5)
+fixef(model5) # fixed effects
+n  <- fixef(model5)[1] # fixed effects (intercept) (-7.95956540)
+pH_b  <- fixef(model5)[2] # beta (pH) (0.19218561)
+bio1_b  <- fixef(model5)[3] # beta (BIO1) (0.01449493)
+#re <- ranef(model5)[[1]] # random effects (log Se mean per Dist)
+re <- ranef(model5)[[2]] # random effects (log Se mean per EA)
+re <- tibble::rownames_to_column(re)
+names(re)
+names(re)[1]  <- area
+names(re)[2]  <- "intercept"
+
+re$EACODE <- stringr::str_extract( re$EACODE, "[:digit:]+")
+
+# Calculating the covariate means for predictions
+re_cov  <- data.df  %>% 
+  group_by(!!sym(area))  %>% 
+  summarise(pH_mean = mean(pH_w), 
+            BIO1_mean = mean(BIO1),
+            Se_mean = mean(!!sym(var)),
+            Se_median = median(!!sym(var)))
+
+# Merging mean of the covariates w/ model results
+re  <- merge(re, re_cov)
+
+# Calculating the predicted-mean Se
+re$maizeSe_mean  <- exp((re$intercept+n)+(pH_b*re$pH_mean)+(bio1_b*re$BIO1_mean))
+
+head(re)
+hist(re$maizeSe_mean )
+summary(re$maizeSe_mean )
+
+length(unique(re$DISTRICT))
+length(unique(data.df$DISTRICT))
+
+dist.df  <- re
+dist.df$admin  <-  area
+names(dist.df)[names(dist.df) == area]  <- "admin_id"
+
+# Dataset for modelling
+eaDis.df  <- re
+eaDis.df$admin  <- "EADIST"
+names(eaDis.df)[names(eaDis.df) == area]  <- "admin_id"
+
+head(eaDis.df)
+
+plot(ea.df$maizeSe_mean, eaDis.df$Se_mean)
+plot(ea.df$Se_median, eaDis.df$Se_mean)
+
+
+#data.df  <-  do.call(rbind, list(ea.df, ta.df, dist.df))
+data.df  <-  do.call(rbind, list(ea.df, dist.df, eaDis.df))
+data.df  <-  do.call(rbind, list(dist.df, eaDis.df))
 
 # Checking predicted mean value vs calculated mean/median values
 
@@ -321,7 +416,10 @@ plot(data.df$maizeSe_mean, data.df$Se_mean)
 plot(data.df$maizeSe_mean[data.df$admin == "DISTRICT"],
      data.df$Se_mean[data.df$admin == "DISTRICT"])
 
+
+
 saveRDS(data.df, here::here("data", "inter-output", "raw_maizeSe-mean-predicted.RDS"))
+saveRDS(data.df, here::here("data", "inter-output", "raw_maizeSe-mean-predicted-nested.RDS"))
 
 ##################################################################################
 
