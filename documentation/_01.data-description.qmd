@@ -454,6 +454,21 @@ We added the distance (in m) at which the co-location was found, when we studied
 
 #### 3.3. Household location-based buffer 
 
-As part of the modelling, a different set of spatial aggregation units (areal units) were generated based on the centroids of the EAs were the household of the WRA in the DHS survey were reported. To do so, a dataset with two buffered areas were generated based on the EA centroid and: 1) the buffer to cover the max displacement (10km), and, 2) one that cover the a sensible distance in-between EAs and district, with it is according to REF, the mean distance between households and a market. 
+Here, we are trying to identify the optimal level of aggregation, hence different set of spatial aggregation units (areal units) were generated based on the centroids of the EAs were the household of the WRA in the DHS survey were reported. 
 
-The list of the EAs where the WRA pontentially lived was obtained in the scripts (00_cleaning-locations.R), and it was used to generate the centroid and buffers for further modelling in the 00_cleaning-boundaries.R.
+We decided to use the EAs centroids to standardise/ minimise the measurement error from the off-setting of the coordinates. 
+
+Two approaches were tested: 
+
+The "easiest one" which was based on the assumption that the maize Se coordinates (with no offset) were the correct EAs centroid: 
+
+To do so, a dataset with two buffered areas were generated based on the EA centroid and: 1) the buffer to cover the max displacement (10km), and, 2) one that cover the a sensible distance in-between EAs and district, with it is according to REF, the mean distance between households and a market. 
+
+The list of the EAs where the WRA potentially lived was obtained in the scripts (00_cleaning-locations.R), and it was used to generate the centroids and buffers for further modelling in the 00_cleaning-boundaries.R.
+
+Following the guidelines of GPS DHS Report 8, we assumed the misclassification potential, then we:
+
+- identify the most probable EA
+- compared that with the results above, i.e.,  with EAs were the same and which one were different
+- checked for those most probable which one had maize Se conc and which one not 
+
