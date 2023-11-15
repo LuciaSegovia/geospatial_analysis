@@ -1,5 +1,5 @@
 
-#######################################################################
+################################################################################
 #
 #   Cleaning & exploring the DHS data from MNS in Malawi
 #     variables of interest: Plasma Se conc., wealth Q, BMI,
@@ -401,8 +401,10 @@ DHSDATA$sdist  <- as.factor(DHSDATA$sdist)
 
 
 # Socio-economic data exploration:
+# TODO: Would differences in WQ by region & urbanicity
+# impact our results? Probably yes. Check what that would mean for our analysis. 
 
-# Wealth quintile poorest-richest == 1-5
+# Wealth quintile 1-5 (lowest to highest)
 # Education 0-3 (low to high)
 hist(as.numeric(DHSDATA$wealth_quintile))
 summary(DHSDATA$wealth_quintile)

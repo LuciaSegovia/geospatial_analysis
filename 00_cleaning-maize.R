@@ -212,6 +212,7 @@ sum(is.na(data.df$BIO1)) # completed
 
 # Finalising the dataset
 # Adding Chilimba Se data to variables: _raw and _std & Crop info
+# REVIEW: Would it be adding more noise than helping the predictions?
 sum(is.na(data.df$Se_raw) & data.df$survey == "Chilimba")
 sum(is.na(data.df$Se_std) & data.df$survey == "Chilimba")
 data.df$Se_grain[data.df$survey == "Chilimba"] 
