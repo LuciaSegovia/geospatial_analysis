@@ -48,7 +48,6 @@ source(here::here("functions", "CEPHaStat_3.R"))
 ```
 
 
-
 ## Introduction {.unnumbered}
 
 ### Objectives {.unnumbered}

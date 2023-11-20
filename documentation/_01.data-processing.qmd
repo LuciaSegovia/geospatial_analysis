@@ -1,19 +1,23 @@
 ---
 title: "Methods: Data processing"
-format: html
+format: 
+  html:
+    number-sections: true
+    number-offset: 1
+    code-fold: show 
+    embed-resources: true
+editor: source
 ---
 
 
 
-## Data
 
-```{r}
+
+```{r set-up, message=FALSE, warning=FALSE}
 
 # Admin Boundaries for Malawi 
-
 # EAs
-ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
+ea_bnd  <- st_read(here::here("data", "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
 
 ```
@@ -32,8 +36,6 @@ Therefore, we decided to use the EAs centroids to standardise/ minimise the meas
 For identifying the EA centroids we used the EAs with maize sampling sites were used to generate the buffers.
 
 ##### Buffered areas based on the maize sampling sites
-
-
 
 The centroid of the EAs with maize sampling sites were used to generate the buffers, which was based on the assumption that the maize Se coordinates (with no offset) were the correct EAs on the assumption that all the EAs where the MNS was carried out were sampled in the GeoNutrition study (@ref-Gashu). In addition, because maize samples were not collected in all EAs, and we are not predicting maize Se values, the EAs with maize Se values would be driving the location. 
 
