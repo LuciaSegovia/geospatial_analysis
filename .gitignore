@@ -60,3 +60,7 @@ presentation/*/
 # outputs
 *.pdf
 visuals/
+
+# Documentation (html files)
+
+documentation/*.html

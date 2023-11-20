@@ -1,0 +1,75 @@
+---
+title: "Methods: Data processing"
+format: html
+---
+
+
+
+## Data
+
+```{r}
+
+# Admin Boundaries for Malawi 
+
+# EAs
+ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
+
+
+```
+
+
+#### Household location-based areas (buffer) 
+ 
+For the household-based areas, ideally, we would like to test the aggregation of the maize grain Se as function of the distance from each household. For instance, with buffered areas around the household (or other measure of distance), identified as "foodsheds" or "food catchment areas". However, due to anonymity protection household locations are not available, moreover only a displaced GPS location per cluster is provided which is often not advised to be used and/or linked to distance-based measurement. 
+
+Therefore, we decided to use the EAs centroids to standardise/ minimise the measurement error from the off-setting of the coordinates. Two buffered areas were generated based on the EA centroids:
+
+1) 10km buffer to cover the max displacement in rural area for the GPS location of the DHS clusters, and,
+
+2) 20-30km buffer that cover a sensible distance between EAs and district, and which is according to REF, the mean distance between households and the closest market in Malawi. 
+
+For identifying the EA centroids we used the EAs with maize sampling sites were used to generate the buffers.
+
+##### Buffered areas based on the maize sampling sites
+
+
+
+The centroid of the EAs with maize sampling sites were used to generate the buffers, which was based on the assumption that the maize Se coordinates (with no offset) were the correct EAs on the assumption that all the EAs where the MNS was carried out were sampled in the GeoNutrition study (@ref-Gashu). In addition, because maize samples were not collected in all EAs, and we are not predicting maize Se values, the EAs with maize Se values would be driving the location. 
+
+In our maize grain Se dataset, we do not have the admin boundaries where each sample lies in. Therefore, we need to spatially merge the boundaries dataset (`ea_bnd`) and the maize Se dataset. 
+
+There were n=`r sum(is.na(Se_admin$EACODE))` without a corresponding EA. This is because some of the GPS location were incorrect (i.e., one sample location lied outside Malawi boundaries), or due to lying in between or too close to outside boundaries as it can be seen by the red dots in the map below (@fig-map1). 
+
+```{r label = "fig-map1", fig.cap = "Map of Malawi divided by Enumeration Areas (EAs) and the red points representing the maize grain Se samples outside EA boundaries."}
+
+# Storing data of the maize Se samples w/o EAs
+missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
+
+# Plotting maize Se sample falling out EAs.
+tm_shape(ea_bnd) +
+tm_polygons() +
+tm_shape(missing) +
+tm_symbols(col ="red", size =0.1)
+
+```
+
+
+
+### Co-location: combining datasets by location
+
+#### Limitations of the co-location
+
+Samples, both maize and plasma, were supposed to be co-located (i.e., collected at the same EA) as per documentation on Gashu et al, (2021). However, due to the EA displacement performed within the DHS protocol (see XX), around 60% of our sample did not share the same EA. Hence, we decided to use the EAs where maize sample were collected (at the were not displaced), and to co-locate (by closest distance possible) the plasma cluster location (See script 00_cleaning-location.R).
+
+We added the distance (in m) at which the co-location was found, when we studied the distance for rural clusters, we can see that only one cluster, corresponding to n=8 WRA reported location, were within higher distance (>5km) of the displacement. This corresponded to 1.23% of the sample of rural household which is below the reported, 10% displacement of 10km. 
+
+#### Testing assumptions: Most probable EA
+
+Following the guidelines of GPS DHS Report 8, we assumed the missclassification potential, then we:
+
+- identify the most probable EA
+- compared that with the results above, i.e.,  with EAs were the same and which one were different
+- checked for those most probable which one had maize Se conc. and which one not 
+
+The list of the EAs where the WRA potentially lived was obtained in the scripts (00_cleaning-locations.R), and it was used to generate the centroids and buffers for further modelling in the 00_cleaning-boundaries.R.

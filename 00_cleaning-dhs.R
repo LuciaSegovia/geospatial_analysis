@@ -6,6 +6,9 @@
 #     # urbanity, HH location, district, region,
 #
 #####################################################################################################
+
+# Setting up ----
+
 # Cleaning the environment
 rm(list = ls())
 
@@ -16,11 +19,11 @@ library(dplyr) # data wrangling
 library(ggplot2) # visualisation
 library(survey) # survey design
 #options(survey.lonely.psu="adjust") # For Error of one PSU at stage 1
-#library(sf) #spatial data manipulation
+library(sf) # spatial data manipulation
 #library(tmap)  #spatial data manipulation and visualisation
-source(here::here("CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 
-# Loading the datat
+# Loading the data
 dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) # survey data DHS
 Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data DHS
 # b_admin3  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_3.shp")) #EA boundaries
@@ -33,6 +36,8 @@ dim(dhs.df)
 #View(Malawi_WRA)
 head(dhs.df)
 #plot(b_admin1[,1])
+
+# MNS data ----
 
 # Renaming variables 
 Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
@@ -130,7 +135,7 @@ class(Malawi_WRA$Malaria_test_result)
 sum(is.na(Malawi_WRA$Malaria_test_result)) # 28 NA
 hist(Malawi_WRA$Malaria_test_result)
 table(Malawi_WRA$Malaria_test_result)
-# recoding others values into NA 
+# Review: Recoding others values into NA 
 Malawi_WRA$Malaria_test_result <- ifelse(Malawi_WRA$Malaria_test_result==4| 
                                         Malawi_WRA$Malaria_test_result==6, 
                                          NA, Malawi_WRA$Malaria_test_result)
@@ -169,20 +174,19 @@ table(Malawi_WRA$wt)
 # Perc. difference with population (WRA)
 (n01-sum(Malawi_WRA$wt))/n01*100
 
-
-# Description of the sample ----
+## Description of the sample ----
 
 # Looking at variables of interest: summary stats + histogram
 #Age - Women of reproductive age (15-49 years)
 # REVIEW: Not excluding outside WRA age range
 # Note: That in the histogram women = 15yo are counted in the first
 # bar (that's why the freq. is over 50)
-sum(is.na(Malawi_WRA$AGE_IN_YEARS)) #no missing values
+sum(is.na(Malawi_WRA$AGE_IN_YEARS)) # No missing values
 hist(Malawi_WRA$AGE_IN_YEARS)
 summary(Malawi_WRA$AGE_IN_YEARS)
-sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49) #8 younger than range
+sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49) # 8 younger than range
 subset(Malawi_WRA, AGE_IN_YEARS<15 | AGE_IN_YEARS>49,
-select = c(region, urbanity, selenium)) #8 younger than range
+select = c(region, urbanity, selenium)) # 8 younger than range
 
 # Age Weighted mean by region/urbanity
 ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(AGE_IN_YEARS, wt,na.rm = T))
@@ -204,26 +208,26 @@ subset(Malawi_WRA, is_pregnant==1,
 select = c(region, urbanity #, selenium
 ))  %>%  count()
 subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant))  %>% dim()
-# REVIEW: Removing the pregnant women and unkown status
+# REVIEW: Removing the pregnant women and unknown status
 Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant)) 
 
-# Height - ouliers (converting 999 to NA)
+# Height - Checking outliers 
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >200]
-# REVIEW: Outliers 999 to NA
+# REVIEW: Missing values (999 to NA)
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >999] <- NA
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT <130] 
 Malawi_WRA$AGE_IN_YEARS[Malawi_WRA$HEIGHT <120] 
 
 # Height Weighted mean by region
-ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(HEIGHT, wt,na.rm = T))
+ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(HEIGHT, wt, na.rm = T))
 
-# Weight - ouliers (converting 999 to NA)
+# Weight - Checking outliers (missing values (999) to NA)
 hist(Malawi_WRA$WEIGHT)
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >200]
 Malawi_WRA$region[Malawi_WRA$WEIGHT >999] # Checking if this "missing values" are affecting more to a particular region
 Malawi_WRA$urbanity[Malawi_WRA$WEIGHT >999] # Same but for urbanity
 
-# REVIEW: Outliers 999 to NA
+# REVIEW: Missing values (999 to NA)
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >999] <- NA
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >80] # Checking Weight >80kg
 Malawi_WRA$HEIGHT[Malawi_WRA$WEIGHT >80] # Checking height >80Kg
@@ -269,6 +273,7 @@ x <- pull(Malawi_WRA[, var])
 
 hist(x, main = paste("Histogram of",  tolower(var)) , xlab = var)
 summary(x)
+
 # Skewness
 summa(x)
 summaplot(x)
@@ -306,10 +311,15 @@ plot(Malawi_WRA$selenium, Malawi_WRA$BMI,
 plot(log(Malawi_WRA$selenium) ~ log(Malawi_WRA$crp))
 plot(log(Malawi_WRA$selenium) ~ log(Malawi_WRA$agp))
 
+# Final check on the number of variables & entries.
+dim(Malawi_WRA)
 
-# Checking DHS survey data  ------
+# DHS survey data  ------
 # (Wealth index and other variables)
+
 dim(dhs.df)
+
+# Renaming and selecting variables of interest (reducing the number of variables)
 
 DHSDATA <- dhs.df %>% dplyr::rename( 
   survey_cluster1='v001',
@@ -328,7 +338,12 @@ DHSDATA <- dhs.df %>% dplyr::rename(
   # person_id=WomenID,
   is_lactating= "v404", # breastfeeding yes=1, no=0
   is_smoker= "v463a" # Only cover cigarettes (other smoking variables)
-)
+) %>% select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
+             region, urbanity,  age_year, wealth_quintile, Literacy,
+             education_level, source_water, is_lactating, is_smoker, sdist)
+
+
+dim(DHSDATA)
 
 # REVIEW: check "ultimate area unit" (v004)
 str(DHSDATA)
@@ -383,7 +398,8 @@ table(DHSDATA$is_lactating)
 haven::print_labels(DHSDATA$is_lactating) # 0=N, 1=Y
 DHSDATA$is_lactating  <- as.factor(DHSDATA$is_lactating)
 
-#Smoking 
+# Smoking 
+# TODO: Checking smoking incidence in WRA in Malawi
 class(DHSDATA$is_smoker)
 sum(is.na(DHSDATA$is_smoker))
 table(DHSDATA$is_smoker)
@@ -435,7 +451,7 @@ sum(as.numeric(DHSDATA$wealth_quintile) > 3 & DHSDATA$region == 1)/ sum(DHSDATA$
 
 DHSDATA %>% group_by (region) %>% dplyr::count(wealth_quintile)
 
-# Merging with DHS dataset ----
+# Merging DHS & MNS ----
 # Merging with DHS dataset to obtain Wealth index and other variables 
 
 EligibleDHS <- Malawi_WRA %>% 
@@ -462,6 +478,7 @@ ddply(EligibleDHS, ~wealth_quintile, summarise,
       medianBMI=matrixStats::weightedMedian(BMI, wt,na.rm = T))
 
 
+# TODO: Sensitivity analysis for wealth and region, and for malaria prevalence.
 # Data checks (non-weigheted)
 
 #Cluster survey
@@ -627,23 +644,46 @@ EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
 EligibleDHS$LOW_SEL_IDI <- ifelse(EligibleDHS$selenium<64.8,1,0)
 EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 
+# Checking the dimension of the dataset
+dim(EligibleDHS)
 
 # Saving Se dataset into R object
-saveRDS(EligibleDHS,  file=here::here("data", "inter-output","dhs_se.rds"))
+# saveRDS(EligibleDHS,  file=here::here("data", "inter-output","dhs_se.rds"))
 
 # EligibleDHS  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
 
-# add GPS values ----
+# GPS Location  ----
 # Loading the dataset
-GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) #GPS location DHS
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) # GPS location DHS
+names(GPS)
 
 # Renaming variables
-GPS <-dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM',
+GPS <- dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM', 
                     Longitude='LONGNUM',  altitude_in_metres='ALT_GPS')
 dim(GPS)
 
+#  Generating the offset buffer
+
+for(i in 1:nrow(GPS)){
+
+offset.dist<-ifelse(GPS$URBAN_RURA[i]=="U", 2000, 5000)
+
+GPS$buffer[i] <- st_buffer(GPS$geometry[i], dist = offset.dist)
+
+}
+
+# Transforming the list into spatial class
+GPS$buffer <- st_as_sfc(GPS$buffer)
+
+# Checking that the output
+plot(GPS$buffer) # Plotting the buffer
+plot(GPS$buffer[GPS$URBAN_RURA == "U"],col='red',add=TRUE) # colouring red those that are urban (smaller radius)
+
 # Merging with the dataset
-EligibleDHS <- merge(EligibleDHS, GPS, by='survey_cluster1')
+dim(EligibleDHS)
+dim(GPS)
+EligibleDHS <- left_join(EligibleDHS, GPS, by=c('survey_cluster1', "urbanity" = "URBAN_RURA"))
+dim(EligibleDHS)
 
 # Only for Se in the dataset
 # GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist",  "selenium", "wealth_quintile", "region")], GPS, by='survey_cluster1')
@@ -671,7 +711,7 @@ ggplot() +
 #saveRDS(GPS_Se, file=here::here("data", "inter-output","dhs_se.rds"))
 
 # Saving DHS + GPS dataset into R object
-saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
+# saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
 
 # Survey analysis: Applying survey weight ----
 EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
