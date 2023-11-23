@@ -409,35 +409,43 @@ unique(data.df$DISTRICT[data.df$urbanity=="1"])
 
  print(plot_dist[[4]])
  
+ data.df$survey_cluster1 <- as.character(data.df$survey_cluster1)
  
- var_x <- "urbanicity"
+ var_x <- "survey_cluster1"
  var_y <- "selenium" 
- var_col <- "urbanicity"
+ var_col <- "urbanity"
  
  
  n_breaks <- unique(data.df[, var_col])
  show_col(hue_pal()(3))
  
+ # Custom legend colour & labels
  col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
+ col_labels <- c("1" = "Urban", "2" = "Rural")
  
  # Custom X-axis labels 
- labels <- c("Urban", "Rural")
+ col_labels <- c("Urban", "Rural")
  
  
  ggplot(data = data.df 
         ,
-        mapping = aes(x = !!sym(var_col), y =!!sym(var_y),
+        mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
                       colour = !!sym(var_col))) +
    geom_boxplot() +
    theme_classic() +
-   scale_colour_manual(values =  col_break) +
+   scale_colour_manual(values =  col_break,
+                    # breaks = col_break,
+                     labels = col_labels) +
    facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
                                                 `2` = "Central", 
-                                                `3` = "Southern"))) +
-   scale_x_discrete(label = labels) +
+                                                `3` = "Southern")),
+              scales = "free_x") +
+  # scale_x_discrete(label = labels) +
    labs(
-        y = expression(paste("Plasma Se conc. (ng ",  mL^{-1}, ")"))) + 
+        y = expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))) + 
+   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
    theme(strip.text = element_text(size = 12),
-         axis.text.y = element_text(size = 12))
+         axis.text.y = element_text(size = 12), 
+         axis.text.x = element_text(size = 10, angle =30))
 
  

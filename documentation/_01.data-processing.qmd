@@ -141,13 +141,23 @@ saveRDS(data.df, here::here("data", "inter-output",
 
 #### Household location-based areas (buffer) 
  
-For the household-based areas, ideally, we would like to test the aggregation of the maize grain Se as function of the distance from each household. For instance, with buffered areas around the household (or other measure of distance), identified as "foodsheds" or "food catchment areas". However, due to anonymity protection household locations are not available, moreover only a displaced GPS location per cluster is provided which is often not advised to be used and/or linked to distance-based measurement. 
+For the household-based areas, ideally, we would like to test the aggregation of the maize grain Se as function of the distance from each household. For instance, with buffered areas around the household (or other measure of distance), identified as "food-sheds" or "food catchment areas". However, due to anonymity protection household locations are not available, only the displaced GPS location of each cluster is provided. This means that the population centroid of each cluster was register in the original survey, and then displaced within 2km for urban clusters and within 5km for rural clusters, with 10% of the rural clusters displaced within 10km buffer. Therefore, the location of the households could be in any area within the EA. Therefore, it is often not advised to used and/or link this type of data to distance-based measurement and/or small level areas where high risk of missclassification may exist. 
 
-Therefore, we decided to use the EAs centroids to standardise/ minimise the measurement error from the off-setting of the coordinates. Two buffer distances were selected:
+Therefore, we decided to use the buffer areas instead of the point locations (GPS coordinates) to standardise/ minimise the measurement error from the off-setting of the coordinates. In order to identify the probable EAs where the households are located. 
+
+```{r}
+
+
+
+```
+
+
+
+Two buffer distances were selected:
 
 1) **10km buffer** to cover the max displacement in rural area for the GPS location of the DHS clusters, and,
 
-2) **20-30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the mean distance between households and the closest market in Malawi. 
+2) **20-30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the mean distance between households and the closest market in Malawi (REF). 
 
 For identifying the EA centroids we used the EAs with maize sampling sites were used to generate the buffers.
 

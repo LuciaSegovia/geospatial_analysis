@@ -1,12 +1,14 @@
-#######################################################################
+################################################################################
 #
-#   Adding information of the admin units for each maize Se conc. sample location
-#     in Malawi, info needed to calculate the predicted-mean Se conc.
-#   for future use and for modelling. 
+#           Adding information of the admin units for 
+#           each maize Se conc. sample location in Malawi, 
+#          info needed to calculate the mean grain Se conc.
+#            for future use and spatial modelling. 
 #
 #
-#####################################################################################################
-# Cleaning the enviroment
+################################################################################
+
+# Cleaning the environment ----
 rm(list=ls())
 
 # Loading libraries and functions
@@ -14,30 +16,20 @@ rm(list=ls())
 #library(plyr) # weighted data analysis
 library(dplyr) # data wrangling 
 library(ggplot2) # visualisation
-library(sf) #spatial data manipulation
+library(sf) # spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
 
-###########################################################################################
-
-
-#    Shapefiles
-
-
-##########################################################################################
-
-# Loading Shapefiles 
+# Data: Shapefiles ----
 
 # Admin Boundaries for Malawi 
 
 # EAs
-ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+ea_bnd  <- st_read(here::here("data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
-
 # National parks
-
-parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
+parks  <-  st_read(here::here( "data",
  "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
  
 # Explore the shapefile
@@ -46,50 +38,45 @@ head(ea_bnd)
 table(sf::st_is_valid(ea_bnd))
 table(sf::st_is_valid(parks))
 
-
-#############################################################################################################
-
-#    Maize Se conc. 
-
-################################################################################
-
-## Loading the data ----
-
-#  Maize Se conc. (cleaned from 00_cleaning-maize.R)
-#file_name  <- "maize-se" # cleaned geo-loc maize Se data
-# maize_values  <- "predicted-maizeSe_LOD" # cleaned  predicted maize Se data (from 01_krg-maize-model.R)
-# file_name  <- paste0("mwi-", maize_values, ".RDS")
-# data.df  <- readRDS(here::here("data", "inter-output", file_name)) 
-data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) 
-
+# Maize Se conc.  ----
+# Loading the data (from cleaned from 00_cleaning-maize.R)
+maize.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) 
 
 # Explore the dataset
-head(data.df)
-names(data.df)
+head(maize.df)
+names(maize.df)
+dim(maize.df)
+length(maize.df$Se_raw[!is.na(maize.df$Se_raw) & maize.df$Crop == "Maize"])
 
-length(data.df$Se_raw[!is.na(data.df$Se_raw) & data.df$Crop == "Maize"])
+## Getting only entries with maize Se values
+maize.df <-  subset(maize.df, !is.na(Se_raw) & 
+                    Crop == "Maize")
 
-# Selecting only variables that are interesting. (EA code, EA area, TA code, district & geo)
-admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
+# Selecting only variables that are interesting 
+# EA code, EA area, TA code, district & geometry)
+ea_admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
 head(admin)
 
-# Generating the spatial object (geometry) from data
-geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+# Transforming maize data.frame into a spatial object (geometry) 
+geomaize.df <- st_as_sf(maize.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
+dim(geomaize.df) # 1689 maize GeoNut 
 
-dim(geodata.df) #1282 - maize 804 plasma # GeoNut 1900
+# Adding a variable to store info on distance 
+geomaize.df$dist_in_m <- NA
+
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
 
-#Se_admin = st_intersection(data.df, admin)
-Se_admin  <-  st_join(geodata.df, admin)
+#Se_admin = st_intersection(maize.df, admin)
+geomaize_ea.df  <-  st_join(geomaize.df, ea_admin)
 
-dim(Se_admin)
-sum(is.na(Se_admin$EACODE))
+dim(geomaize_ea.df)
+sum(is.na(geomaize_ea.df$EACODE))
 
 # 60   61  976 1893 1895
-missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
+missing  <- geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),]
 
 #Checking missing values
 tm_shape(ea_bnd) +
@@ -97,70 +84,99 @@ tm_polygons() +
 tm_shape(missing) +
 tm_symbols(col ="red", size =0.1)
 
-# Checkin the closest EA for those missing EA GPS loc. 
-st_join(missing[,1:ncol(geodata.df)-1], admin, st_is_within_distance, 
+# Checking the closest EA for those missing EA GPS loc. 
+st_join(missing[,1:ncol(geomaize.df)-1], admin, st_is_within_distance, 
              dist = units::set_units(4500, "m"))  # %>% pull(EACODE)
 
+
+
 m <-  c(90, 200, 300, 4500)
-# Fixint missing (Pred. Se values) 
-Se_admin[which(is.na(Se_admin$EACODE)),]
+
+# Fixint missing (EAs for maize Se values) 
+geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),]
 
 for(i in 1:length(m)){
 
-Se_admin[which(is.na(Se_admin$EACODE)),]  <-  st_join(Se_admin[which(is.na(Se_admin$EACODE)),1:ncol(geodata.df)-1], 
+geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)), "dist_in_m"] <- m[i]
+  
+geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),]  <-  st_join(geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),1:ncol(geomaize.df)-1], 
     admin, st_is_within_distance,  dist = units::set_units(m[i], "m")) 
 
 }
 
-#missing  <- Se_admin[which(is.na(Se_admin$EACODE)),]
 
+geomaize_ea.df$dist_in_m[!is.na(geomaize_ea.df$dist_in_m)]
 
+#missing  <- geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),]
 
 # Checking the areas
-sum(duplicated(Se_admin$EACODE))
-length(unique(Se_admin$EACODE)) #9219 --> 1628 (not all EAs were sampled)
-length(unique(Se_admin$DISTRICT)) #30 --> 26 (3 lakes + likoma island) # district
-length(unique(Se_admin$TA_CODE)) #351 --> #ta code
+sum(duplicated(geomaize_ea.df$EACODE))
+length(unique(geomaize_ea.df$EACODE)) #9219 --> 1628 (not all EAs were sampled)
+length(unique(geomaize_ea.df$DISTRICT)) #30 --> 26 (3 lakes + likoma island) # district
+length(unique(geomaize_ea.df$TA_CODE)) #351 --> #ta code
 sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
 
 # Adding a variable for region (1>3 = N>S)
-Se_admin$region  <-  NA
-Se_admin$region[grepl("^1", Se_admin$EACODE)]  <- "1"
-Se_admin$region[grepl("^2", Se_admin$EACODE)]  <- "2"
-Se_admin$region[grepl("^3", Se_admin$EACODE)]  <- "3"
+geomaize_ea.df$region  <-  NA
+geomaize_ea.df$region[grepl("^1", geomaize_ea.df$EACODE)]  <- "1"
+geomaize_ea.df$region[grepl("^2", geomaize_ea.df$EACODE)]  <- "2"
+geomaize_ea.df$region[grepl("^3", geomaize_ea.df$EACODE)]  <- "3"
 
-maize  <- subset(Se_admin, Crop=="Maize")
+# maize  <- subset(geomaize_ea.df, Crop=="Maize")
+# maize$Se_raw[maize$Se_raw == 0]  <- min(maize$Se_std)
 
 par(mfrow=c(1,3))
-#boxplot(log(Se_grain) ~ region, Se_admin)
-#boxplot(log(pred.Se) ~ region, Se_admin)
-#boxplot(log(Se_std) ~ region, Se_admin)
-boxplot(log(Se_grain) ~ region, maize)
-boxplot(log(Se_std) ~ region, maize)
-boxplot(log(Se_raw) ~ region, maize)
+#boxplot(log(Se_grain) ~ region, geomaize_ea.df)
+#boxplot(log(pred.Se) ~ region, geomaize_ea.df)
+#boxplot(log(Se_std) ~ region, geomaize_ea.df)
 
-Se_admin$survey[Se_admin$Se_grain>1.5]
-par(mfrow=c(1,2))
-boxplot(Se_grain[Se_admin$Se_grain<1.5] ~ region[Se_admin$Se_grain<1.5], Se_admin)
-boxplot(Se_std[Se_admin$Se_grain<1.5] ~ region[Se_admin$Se_grain<1.5], Se_admin)
-boxplot(Se_raw ~ region, maize)
-hist(maize$Se_raw)
+# Log median GeoNut dataset
+a <- log(median(geomaize_ea.df$Se_grain[!is.na(geomaize_ea.df$Se_grain)]))
+b <- log(median(geomaize_ea.df$Se_std[!is.na(geomaize_ea.df$Se_std)]))
+c <- log(median(geomaize_ea.df$Se_raw[!is.na(geomaize_ea.df$Se_raw)]))
+
+boxplot(log(Se_grain) ~ region, geomaize_ea.df, ylim = c(-10,0))
+abline(h = a, col = "red", lwd = 3)
+abline(h = b, col = "green", lwd = 3)
+abline(h = c, col = "blue", lwd = 3)
+boxplot(log(Se_std) ~ region, geomaize_ea.df, ylim = c(-10,0))
+abline(h = x, col = "red", lwd = 3)
+abline(h = b, col = "green", lwd = 3)
+abline(h = c, col = "blue", lwd = 3)
+boxplot(log(Se_raw) ~ region, geomaize_ea.df, ylim = c(-10,0))
+abline(h = x, col = "red", lwd = 3)
+abline(h = b, col = "green", lwd = 3)
+abline(h = c, col = "blue", lwd = 3)
+
+# geomaize_ea.df$survey[geomaize_ea.df$Se_grain>1.5]
+# subset(geomaize_ea.df, Se_grain>1.5)
+# 
+# par(mfrow=c(1,2))
+# boxplot(Se_grain[geomaize_ea.df$Se_grain<1.5] ~ region[geomaize_ea.df$Se_grain<1.5], geomaize_ea.df)
+# boxplot(Se_std[geomaize_ea.df$Se_grain<1.5] ~ region[geomaize_ea.df$Se_grain<1.5], geomaize_ea.df)
+# boxplot(Se_raw ~ region, maize)
+# hist(maize$Se_raw)
+# 
+# test <- geomaize_ea.df %>% group_by(EACODE) %>% count() %>% arrange(desc(n)) %>% .[1,]
+
+# Plotting maize Se sample falling out EAs
+# tm_shape(ea_bnd) +
+#   tm_polygons() +
+#   tm_shape(test) +
+#   tm_symbols(col ="red", size =0.1)
 
 # Converting back from spatial obj to dataframe
-data.df  <- Se_admin  %>% st_drop_geometry()  %>%  #removing geometry
-            right_join(., data.df)  # adding back the long/lat variable
+maize.df  <- geomaize_ea.df  %>% st_drop_geometry()  %>%  #removing geometry
+            right_join(., maize.df)  # adding back the long/lat variable
 
 # Saving dataset with aggregation unit for modelling 
-# Admin 
-#file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
-#saveRDS(data.df, here::here("data", "inter-output", file_name))
 saveRDS(data.df, here::here("data", "inter-output", 
-                            "mwi-grain-se_raw_admin.RDS"))
+                            "mwi_maize-se-raw_admin.RDS"))
 
 
-# Testing results accoring to different shapefile choices:
+# Testing results according to different shapefile choices:
 
-test  <- ea_bnd  %>% filter(!DISTRICT %in% unique(Se_admin$DISTRICT))
+test  <- ea_bnd  %>% filter(!DISTRICT %in% unique(geomaize_ea.df$DISTRICT))
 length(unique(test$DISTRICT))
 
 #tm_shape(ea_bnd) +
@@ -170,9 +186,9 @@ length(unique(test$DISTRICT))
 #tm_shape(parks) +
 #tm_borders(col = "green")
 
-test  <- ea_bnd  %>% filter(!TA_CODE %in% unique(Se_admin$TA_CODE))
+test  <- ea_bnd  %>% filter(!TA_CODE %in% unique(geomaize_ea.df$TA_CODE))
 test  <- ta_bnd  %>% 
-filter(!ADM3_PCODE %in% paste0("MW", unique(Se_admin$TA_CODE)))
+filter(!ADM3_PCODE %in% paste0("MW", unique(geomaize_ea.df$TA_CODE)))
 
 test$TA_CODE  <- as.character(test$TA_CODE)
 length(unique(test$TA_CODE))
@@ -184,23 +200,78 @@ length(unique(ta_bnd$ADM3_PCODE))
 #tm_shape(test) +
 #tm_polygons(col = "green", legend.show = FALSE) +
 #tmap_options(max.categories = 124) +
-#tm_shape(geodata.df) +
+#tm_shape(geomaize.df) +
 #tm_symbols(size = 0.09, col = "red")
 
-################################################################################
+# Plasma Se conc. ----
 
-#    Plasma Se conc. 
+# Loading the data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+data.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
+ filter(!is.na(selenium))
+# Removing lakes from boundaries dataset
+# Selecting only variables that are interesting 
+# EA code, EA area, TA code, district & geometry)
+ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
+                                  ignore.case = TRUE)) %>% 
+  select(c(4, 10, 11, 17, 18))
 
-################################################################################
+# Getting the geometry to merge as the buffer
+geodata.df <- data.df %>% select(-geometry) %>% 
+  dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
 
-# # Loading the data
+# Transforming plasma data.frame into a spatial object (geometry) 
+#geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+#                       crs = "EPSG:4326")
+
+# Transforming the buffer into spatial value
+
+# Transforming the list into spatial class
+# data.df$buffer <- st_as_sfc(data.df$buffer)
+
+dim(geodata.df) # 804 plasma
+
+# Adding a variable to store info on distance 
+geodata.df$dist_in_m <- NA
+
+# Getting info on the admin boudaries (EA/district level)
+# Allocating Se values to each admin unit
+
+#Se_admin = st_intersection(data.df, admin)
+geoplasma_ea <-  st_join(geodata.df, ea_admin)
+
+geoplasma_ea %>% st_drop_geometry() %>% select(survey_cluster1, EACODE) %>% 
+  distinct() %>% 
+  dplyr::group_by(survey_cluster1) %>% 
+  dplyr::count() %>% arrange(desc(n)) %>% View()
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(geodata.df) +
+  tm_symbols(col ="red", size =0.1)
+
+dhs_admi <- Se_admin
+
+dim(Se_admin)
+sum(is.na(Se_admin$EACODE))
+
+test <- Se_admin %>% inner_join(., Se_prob %>% 
+                          select(unique_id, V2, V3) %>% distinct()) %>% 
+select(unique_id, EACODE, V2, V3) %>% 
+  mutate(ea_check = (EACODE == V2))
+
+test %>% inner_join(., Se_admin %>% st_drop_geometry() %>% 
+                      select(Se_raw, EACODE),
+                    by = c("V2" = "EACODE"))
+
+#  Loading the data
 # maize 
 # file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
 # maize.df  <- readRDS(here::here("data", "inter-output", file_name))
 maize.df  <- readRDS(here::here("data", "inter-output",
                                 "mwi-grain-se_raw_admin.RDS"))
-
 names(maize.df)
+
 # Selecting only values measured in maize
 unique(maize.df$Crop)
 maize.df  <- subset(maize.df, Crop == "Maize")
@@ -209,6 +280,9 @@ maize.df %>% left_join(., ea_bnd) %>% dplyr::filter(is.na(EACODE))
 
 geomaize.df <- maize.df %>% left_join(., ea_bnd) %>%
   dplyr::select(EACODE, DISTRICT, region, geometry)
+
+
+
 
 class(geomaize.df)
 
@@ -871,6 +945,14 @@ data.df  <- data.df %>% dplyr::select( survey_cluster1, Longitude, Latitude)  %>
 distinct()
 
 head(data.df)
+
+# Those clusters showed high plasma Se conc. and high IQR. 
+# Se boxplot in cleaning. 
+
+tm_shape(ea_bnd) +
+  tm_polygons() +
+  tm_shape(geoplasma_ea$geometry[geoplasma_ea$survey_cluster1 %in% c("136", "170", "192")]) +
+  tm_symbols(col ="red", size =0.1)
 
 
 

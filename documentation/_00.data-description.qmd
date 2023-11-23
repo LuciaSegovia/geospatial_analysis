@@ -14,6 +14,7 @@ editor: source
 # Loading packages
 library(dplyr) # data wrangling 
 library(sf) # spatial data manipulation
+library(ggplot2) # data visualisation
 
 # Data
 # Biomarkers data DHS (00_cleaning-dhs, line 25)
@@ -551,6 +552,56 @@ Plasma Se median (and mean) values were higher in urban settings than in rural, 
 
 What it is interesting is that while the women in the Northern-urban areas had higher plasma Se than their southern counterpart, the women in the Southern-rural areas had higher plasma Se those in Northern-rural areas. In addition, women who live in urban setting of the Central region had similar plasma Se median concentration as women in the northern region in rural settings. 
 
+```{r label = "fig-4", fig.cap = "Variation in plasma Se concentration (ng/mL) of women in Malawi by cluster. Information is divided by region and colour represents the urbanicity."}
+
+data.df <- Malawi_WRA %>% dplyr::filter(!is.na(selenium))
+
+data.df$survey_cluster1 <- as.character(data.df$survey_cluster1)
+data.df$urbanity <- as.factor(data.df$urbanity)
+
+ var_x <- "survey_cluster1"
+ var_y <- "selenium" 
+ var_col <- "urbanity"
+ 
+ n_breaks <- unique(data.df[, var_col])
+ 
+ # Custom legend colour & labels
+ col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
+ col_labels <- c("1" = "Urban", "2" = "Rural")
+ 
+ # Custom X-axis labels 
+ col_labels <- c("Urban", "Rural")
+ 
+ 
+ ggplot(data = data.df 
+        ,
+        mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
+                      colour = !!sym(var_col))) +
+   geom_boxplot() +
+   theme_classic() +
+   scale_colour_manual("", 
+     values =  col_break,
+                    # breaks = col_break,
+                     labels = col_labels) +
+   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+                                                `2` = "Central", 
+                                                `3` = "Southern")),
+              scales = "free_x") +
+  # scale_x_discrete(label = labels) +
+   labs(
+     x= "DHS-MNS Clusters",
+        y = expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))) + 
+   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+   theme(strip.text = element_text(size = 12),
+         axis.text.y = element_text(size = 12), 
+         axis.text.x = element_text(size = 10, angle =30), 
+         legend.position = "top")
+
+
+```
+
+
+
 #### Inflammation {#sec-inflam}
 
 According to the NSO (2017) report: Malawi Micronutrient Survey 2015-2016, inflammation was reported around 12% but it was consistent across age groups, residency, and wealth Q. However, malaria prevalence was higher in rural areas and for the different wealth quintiles (WQ), with lowest WQ being 6-times higher than the highest WQ. Since, these two variables may influence Plasma Se status we are including it in the model. 
@@ -648,6 +699,8 @@ Then, the next step will be to combine with the information on maize Se at diffe
 
 
 #### Limitation to DHS-MNS data
+
+-  **Cluster level data**: Most our analysis are based on location, however, we only have location information at cluster level. This would mean that when comparing with the maize values, those values will be the same for all the women within one cluster. We may need to account for it in our model design: for instance by adding the cluster as random effect. 
 
   - **Displacement of the GPS coordinates at cluster level**. This led to high chances of missclassification and reducing the accuracy of the results for small area (e.g., EAs). It also led to the reduction of the no. of co-located (maize Se & plasma Se) samples. 
 
