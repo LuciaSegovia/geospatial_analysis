@@ -20,7 +20,9 @@ library(tmap) # (spatial) visualisation
 
 # TAs
 ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
-                              "mwi-boundaries", "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
+                              "mwi-boundaries",
+                              "mwi_adm_nso_hotosm_20230329_shp", 
+                              "mwi_admbnda_adm3_nso_hotosm_20230329.shp"))
 
 
 # EAs

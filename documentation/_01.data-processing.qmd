@@ -28,14 +28,25 @@ library(dplyr) # data wrangling
 library(sf) # spatial data manipulation
 library(tmap) # spatial data visualisation
 
+# Loading data
 # Admin Boundaries for Malawi: EAs
 ea_bnd  <- st_read(here::here("data", "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"), quiet = TRUE)
+# Admin boundaries w/o Lake
+# Selecting only variables that are interesting:
+  # EA code, EA area, TA code, district & geometry
+ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT, ignore.case = TRUE)) %>% 
+  select(c(4, 10, 11, 17, 18))
 
 # Maize Se conc.(from cleaned from 00_cleaning-maize.R)
-maize.df  <- readRDS(here::here("data", "inter-output",
-                               "mwi-grain-se_raw.RDS"))  %>% 
+maize.df<- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) %>%
    ## Getting only entries with maize Se values
   filter(!is.na(Se_raw) & Crop == "Maize")
+
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% 
+  # removing entries with missing values in plasma Se conc.
+ filter(!is.na(selenium))
+
 
 ```
 
@@ -58,11 +69,6 @@ class(geomaize.df)
 # Adding a variable to store info on distance 
 geomaize.df$dist_in_m <- NA
 
-# Selecting only variables that are interesting:
-  # EA code, EA area, TA code, district & geometry
-
-ea_admin <- ea_bnd %>% select(c(4, 10, 11, 17, 18))
-  
 
 ```
 
@@ -124,7 +130,7 @@ geomaize_ea.df$region[grepl("^3", geomaize_ea.df$EACODE)]  <- "3"
 
 ```
 
-Finally, the dataset which is ready for calculating the aggregation level at admin. level was stored into as intermediary output for further analysis. Before saving the dataset, it was transformed back into a dataframe by removing the `geometry` and adding back the information about the samples locations as coordenates (`longitud` and `latitude`).
+Finally, the dataset which is ready for calculating the aggregation level at admin. level was stored into as intermediary output for further analysis. Before saving the dataset, it was transformed back into a dataframe by removing the `geometry` and adding back the information about the samples locations as coordenates (`longitude` and `latitude`).
 
 ```{r eval=FALSE}
 
@@ -133,7 +139,7 @@ maize.df  <- geomaize_ea.df  %>% st_drop_geometry()  %>%  #removing geometry
             right_join(., maize.df)  # adding back the long/lat variable
 
 # Saving dataset with aggregation unit for modelling 
-saveRDS(data.df, here::here("data", "inter-output", 
+saveRDS(maize.df, here::here("data", "inter-output", 
                             "mwi_maize-se-raw_admin.RDS"))
 
 ```
@@ -147,6 +153,47 @@ Therefore, we decided to use the buffer areas instead of the point locations (GP
 
 ```{r}
 
+# Getting only cluster location (to avoid duplicates), 
+geodata.df <- plasma.df %>% select(survey_cluster1, buffer) %>% 
+  distinct() %>% 
+# renaming buffer as geometry for converting into spatial object
+  dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
+
+```
+
+Then, we used the spatial join to identify the EAs in the boundary of Malawi without the lakes dataset (`ea_admin`) with the buffered areas for each cluster.
+
+```{r}
+
+# Getting info on the admin boudaries (EA/district level)
+# Allocating buffered areas to each admin unit
+
+geodata_ea <-  st_join(geodata.df, ea_admin)
+
+```
+
+In the @fig-map2, we can see the EAs that were within the buffered areas, and in blue the buffers. 
+
+```{r label = "fig-map2", fig.cap = "Map of Malawi with the possible EAs where the household that were surveyed in the DHS-MNS may reside (in dark red), and the buffer representing the GPS displacement (in blue).", fig.height=7, fig.width=6}
+
+# Aggregate boundaries the whole country (with lakes)
+malawi_bnd_lakes <- st_union(ea_bnd)
+
+# Aggregate boundaries the whole country
+malawi_bnd <- st_union(ea_admin)
+
+# Generating the map
+tm_shape(ea_admin) +
+  tm_polygons(col = "white", 
+              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
+tm_shape(malawi_bnd) +
+  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
+  tm_shape(malawi_bnd_lakes) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+    tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
+  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
+  tm_shape(geodata.df) +
+  tm_borders(col = "steelblue" )
 
 
 ```

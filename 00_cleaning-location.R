@@ -11,7 +11,7 @@
 # Cleaning the environment ----
 rm(list=ls())
 
-# Loading libraries and functions
+# Loading libraries and functions -----
 
 #library(plyr) # weighted data analysis
 library(dplyr) # data wrangling 
@@ -38,6 +38,13 @@ head(ea_bnd)
 table(sf::st_is_valid(ea_bnd))
 table(sf::st_is_valid(parks))
 
+# Removing lakes from boundaries dataset
+# Selecting only variables that are interesting 
+# EA code, EA area, TA code, district & geometry)
+ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
+                                     ignore.case = TRUE)) %>% 
+  select(c(4, 10, 11, 17, 18))
+
 # Maize Se conc.  ----
 # Loading the data (from cleaned from 00_cleaning-maize.R)
 maize.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) 
@@ -55,7 +62,7 @@ maize.df <-  subset(maize.df, !is.na(Se_raw) &
 # Selecting only variables that are interesting 
 # EA code, EA area, TA code, district & geometry)
 ea_admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
-head(admin)
+head(ea_admin)
 
 # Transforming maize data.frame into a spatial object (geometry) 
 geomaize.df <- st_as_sf(maize.df , coords =c("Longitude", "Latitude"),
@@ -85,7 +92,7 @@ tm_shape(missing) +
 tm_symbols(col ="red", size =0.1)
 
 # Checking the closest EA for those missing EA GPS loc. 
-st_join(missing[,1:ncol(geomaize.df)-1], admin, st_is_within_distance, 
+st_join(missing[,1:ncol(geomaize.df)-1], ea_admin, st_is_within_distance, 
              dist = units::set_units(4500, "m"))  # %>% pull(EACODE)
 
 
@@ -100,7 +107,7 @@ for(i in 1:length(m)){
 geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)), "dist_in_m"] <- m[i]
   
 geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),]  <-  st_join(geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),1:ncol(geomaize.df)-1], 
-    admin, st_is_within_distance,  dist = units::set_units(m[i], "m")) 
+    ea_admin, st_is_within_distance,  dist = units::set_units(m[i], "m")) 
 
 }
 
@@ -140,11 +147,11 @@ abline(h = a, col = "red", lwd = 3)
 abline(h = b, col = "green", lwd = 3)
 abline(h = c, col = "blue", lwd = 3)
 boxplot(log(Se_std) ~ region, geomaize_ea.df, ylim = c(-10,0))
-abline(h = x, col = "red", lwd = 3)
+abline(h = a, col = "red", lwd = 3)
 abline(h = b, col = "green", lwd = 3)
 abline(h = c, col = "blue", lwd = 3)
 boxplot(log(Se_raw) ~ region, geomaize_ea.df, ylim = c(-10,0))
-abline(h = x, col = "red", lwd = 3)
+abline(h = a, col = "red", lwd = 3)
 abline(h = b, col = "green", lwd = 3)
 abline(h = c, col = "blue", lwd = 3)
 
@@ -170,30 +177,30 @@ maize.df  <- geomaize_ea.df  %>% st_drop_geometry()  %>%  #removing geometry
             right_join(., maize.df)  # adding back the long/lat variable
 
 # Saving dataset with aggregation unit for modelling 
-saveRDS(data.df, here::here("data", "inter-output", 
+saveRDS(maize.df, here::here("data", "inter-output", 
                             "mwi_maize-se-raw_admin.RDS"))
 
 
 # Testing results according to different shapefile choices:
 
-test  <- ea_bnd  %>% filter(!DISTRICT %in% unique(geomaize_ea.df$DISTRICT))
-length(unique(test$DISTRICT))
-
-#tm_shape(ea_bnd) +
-#tm_polygons() +
-#tm_shape(test) +
-#tm_polygons("DISTRICT") +
-#tm_shape(parks) +
-#tm_borders(col = "green")
-
-test  <- ea_bnd  %>% filter(!TA_CODE %in% unique(geomaize_ea.df$TA_CODE))
-test  <- ta_bnd  %>% 
-filter(!ADM3_PCODE %in% paste0("MW", unique(geomaize_ea.df$TA_CODE)))
-
-test$TA_CODE  <- as.character(test$TA_CODE)
-length(unique(test$TA_CODE))
-length(unique(test$ADM3_PCODE))
-length(unique(ta_bnd$ADM3_PCODE))
+# test  <- ea_bnd  %>% filter(!DISTRICT %in% unique(geomaize_ea.df$DISTRICT))
+# length(unique(test$DISTRICT))
+# 
+# #tm_shape(ea_bnd) +
+# #tm_polygons() +
+# #tm_shape(test) +
+# #tm_polygons("DISTRICT") +
+# #tm_shape(parks) +
+# #tm_borders(col = "green")
+# 
+# test  <- ea_bnd  %>% filter(!TA_CODE %in% unique(geomaize_ea.df$TA_CODE))
+# test  <- ta_bnd  %>% 
+# filter(!ADM3_PCODE %in% paste0("MW", unique(geomaize_ea.df$TA_CODE)))
+# 
+# test$TA_CODE  <- as.character(test$TA_CODE)
+# length(unique(test$TA_CODE))
+# length(unique(test$ADM3_PCODE))
+# length(unique(ta_bnd$ADM3_PCODE))
 
 #tm_shape(ta_bnd) +
 #tm_polygons() +
@@ -207,18 +214,18 @@ length(unique(ta_bnd$ADM3_PCODE))
 
 # Loading the data
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
-data.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
+plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
  filter(!is.na(selenium))
-# Removing lakes from boundaries dataset
-# Selecting only variables that are interesting 
-# EA code, EA area, TA code, district & geometry)
-ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
-                                  ignore.case = TRUE)) %>% 
-  select(c(4, 10, 11, 17, 18))
 
-# Getting the geometry to merge as the buffer
-geodata.df <- data.df %>% select(-geometry) %>% 
+names(plasma.df)
+
+# Getting only cluster location (to avoid duplicates), 
+# renaming buffer as geometry for converting into spatial object
+geodata.df <- plasma.df %>% select(survey_cluster1, buffer) %>% 
+  distinct() %>% 
   dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
+
+class(geodata.df)
 
 # Transforming plasma data.frame into a spatial object (geometry) 
 #geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
@@ -228,8 +235,7 @@ geodata.df <- data.df %>% select(-geometry) %>%
 
 # Transforming the list into spatial class
 # data.df$buffer <- st_as_sfc(data.df$buffer)
-
-dim(geodata.df) # 804 plasma
+# dim(geodata.df) # 804 plasma
 
 # Adding a variable to store info on distance 
 geodata.df$dist_in_m <- NA
@@ -238,19 +244,44 @@ geodata.df$dist_in_m <- NA
 # Allocating Se values to each admin unit
 
 #Se_admin = st_intersection(data.df, admin)
-geoplasma_ea <-  st_join(geodata.df, ea_admin)
+geodata_ea <-  st_join(geodata.df, ea_admin)
 
-geoplasma_ea %>% st_drop_geometry() %>% select(survey_cluster1, EACODE) %>% 
-  distinct() %>% 
-  dplyr::group_by(survey_cluster1) %>% 
+# geoplasma_ea %>% st_drop_geometry() %>% select(survey_cluster1, EACODE) %>% 
+#   distinct() %>% 
+#   dplyr::group_by(survey_cluster1) %>% 
+#   dplyr::count() %>% arrange(desc(n)) %>% View()
+
+# Checking no. of EAs per buffer
+geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
   dplyr::count() %>% arrange(desc(n)) %>% View()
 
-tm_shape(ea_admin) +
-  tm_polygons() +
-  tm_shape(geodata.df) +
-  tm_symbols(col ="red", size =0.1)
+# Visually checking buffer areas and EAs
+malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
+malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
 
-dhs_admi <- Se_admin
+# Tested green (#2D8733)
+
+tm_shape(ea_admin) +
+  tm_polygons(col = "white", 
+              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
+tm_shape(malawi_bnd) +
+  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
+  tm_shape(malawi_bnd_lakes) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+    tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
+  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
+  tm_shape(geodata.df) +
+  tm_borders(col = "steelblue" )
+
+## Checking matches between EAs in plasma & EAs in maize
+geodata_ea %>% select(-dist_in_m) %>% 
+  st_drop_geometry() %>% left_join(., maize.df %>% select(EACODE, Se_raw) %>% 
+                                     distinct()) %>% 
+  dplyr::filter(is.na(Se_raw))
+
+geodata_ea %>% st_drop_geometry() %>% left_join(., maize.df) %>% 
+   View()
+
 
 dim(Se_admin)
 sum(is.na(Se_admin$EACODE))

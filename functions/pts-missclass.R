@@ -62,7 +62,7 @@ point_in_polygon_fun<-function(Observed_DHS_Points,Polygon,Polygon_Values,
   
   for(i in 1:n){
     
-    #Creating Buffer Around Point with Maximum Offset as Radius
+    # Creating Buffer Around Point with Maximum Offset as Radius
     pdsc<-disc(radius = offset.dist[i], centre = c(coordinates(Observed_DHS_Points)[i,1],
                                                    coordinates(Observed_DHS_Points)[i,2]))
     

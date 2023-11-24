@@ -682,7 +682,7 @@ plot(GPS$buffer[GPS$URBAN_RURA == "U"],col='red',add=TRUE) # colouring red those
 # Merging with the dataset
 dim(EligibleDHS)
 dim(GPS)
-EligibleDHS <- left_join(EligibleDHS, GPS, by=c('survey_cluster1', "urbanity" = "URBAN_RURA"))
+EligibleDHS <- left_join(EligibleDHS, GPS) 
 dim(EligibleDHS)
 
 # Only for Se in the dataset
@@ -710,8 +710,10 @@ ggplot() +
  # Saving Se dataset into R object
 #saveRDS(GPS_Se, file=here::here("data", "inter-output","dhs_se.rds"))
 
+dim(EligibleDHS)
+
 # Saving DHS + GPS dataset into R object
-# saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
+#saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
 
 # Survey analysis: Applying survey weight ----
 EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
