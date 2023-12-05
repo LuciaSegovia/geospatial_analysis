@@ -5,31 +5,42 @@ rm(list=ls())
 # Loading libraries and functions
 
 library(dplyr) # data wrangling 
-library(plyr) # weighted data analysis
+#library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
 library(scales) # visualisation - colours
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
 
-###########################################################################################
-
-
-#    Shapefiles
-
-
-##########################################################################################
-
-# Loading Shapefilees 
+# Loading Shapefiles -----
 
 # Admin Boundaries for Malawi 
 
 # EAs
-ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
+ea_bnd  <- st_read(here::here("data",
+                              "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
+#Districts
 dist_bnd <- st_read(here::here("..", "PhD_geospatial-modelling",   #folder for storing (all) shapefiles 
-           "data", "mwi-boundaries",   "EN_NSO", "dist_bnd.shp"))
+                               "data", "mwi-boundaries",   "EN_NSO", "dist_bnd.shp"))
+# National parks
+parks  <-  st_read(here::here( "data",
+                               "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
+
+# Explore the shapefile
+head(ea_bnd)
+
+table(sf::st_is_valid(ea_bnd))
+table(sf::st_is_valid(parks))
+
+# Removing lakes from boundaries dataset
+# Selecting only variables that are interesting 
+# EA code, EA area, TA code, district & geometry)
+ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
+                                     ignore.case = TRUE)) %>% 
+  select(c(4, 10, 11, 17, 18))
+
+
 
 # ea_bnd[which(duplicated(ea_bnd$EACODE)),]  %>% View()
 # 
@@ -37,7 +48,10 @@ dist_bnd <- st_read(here::here("..", "PhD_geospatial-modelling",   #folder for s
 # tm_shape() +
 # tm_polygons()
 
-######################################################
+# Loading data ----
+# Maize data (from 00_cleaning-location.R)
+maize.df <- readRDS(here::here("data", "inter-output",  "mwi_maize-se-raw_admin.RDS"))
+
 # Loading Plasma Se with the EACODE allocated
 data.df  <- readRDS(here::here("data", "inter-output","mwi-plasma-se_admin.RDS"))
 # Loading Maize Se (pred)
@@ -93,18 +107,49 @@ test_buffer10  <- st_buffer(test_centroid, dist = 10000) #10km (2Km urban, 5-10k
 
 ## MAP: Malawi (EA) ======
 
-ea_bnd$EACODE <- as.character(ea_bnd$EACODE )
+# ea_bnd$EACODE <- as.character(ea_bnd$EACODE )
+# 
+# ea_bnd %>% select(geometry, EACODE) %>% 
+#   left_join(., data.df %>% filter(admin == "EADIST") %>% 
+#     select(admin_id,  maizeSe_mean),
+#             by = c("EACODE" = "admin_id")) %>% 
+#   tm_shape() +
+#   tm_polygons(col = "maizeSe_mean")
 
-ea_bnd %>% select(geometry, EACODE) %>% 
-  left_join(., data.df %>% filter(admin == "EADIST") %>%  select(admin_id,  maizeSe_mean),
-            by = c("EACODE" = "admin_id")) %>% 
-  tm_shape() +
-  tm_polygons(col = "maizeSe_mean")
+
+# Visually checking buffer areas and EAs
+malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
+malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
+
+# EAs that are to be shown (interested geographies)
+EAselected <- unique(maize.df$EACODE)
+
+# The Map:
+# Base map (EAs)
+tm_shape(ea_admin) +    
+  tm_polygons(col = "white", 
+              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
+# Land boundaries
+  tm_shape(malawi_bnd) +   
+  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
+# Land/ Lake boundaries
+  tm_shape(malawi_bnd_lakes) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+# EAs to be shown 
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% EAselected]) +
+  tm_polygons(col ="#314f40", border.col = "black", border.alpha = 0.3)
+
+# Optional: buffers or other features 
+#  tm_shape(geodata.df) +
+#  tm_borders(col = "steelblue" )
+
+
 
 ## MAP: Malawi (DISTRICT) ======
 
 dist_bnd  %>% 
-  left_join(., data.df %>% filter(admin == "DISTRICT") %>%  select(admin_id,  maizeSe_mean),
+  left_join(., data.df %>% filter(admin == "DISTRICT") %>%  
+              select(admin_id,  maizeSe_mean),
             by = c("DISTRICT" = "admin_id")) %>% 
   tm_shape() +
   tm_polygons(col = "maizeSe_mean") +

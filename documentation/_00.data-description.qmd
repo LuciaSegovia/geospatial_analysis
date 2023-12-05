@@ -399,7 +399,7 @@ For more information on that see the exploratory analysis and the variable selec
 
 ### Micronutrient survey data (MW_WRA)
 
-```{r collapse=TRUE, cleaning-mw_wra}
+```{r code-fold:true}
 
 # Renaming variables 
 Malawi_WRA <- Malawi_WRA %>% 

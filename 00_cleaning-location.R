@@ -256,22 +256,50 @@ geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>%
   dplyr::count() %>% arrange(desc(n)) %>% View()
 
 # Visually checking buffer areas and EAs
-malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
-malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
+# malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
+# malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
+# 
+# # Tested green (#2D8733)
+# 
+# tm_shape(ea_admin) +
+#   tm_polygons(col = "white", 
+#               border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
+# tm_shape(malawi_bnd) +
+#   tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
+#   tm_shape(malawi_bnd_lakes) +
+#   tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+#     tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
+#   tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
+#   tm_shape(geodata.df) +
+#   tm_borders(col = "steelblue" )
+# 
 
-# Tested green (#2D8733)
+## Checking matches between EAs in plasma & EAs in maize
+geodata_ea %>% select(-dist_in_m) %>% 
+  st_drop_geometry() %>% filter(EACODE %in% EAselected) %>% 
+  count(survey_cluster1)
+
+# Checking which are the two missing EAs
+plasma.df %>% distinct(survey_cluster1) %>%
+  anti_join(.,  geodata_ea %>% select(-dist_in_m) %>% 
+              st_drop_geometry() %>% filter(EACODE %in% EAselected) %>% 
+              distinct(survey_cluster1))
+
+# Checking the district of the missing EAs
+geodata_ea$DISTRICT[geodata_ea$survey_cluster1 %in% c("497", "777")]
+
+# Plotting the data to see where they lie within and in respect of maize grain Se EAs. 
+eas_missing <- geodata_ea$EACODE[geodata_ea$survey_cluster1 %in% c("497", "777") ]
 
 tm_shape(ea_admin) +
-  tm_polygons(col = "white", 
-              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
-tm_shape(malawi_bnd) +
-  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
-  tm_shape(malawi_bnd_lakes) +
-  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
-    tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
-  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
-  tm_shape(geodata.df) +
-  tm_borders(col = "steelblue" )
+  tm_polygons() +
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% eas_missing]) +
+    tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% EAselected]) +
+  tm_polygons(col ="#314f40", border.col = "black", border.alpha = 0.3) +
+  tm_shape(geodata_ea$geometry[geodata_ea$survey_cluster1 %in% c("497", "777") ]) +
+  tm_borders(col = "steelblue") 
+  
 
 ## Checking matches between EAs in plasma & EAs in maize
 geodata_ea %>% select(-dist_in_m) %>% 

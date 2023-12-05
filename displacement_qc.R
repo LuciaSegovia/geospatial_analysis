@@ -9,6 +9,9 @@ library(tmap) # (spatial) visualisation
 source(here::here("functions", "pts-missclass.R"))
 
 # Loading the data
+# Maize data 
+maize.df <- readRDS(here::here("data", "inter-output",  "mwi_maize-se-raw_admin.RDS"))
+
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
 data.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
 filter(!is.na(selenium))
