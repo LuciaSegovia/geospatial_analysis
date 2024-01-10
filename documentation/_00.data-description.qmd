@@ -717,7 +717,7 @@ In this study, we are trying to identify the optimal level of aggregation of mai
 
 #### Administrative boundaries
 
-We have found several shape files with the boundaries for Malawi (See @sec-bound). After exploring the boundaries datasets (pre-exploration using QGIS version (3.28.3) Firenze). Then, after selecting boundaries 3, we decided to use `ea_bnd` for EAs, and generate from that file (dissolving boundaries) the district boundaries file (`dist_bnd`), to avoid potential effect/ bias in the results due to differences in the boundaries datasets (See below). The dist_bnd file is generated in the script (`00_cleaning-boundaries.R`).
+We have found several shape files with the boundaries for Malawi (See @sec-bound). After exploring the boundaries datasets (pre-exploration using QGIS version (3.28.3) Firenze). Then, we selected the boundaries 3 (@ref-NSO) (`ea_bnd`) as the source of the polygons of each of the n= `r `length(unique(ea_bnd$EACODE))` EAs, and n= `r `length(unique(ea_bnd$DISTRICT))` districts. This file was used to generate (from dissolving boundaries) the district boundaries polygons (`dist_bnd`), to avoid potential effect/ bias in the results due to differences in the boundaries datasets (See below). The `dist_bnd` file is generated in the script (`00_cleaning-boundaries.R`).
 
 
 ##### Limitation of the admin boundaries data 

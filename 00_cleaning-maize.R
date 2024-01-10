@@ -16,6 +16,7 @@ source("CEPHaStat_3.R")
 # Loading data (Kumssa - GeoNut) ----
 # data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Grain & soil chem data
 #  "MWI_CropSoilData_NA.csv"))
+# Se_grain,Selenium,mg kg-1 DM
 data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Grain & soil chem data
  "MWI_CropSoilData_Raw.csv"))
 lod.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Minerals LOD data

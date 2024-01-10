@@ -20,8 +20,6 @@ The datasets that we used are listed below:
 
 -`maize.df`: This file contains the sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT). See section XX for more information on the dataset.
 
--`predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in ``01_maize-model.R` and are based on the study of Gashu and colleagues (2022). See section XX for full information. 
-
 -`plasma.df`: This file contains the displaced cluster location (lon/lat), plasme Se concentration, and other individual level information (wealth quintile, BMI, etc.). See section XX for more information on the dataset.
 
 
@@ -54,8 +52,16 @@ plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>%
 
 ```
 
-In order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 
-## Generating the boundaries. 
+
+## Generating predicted maize grain Se concentration for Malawi
+
+
+
+-`predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022). See section XX for full information. 
+
+
+Then, in order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 
+## Generating the boundaries
 
 The first two aggregations (areal units) were are based on administrative boundaries (e.g., Enumeration Areas (EAs), districts) whereas the other two boundaries were based on the cluster location. 
 

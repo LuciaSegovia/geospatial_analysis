@@ -255,6 +255,10 @@ geodata_ea <-  st_join(geodata.df, ea_admin)
 geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
   dplyr::count() %>% arrange(desc(n)) %>% View()
 
+# Getting the unique EAs where the HHs buffer are co-located
+
+EAselected <- unique(geodata_ea$EACODE)
+
 # Visually checking buffer areas and EAs
 # malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
 # malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
@@ -297,10 +301,10 @@ eas_missing <- geodata_ea$EACODE[geodata_ea$survey_cluster1 %in% c("497", "777")
 
 tm_shape(ea_admin) +
   tm_polygons() +
-  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% eas_missing]) +
-    tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
   tm_shape(ea_admin$geometry[ea_admin$EACODE %in% EAselected]) +
   tm_polygons(col ="#138e61", border.col = "black", border.alpha = 0.3) +
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% eas_missing]) +
+  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
   tm_shape(geodata_ea$geometry[geodata_ea$survey_cluster1 %in% c("497", "777") ]) +
   tm_borders(col = "#13418e") 
   
@@ -327,10 +331,58 @@ test %>% inner_join(., Se_admin %>% st_drop_geometry() %>%
                       select(Se_raw, EACODE),
                     by = c("V2" = "EACODE"))
 
+
+
+# Predicted Se conc. ----
+
+# Loading the data
+# Preducted Se conc. (predicted in 01_maize-model.R)
+predmaize.df  <- read.csv(here::here("data", "predicted","Se_raw_OK_maize.csv"))
+
+names(predmaize.df)
+
+# Getting only cluster location (to avoid duplicates), 
+# renaming buffer as geometry for converting into spatial object
+geopredmaize.df <-  st_as_sf( predmaize.df , coords =c("Longitude", "Latitude"),
+                             crs = "EPSG:4326")
+
+## Checking the EAs of the HHs with predicted maize
+
+bnd_reduced <- ea_admin %>% filter(EACODE %in% EAselected)
+
+geopred_ea <-  st_join(geopredmaize.df, bnd_reduced)
+
+# Checking consistency with EAs reported w/i buffer areas of the HHs
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geopred_ea$EACODE)]) +
+  tm_polygons(col ="#138e61", border.col = "black", border.alpha = 0.3) +
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% setdiff(EAselected, unique(geopred_ea$EACODE))]) +
+  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3)
+
+setdiff(EAselected, unique(geopred_ea$EACODE))
+length(setdiff(EAselected, unique(geopred_ea$EACODE))) # even with the surface #68 EAs didn't have values 
+ 
+## Checking (predicted and aggregated) maize grain Se values w/ plasma Se values
+
+pred_ea <- geopred_ea %>% filter(!is.na(EACODE)) %>% select(EACODE, Zhat, kv) %>% 
+  st_drop_geometry()
+  
+check <-  right_join(., geodata_ea %>% st_drop_geometry()) %>% 
+  group_by(survey_cluster1) %>% 
+summarise(mean_Se = mean(Zhat, na.rm =TRUE), 
+          median_Se = median(Zhat, na.rm =TRUE), 
+          sd_se =sd(Zhat, na.rm = TRUE)) 
+
+check %>% 
+  right_join(., plasma.df) %>% 
+  ggplot(aes(log(mean_Se), log(selenium))) + geom_point() 
+
+
+## Checking the value with (observed aggregated values)
+
 #  Loading the data
-# maize 
-# file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
-# maize.df  <- readRDS(here::here("data", "inter-output", file_name))
 maize.df  <- readRDS(here::here("data", "inter-output",
                                 "mwi-grain-se_raw_admin.RDS"))
 names(maize.df)
@@ -338,6 +390,23 @@ names(maize.df)
 # Selecting only values measured in maize
 unique(maize.df$Crop)
 maize.df  <- subset(maize.df, Crop == "Maize")
+
+maize.df %>% dplyr::filter(!is.na(EACODE))  %>%
+  select(EACODE, Se_raw) %>% left_join(., pred_ea) %>% 
+  filter(!is.na(Zhat)) %>% 
+  ggplot(aes(Se_raw, Zhat)) + geom_point() 
+
+pred_ea %>% group_by(EACODE) %>% 
+  summarise(mean_Se = mean(Zhat, na.rm =TRUE), 
+            median_Se = median(Zhat, na.rm =TRUE), 
+            sd_se =sd(Zhat, na.rm = TRUE)) %>% 
+left_join(.,maize.df %>% dplyr::filter(!is.na(EACODE))  %>%
+            select(EACODE, Se_raw) ) %>% 
+  filter(!is.na(Se_raw)) %>% 
+  ggplot(aes(log(Se_raw), log(mean_Se))) + geom_point() 
+
+
+## 
 
 maize.df %>% left_join(., ea_bnd) %>% dplyr::filter(is.na(EACODE))  
 
