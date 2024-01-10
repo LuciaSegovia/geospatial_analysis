@@ -52,7 +52,7 @@ For both aggregation levels, the likelihood models were showing opposite resutls
 
 ### Maize Se estimates
 
-Predicted-mean Se concentration in maize at different level of aggregation were calculated using a Linear Mixed Model using pH & MAT as covariates and the aggregation unit as the random effect. The covariates were selected following Gashu et al, (2019) method. The covariates that were selected (significant) for the maize Se map (kringing map) were mean atmospheric temperature (MAT) and pH. See: `Explora_Malawi_model.R`.
+Predicted-mean Se concentration in maize at different level of aggregation were calculated using a Linear Mixed Model using pH & MAT as covariates and the aggregation unit as the random effect. The covariates were selected following Gashu et al, (2019) method. The covariates that were selected (significant) for the maize Se map (kriging map) were mean atmospheric temperature (MAT) and pH. See: `Explora_Malawi_model.R`.
 
 #### Maize modelling issues (check notes:`Maize-model_notes.md`)
  
@@ -61,7 +61,7 @@ Predicted-mean Se concentration in maize at different level of aggregation were 
 
 ### . Other crops 
 
-There were some discsusions around including or not other crops into the model. The rationale for inclusion is: 
+There were some dissusions around including or not other crops into the model. The rationale for inclusion is: 
 
 1) the model will be more generalisable/ flexible: Because other countries may not have a unique dominant staple crop, as it is maize in Malawi. 
 2) the model will account for spatial variation due to other crops, hence probably yielding more accurate results. 

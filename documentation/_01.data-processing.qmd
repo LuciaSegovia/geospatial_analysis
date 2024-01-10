@@ -12,15 +12,17 @@ editor: source
 
 ## Introduction
 
-Once the datasets are selected and cleaned. The next step is preparing the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se for each aggregation level that will be compared with the plasma Se concentration in women in Malawi. 
+Once the datasets are selected and cleaned. The next step is preparing the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se concentration and predicted Se concentration for each aggregation level that will be compared with the plasma Se concentration in women in Malawi. 
 
 The datasets that we used are listed below:
 
-- `ea_admin`: This file contains the boundaries of Malawi Enumeration Areas, information of the District. The boundaries of the lakes (e.g., Lake Malawi) were excluded as maize grain nor plasma Se could have been taken within those boundaries. 
+-`ea_admin`: This file contains the boundaries of Malawi Enumeration Areas, information of the District. The boundaries of the lakes (e.g., Lake Malawi) were excluded as maize grain nor plasma Se could have been taken within those boundaries. 
 
--`maize.df`: This files contains the sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT).
+-`maize.df`: This file contains the sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT). See section XX for more information on the dataset.
 
--`plasma.df`: This file contains the displaced cluster location (lon/lat), plasme Se concentration, and other individual level information (wealth quintile, BMI, etc.). 
+-`predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in ``01_maize-model.R` and are based on the study of Gashu and colleagues (2022). See section XX for full information. 
+
+-`plasma.df`: This file contains the displaced cluster location (lon/lat), plasme Se concentration, and other individual level information (wealth quintile, BMI, etc.). See section XX for more information on the dataset.
 
 
 ```{r set-up, message=FALSE, warning=FALSE}
@@ -52,14 +54,18 @@ plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>%
 
 ```
 
+In order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 
+## Generating the boundaries. 
+
 The first two aggregations (areal units) were are based on administrative boundaries (e.g., Enumeration Areas (EAs), districts) whereas the other two boundaries were based on the cluster location. 
 
-## Administrative boundaries areas
+### Administrative boundaries areas
 
 In our maize grain Se dataset, we do not have information about the administrative boundaries where each sample point lies in. Therefore, in order to calculate the mean/media maise Se concentration for each administrative unit, we need to link the dataset with the administrative boundaries of Malawi (`ea_admin`) with the maize grain Se dataset (`maize.df`).
 
+The first step is to identify the Enumeration Areas where each maize grain were sampled. We started with the Enumeration Areas because there are the smallest administrative units, and they are nested within the other (bigger) administrative units (Districts and Regions). 
 
-The first step is to identify the Enumeration Areas where each maize grain were sampled. To do so, we need to spatially merge the boundaries dataset (`ea_admin`) and the maize Se dataset. Hence, some data preparation need to be done before carrying the spatial join. For instance, both datasets need to be spatial objects. 
+To do so, we need to spatially merge the boundaries dataset (`ea_admin`) and the maize Se dataset. Hence, some data preparation need to be done before carrying the spatial join. For instance, both datasets need to be spatial objects. 
 
 
 ```{r}
@@ -71,7 +77,7 @@ class(maize.df)
 
 ```
 
-We cans ee that the maize grain dataset is not a spatial object. Therefore, we need to use the `sf package`. 
+We can see that the maize grain dataset is not a spatial object. Therefore, we need to use the `sf package`. 
 
 ```{r}
 
@@ -147,7 +153,7 @@ geomaize_ea.df$region[grepl("^3", geomaize_ea.df$EACODE)]  <- "3"
 
 ```
 
-Finally, the maize grain dataset was ready for calculating the mean/median Se concentration at the different administrative boundaries and was stored into as intermediary output for further analysis. Before saving the dataset, it was transformed back into a dataframe by removing the `geometry` and adding back the information about the samples locations as coordenates (`longitude` and `latitude`).
+Finally, the maize grain dataset was ready for calculating the mean/median Se concentration at the different administrative boundaries and was stored into as intermediary output for further analysis. Before saving the dataset, it was transformed back into a data frame by removing the `geometry` and adding back the information about the samples locations as coordinates (`longitude` and `latitude`).
 
 ```{r eval=FALSE}
 
@@ -162,11 +168,11 @@ saveRDS(maize.df, here::here("data", "inter-output",
 ```
 
 
-#### Household location-based areas (buffer) 
+#### Enumeration Areas of household locations. 
  
-For the household-based areas, ideally, we would like to test the aggregation of the maize grain Se as function of the distance from each household. For instance, with buffered areas around the household, that could be identified as "food-sheds" or "food catchment areas". However, due to confidentiality and anonymity protection, household locations are not available. Instead, the displaced GPS location of each cluster (i.e., EA) is provided. This means that the population centroid of each cluster was register in the original survey, and then displaced within 2km for urban clusters and 5km for rural clusters, with 10% of the rural clusters displaced within 10km buffer. Therefore, it is often not advised to used and/or link this type of data to distance-based measurement and/or small areas where high risk of missclassification may exist. This is because the location of the households could be in any of the EAs within the displaced buffer area. 
+Similarly, in the plasma dataset, the EAs were not available for each household. In addition, due to confidentiality and anonymity protection, household locations are not available. Instead, the displaced GPS location of each cluster (i.e., EA) is provided. This means that the population centroid of each cluster was register in the original survey, and then displaced within 2km for urban clusters and 5km for rural clusters, with 10% of the rural clusters displaced within 10km buffer. Therefore, it is often not advised to used and/or link this type of data to distance-based measurement and/or small areas where high risk of missclassification may exist. This is because the location of the households could be in any of the EAs within the displaced buffer area. 
 
-Hence, we decided to use the buffer areas instead of the point locations (GPS coordinates) to standardise/ minimise the measurement error from the off-setting of the coordinates. In order to identify the probable EAs where the households may be located. 
+Hence, we decided to use the buffer areas instead of the point locations (GPS coordinates) to standardise/ minimise the measurement error from the off-setting of the coordinates, and in turn, use the buffer area to identify the probable EAs where the households may be located. 
 
 ```{r}
 
@@ -178,11 +184,11 @@ geodata.df <- plasma.df %>% select(survey_cluster1, buffer) %>%
 
 ```
 
-Then, we used the spatial join to identify the Malawi EAs (`ea_admin`) within the buffered areas for each cluster.
+To do so, we used the spatial join to identify the Malawi EAs (`ea_admin`) within the buffered areas for each cluster.
 
 ```{r}
 
-# Getting info on the admin boudaries (EA/district level)
+# Getting info on the admin boundaries (EA/district level)
 # Allocating buffered areas to each admin unit
 
 geodata_ea <-  st_join(geodata.df, ea_admin)
@@ -218,8 +224,9 @@ tm_shape(malawi_bnd) +
 
 #### Household location-based areas (buffer) 
 
+For the household-based areas, ideally, we would like to test the aggregation of the maize grain Se as function of the distance from each household. For instance, with buffered areas around the household, that could be identified as "food-sheds" or "food catchment areas". However, as explained in previous section, the location used to generate the buffer are not the real household location but an approximation. By generating bigger than the displacement area buffer we aim to capture the plausible "food catchment area" for each WRA in the sample. 
 
-Two buffer distances were selected:
+Two buffer distances selected were:
 
 1) **10km buffer** to cover the max displacement in rural area for the GPS location of the DHS clusters, and,
 

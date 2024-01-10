@@ -10,7 +10,7 @@
 
 
 library(geosphere)
-source("CEPHaStat_3.R")
+source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 
 #  Note  function commands at the bottom of this script must be
 #  run before the analyses are attempted
@@ -24,29 +24,40 @@ source("CEPHaStat_3.R")
 #  Read in the maize data set
 #
 
-maize_se  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+# maize <- read.csv(here::here("data", "maize", "Malawi_Grain.csv"))
+min(maize$Se_triplequad)
+#maize_se  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
+data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) # cleaned geo-loc maize Se data (2 datasets)
+names(data.df)
 
-
+# Housekeeping: Check NA and zeros
+sum(is.na(data.df$Se_raw))
+data.df <- subset(data.df, !is.na(Se_raw)) #excluding NA
+sum(data.df$Se_raw == 0)
+min(data.df$Se_raw[data.df$Se_raw>0]) # 
+# Changin zeros to min (for log transformation)
+data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
 
 # Now create plot name with Se (element of interest)
 
-element<-"Se_triplequad"
-plotname<-expression("Se_triplequad /"~mg~kg^{-1})
-plotname2<-expression("Se_triplequad /"~log~mg~kg^{-1})
+element<-"Se_raw"
+Crop.target <- "maize"
+plotname<-expression("Se_raw /"~mg~kg^{-1})
+plotname2<-expression("Se_raw /"~log~mg~kg^{-1})
 
 
 # Compute summary statistics of the selected variable
 
 data.df  <- as.data.frame(data.df)
 
-summary<-(summa(data.df[,1]))
-summary<-rbind(summary,(summa(log(data.df[,1]))))
+summary<-(summa(data.df[,element]))
+summary<-rbind(summary,(summa(log(data.df[,element]))))
 row.names(summary)<-c("mg/kg,","log mg/kg")
 
-summaplot((data.df[,1]),plotname)
-summaplot(log(data.df[,1]),plotname2)
-summaplot((outliers(data.df[,1],trim=T)))
-summa((outliers(data.df[,1],trim=T)))
+summaplot((data.df[,element]),plotname)
+summaplot(log(data.df[,element]),plotname2)
+summaplot((outliers(data.df[,element],trim=T)))
+summa((outliers(data.df[,element],trim=T)))
 
 # At this point a decision is made whether to analyse the data on their
 # original units or to replace them with their natural logarithms.
@@ -56,8 +67,8 @@ summa((outliers(data.df[,1],trim=T)))
 #  The next two commands are commented out so that they are not 
 #  automatically run
 #
-  #  data.df[,3]<-log(data.df[,3]) #Already done
-    plotname<-plotname2
+  data.df[,element]<-log(data.df[, element]) 
+  plotname<-plotname2
 
 # The following two rows will remove outliers
 # defined as values outwith the outer fences as in Tukey (1977)
@@ -73,7 +84,7 @@ summa((outliers(data.df[,1],trim=T)))
 # the top in red.
 #
 
-quantiles<-as.character(cut(data.df[,1],quantile(data.df[,1],
+quantiles<-as.character(cut(data.df[,element],quantile(data.df[,element],
 c(0,0.25,0.5,0.75,1)),include.lowest=T,
 label=c("blue","green","yellow","red")))	
 
@@ -81,7 +92,7 @@ label=c("blue","green","yellow","red")))
 # Classified post-plot
 dev.new()
 options(scipen=5)
-plot(data.df[,5],data.df[,6], # Lon & Lat variables
+plot(data.df[,"Longitude"],data.df[,"Latitude"], # Lon & Lat variables
 pch=16,col=quantiles,asp=1,
 xlab="Longitude",ylab="Latitude",cex=0.5)
 
@@ -89,10 +100,10 @@ xlab="Longitude",ylab="Latitude",cex=0.5)
 
 par(mfrow=c(1,2))
 par(mar=c(5,5,3,3))
-plot(data.df[,5],(data.df[,1]),pch=16,cex=0.8,
+plot(data.df[,"Longitude"],(data.df[,element]),pch=16,cex=0.8,
 xlab="Longitude",ylab=plotname)
 
-plot(data.df[,6],(data.df[,1]),pch=16,cex=0.8,
+plot(data.df[,"Latitude"],(data.df[,element]),pch=16,cex=0.8,
 xlab="Latitude",ylab=plotname)
 
 
@@ -110,7 +121,7 @@ NP<-0.5*N*(N-1)
 
 Long<-data.df$Longitude
 Lat<-data.df$Latitude
-z<-data.df[,1]
+z<-data.df[,element]
 
 lag<-vector("numeric",NP)
 vclo<-vector("numeric",NP)
@@ -303,8 +314,8 @@ mtext("c). Dowd",3,adj=0,line=0.5)
 #  estimators of Matheron, Cressie & Hawkins and Dowd respectively.
 #  
 
-Nv<-N # no need to subset for Ethiopia
-#Nv<-500 # Malawi
+#Nv<-N # no need to subset for Ethiopia
+Nv<-500 # Malawi
 
 
 
@@ -468,7 +479,7 @@ print(c(thetaCLL,thetaCLU))
 #Select parameter set for kriging (from ooMa, ooCH, ooDo depending
 # on the decision above
 
-ooX<-ooMa
+ooX<-ooCH
 
 ####################################################################
 # Writing output prior to kriging.
@@ -484,8 +495,6 @@ write.table(Models,fname,quote=F)
 fname<-paste(element,Crop.target,"variogram_estimates.dat")
 
 write.table(cbind(varlags,npair,semiv),fname,quote=F,row.names=F)
-
-
 
 fname<-paste(element,Crop.target,"XVal_Ma.dat",sep="_")
 write.table(kvopMa,fname,quote=F,row.names=F)
@@ -506,8 +515,9 @@ write.table(summary,fname,quote=F)
 #
 #  Kriging
 #
-targets.df<-read.csv("Ethiopia_map.csv",header=T) #Option for Ethiopia
-#targets.df<-read.csv("Malawi_targets.csv",header=T) #Option for Malawi
+
+#targets.df<-read.csv("Ethiopia_map.csv",header=T) #Option for Ethiopia
+targets.df<-read.csv(here::here("data", "maize", "Malawi_targets.csv"),header=T) # Option for Malawi
 
 urdata.df<-data.frame(cbind(Lat,Long,z))
 

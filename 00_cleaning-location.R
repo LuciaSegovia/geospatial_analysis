@@ -291,14 +291,18 @@ geodata_ea$DISTRICT[geodata_ea$survey_cluster1 %in% c("497", "777")]
 # Plotting the data to see where they lie within and in respect of maize grain Se EAs. 
 eas_missing <- geodata_ea$EACODE[geodata_ea$survey_cluster1 %in% c("497", "777") ]
 
+#138e61
+#314f40
+#steelblue
+
 tm_shape(ea_admin) +
   tm_polygons() +
   tm_shape(ea_admin$geometry[ea_admin$EACODE %in% eas_missing]) +
     tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
   tm_shape(ea_admin$geometry[ea_admin$EACODE %in% EAselected]) +
-  tm_polygons(col ="#314f40", border.col = "black", border.alpha = 0.3) +
+  tm_polygons(col ="#138e61", border.col = "black", border.alpha = 0.3) +
   tm_shape(geodata_ea$geometry[geodata_ea$survey_cluster1 %in% c("497", "777") ]) +
-  tm_borders(col = "steelblue") 
+  tm_borders(col = "#13418e") 
   
 
 ## Checking matches between EAs in plasma & EAs in maize

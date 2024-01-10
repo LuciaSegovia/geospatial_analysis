@@ -81,9 +81,9 @@ The data repository contains a number of data files for [Malawi](https://figshar
 -  **Limit of detection dataset** (MWI_Crop_LOD_ByICPRun), it provides information about the limit of detection per each round of ICP.
 
 
-This is problematic for our analysis as selenium (Se) in Malawi was highly affected due to the very low values of Se concentration in maize in that country. Therefore, some considerations were taken and are explained in the data exploration (@sec-explo) as well as in the modelling section (Section 3.x). See also notes in Kumssa et al, (2022). 
+This dataset is problematic for our analysis as the number of below detection limit values of selenium (Se) in Malawi were high due to the very low Se concentration in maize found in the country which in turn would highly affect our final results. Therefore, some considerations were taken and are explained in the data exploration (@sec-explo) as well as in the modelling section (Section 3.x). See also notes in Kumssa et al, (2022). 
 
-In addition, we found that in Southern Malawi were other crops (e.g., millet, sorghum, etc.) were collected instead of maize. It could be because the harvest season is slightly earlier in that area and hence the fields were already plotted and other crops planted (@ref).
+In addition, we found that in Southern Malawi mostly other crops (e.g., millet, sorghum, etc.) were collected instead of maize. It could be because the harvest season is slightly earlier in that area and hence the fields were already plotted and other crops planted when the data collection happened (@ref).
 
 File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_CropSoilData_Raw.csv`
 
@@ -91,17 +91,17 @@ File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_Crop_LOD_ByICPRun.csv`
 
 #### Complementary dataset: Chilimba 
 
-Malawi maize grain and soil Se concentration dataset (2009-2010): It is publicly available [here](), but we obtained a more extensive dataset from the co-authors of the manuscript (E.L.A.) including the values of pH (in water) of the soil where samples were collected. 
+Malawi maize grain and soil Se concentration dataset (2009-2010): It is publicly available [here](), but we obtained a more extensive dataset from the co-authors of the manuscript (E.L.A.) which included the values of pH (in water) of the soil where samples were collected. 
 
-This dataset was included to provide information on maize grain Se concentration in Southern Malawi. 
+This dataset was mainly included to provide information on maize grain Se concentration in Southern Malawi. Note that no information regarding limit of detection were provided, and that data collection and data analysis were done at different time and by a different team. 
 
 File name: `data/maize/AllanChilimbaFieldData_forLucia_20230615.xlsx`
 
 
-#### Excluded sources of data
+#### List of the excluded sources of data
 
 
-  a. Malawi maize grain and soil Se concentration dataset (2018). It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi)
+  a. Malawi maize grain and soil Se concentration dataset (2018). It is publicly available [here](https://github.com/rmlark/GeoNutrition/tree/main/Soil_Crop_comparisons/Malawi).
 
   File name: `GeoNutrition/Soil_Crop_comparisons/Malawi/Malawi_grain_soil.xlsx` 
 (data/maize/Malawi_Grain.csv)
@@ -121,7 +121,9 @@ File name: `data/maize/AllanChilimbaFieldData_forLucia_20230615.xlsx`
 
 **Cleaning script:** excluded/00_cleaning_excluded.R
 
-For more information regarding the exclusion go to Section 2 (*Cleaning and Exploratory analysis*).
+For more information regarding these datasets and the reasons for exclusion go to @sec-exclusion.
+
+<br>
 
 #### Enviromental covariates (Mean Annual Temperature)
 
@@ -354,7 +356,9 @@ summaplot(log(maize$Se_mg))
 ```
 
 
-#### Excluded datasets
+#### Excluded datasets {#sec-exclusion}
+
+Here, we provide information about the data exploration and main reasons for exclusion of the datasets. 
 
 ##### GeoNutrition (Gashu et al., 2021)
 
@@ -699,6 +703,8 @@ Then, the next step will be to combine with the information on maize Se at diffe
 
 
 #### Limitation to DHS-MNS data
+
+<br> 
 
 -  **Cluster level data**: Most our analysis are based on location, however, we only have location information at cluster level. This would mean that when comparing with the maize values, those values will be the same for all the women within one cluster. We may need to account for it in our model design: for instance by adding the cluster as random effect. 
 

@@ -18,7 +18,8 @@ library(ggplot2) # visualisation
 #library(survey) # survey design
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
-source(here::here("CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "CEPHaStat_3.R")) #stat functions
+#stat functions
 library(geoR)  # geospatial modelling
 #library(maps)
 #library(mapdata) 
