@@ -25,7 +25,7 @@ source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 #
 
 # maize <- read.csv(here::here("data", "maize", "Malawi_Grain.csv"))
-min(maize$Se_triplequad)
+# min(maize$Se_triplequad)
 #maize_se  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
 data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) # cleaned geo-loc maize Se data (2 datasets)
 names(data.df)
@@ -37,6 +37,9 @@ sum(data.df$Se_raw == 0)
 min(data.df$Se_raw[data.df$Se_raw>0]) # 
 # Changin zeros to min (for log transformation)
 data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
+## Choosing only entries with maize Se values
+data.df <-  subset(data.df, Crop == "Maize")
+
 
 # Now create plot name with Se (element of interest)
 
@@ -479,7 +482,9 @@ print(c(thetaCLL,thetaCLU))
 #Select parameter set for kriging (from ooMa, ooCH, ooDo depending
 # on the decision above
 
-ooX<-ooCH
+#ooX<-ooCH #non-log
+ooX<-ooMa  #log
+
 
 ####################################################################
 # Writing output prior to kriging.
@@ -578,6 +583,7 @@ kv<-t(Bd)%*%lam
 lagr<-lam[N+1]
 krop[it,]<-c(Long_t,Lat_t,Zhat,kv)
 }
+
 
 
 colnames(krop)<-c("Longitude","Latitude","Zhat","kv")
