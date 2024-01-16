@@ -24,7 +24,9 @@ source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 #  Read in the maize data set
 #
 
-# maize <- read.csv(here::here("data", "maize", "Malawi_Grain.csv"))
+maize <- read.csv(here::here("data", "maize", "Malawi_Grain.csv"))
+maize$Se_triplequad [maize$Se_triplequad >9000] <- NA
+
 # min(maize$Se_triplequad)
 #maize_se  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
 data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) # cleaned geo-loc maize Se data (2 datasets)

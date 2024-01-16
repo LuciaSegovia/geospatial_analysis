@@ -12,15 +12,19 @@ min(data.df$Se_raw[data.df$Se_raw>0])
 # Changin zeros to min (for log transformation)
 data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
 
+# Exponential from log transformed
+check$predSe <- exp(check$Zhat)
+
 
 left_join(data.df, check)
 
 
 
-hist(exp(check$Zhat))
-min(check$Zhat)
-sum(check$Zhat<0)
-mean(check$Zhat)
+hist(check$Zhat)
+hist(check$predSe)
+min(check$predSe)
+sum(check$predSe<0)
+mean(check$predSe)
 hist(data.df$Se_raw)
 min(data.df$Se_raw)
 

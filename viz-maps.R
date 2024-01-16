@@ -8,6 +8,7 @@ library(dplyr) # data wrangling
 #library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
 library(scales) # visualisation - colours
+library(paletteer) # visualisation - colours
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
@@ -492,5 +493,72 @@ unique(data.df$DISTRICT[data.df$urbanity=="1"])
    theme(strip.text = element_text(size = 12),
          axis.text.y = element_text(size = 12), 
          axis.text.x = element_text(size = 10, angle =30))
+
+ 
+ # Plasma and maize at EA level (What's the cluster?) ----
+
+ ## Loading data
+ 
+ # Plasma dataset with admin aggregation unit (from 00_cleaning-location.R)
+plasma.df <- readRDS(here::here("data", "inter-output", 
+                               paste0("dhs_se_gps_admin.RDS")))
+ 
+ # Selecting variables of interest
+plasma_ea <- plasma.df %>%  select(selenium, wealth_quintile, urbanity, region, 
+                    survey_cluster1, unique_id, EACODE)
+
+# Getting colours for the clusters in the different regions 
+my_colour <-   c(paletteer::paletteer_c("ggthemes::Green", 35),
+ paletteer_c("ggthemes::Classic Red", 34),
+ paletteer_c("ggthemes::Classic Blue", 33))
+ 
+ 
+ names(my_colour) <- plasma.df %>% select(survey_cluster1, region) %>% 
+   distinct() %>% #filter(region == "1") %>% 
+  arrange(region) %>% pull(survey_cluster1)
+ 
+ pred_ea %>% 
+   right_join(., plasma_ea) %>% mutate_at("survey_cluster1", as.character) %>% 
+ #  filter(region == "1") %>% 
+   ggplot(aes(log(predSe), selenium, colour =survey_cluster1)) + geom_point() +
+   geom_hline(yintercept = 84.9, colour = "red") +
+    theme_minimal() +
+   theme(legend.position = "none") +
+   scale_colour_manual(values = my_colour) # +
+  # facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+  #                                              `2` = "Central", 
+  #                                              `3` = "Southern"))) 
+ 
+ 
+ 
+ # install.packages("ggridges")
+ library(ggridges)
+ # install.packages("ggplot2")
+ library(ggplot2)
+ 
+ unique(plasma_ea$unique_id)[1:10]
+ 
+
+ 
+ pred_ea %>% 
+   right_join(., plasma_ea) %>% 
+  dplyr::filter(survey_cluster1 %in%  unique(plasma_ea$survey_cluster1)[1]) %>% 
+ ggplot(aes(x = predSe, y = unique_id)) +
+   geom_density_ridges() 
+ 
+ pred_ea %>% 
+   right_join(., plasma_ea) %>%  mutate_at("survey_cluster1", as.character) %>% 
+ #  dplyr::filter(survey_cluster1 %in%  unique(plasma_ea$survey_cluster1)[1]) %>% 
+   ggplot(aes(x = predSe, y = survey_cluster1, fill = stat(x))) +
+   geom_density_ridges_gradient() +
+   scale_fill_viridis_c(name = "Maize Se", option = "C") +
+   coord_cartesian(clip = "off") + # To avoid cut off
+   theme_minimal() +
+   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+                                               `2` = "Central", 
+                                              `3` = "Southern")),
+              scales = "free")  
+ 
+
 
  

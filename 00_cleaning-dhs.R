@@ -639,7 +639,7 @@ boxplot(selenium ~ Malaria_test_result*wealth_quintile, data = EligibleDHS,
         col = c("white", "steelblue"), frame = FALSE)
 
 
-# Defining Se deficiency
+# Defining Se deficiency ----
 EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
 EligibleDHS$LOW_SEL_IDI <- ifelse(EligibleDHS$selenium<64.8,1,0)
 EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)

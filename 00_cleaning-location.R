@@ -251,13 +251,23 @@ geodata_ea <-  st_join(geodata.df, ea_admin)
 #   dplyr::group_by(survey_cluster1) %>% 
 #   dplyr::count() %>% arrange(desc(n)) %>% View()
 
+
+# Converting back from spatial obj to dataframe
+plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  #removing geometry
+  right_join(., plasma.df)  # adding back the long/lat variable
+
+# Saving dataset with aggregation unit for modelling 
+# saveRDS(plasma.df, here::here("data", "inter-output", 
+#                              paste0("dhs_se_gps_admin.RDS")))
+
 # Checking no. of EAs per buffer
 geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
   dplyr::count() %>% arrange(desc(n)) %>% View()
 
 # Getting the unique EAs where the HHs buffer are co-located
-
 EAselected <- unique(geodata_ea$EACODE)
+
+
 
 # Visually checking buffer areas and EAs
 # malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
@@ -354,12 +364,12 @@ geopred_ea <-  st_join(geopredmaize.df, bnd_reduced)
 
 # Checking consistency with EAs reported w/i buffer areas of the HHs
 
-tm_shape(ea_admin) +
+tm_shape(ea_admin$geometry[grep("^3", ea_admin$EACODE)]) +
   tm_polygons() +
-  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geopred_ea$EACODE)]) +
-  tm_polygons(col ="#138e61", border.col = "black", border.alpha = 0.3) +
+ # tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geopred_ea$EACODE)]) +
+#  tm_polygons(col ="#138e61", border.col = "black", border.alpha = 0.3) +
   tm_shape(ea_admin$geometry[ea_admin$EACODE %in% setdiff(EAselected, unique(geopred_ea$EACODE))]) +
-  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3)
+  tm_polygons(col ="red", border.alpha = 0.3)
 
 setdiff(EAselected, unique(geopred_ea$EACODE))
 length(setdiff(EAselected, unique(geopred_ea$EACODE))) # even with the surface #68 EAs didn't have values 
@@ -369,15 +379,33 @@ length(setdiff(EAselected, unique(geopred_ea$EACODE))) # even with the surface #
 pred_ea <- geopred_ea %>% filter(!is.na(EACODE)) %>% select(EACODE, Zhat, kv) %>% 
   st_drop_geometry()
   
-check <-  right_join(., geodata_ea %>% st_drop_geometry()) %>% 
-  group_by(survey_cluster1) %>% 
-summarise(mean_Se = mean(Zhat, na.rm =TRUE), 
-          median_Se = median(Zhat, na.rm =TRUE), 
-          sd_se =sd(Zhat, na.rm = TRUE)) 
 
-check %>% 
-  right_join(., plasma.df) %>% 
-  ggplot(aes(log(mean_Se), log(selenium))) + geom_point() 
+pred_ea$predSe <- exp(pred_ea$Zhat)
+
+check <-  right_join(pred_ea, geodata_ea %>% st_drop_geometry()) %>% 
+  group_by(survey_cluster1) %>% 
+summarise(mean_Se = mean(predSe, na.rm =TRUE), 
+          median_Se = median(predSe, na.rm =TRUE), 
+          sd_se =sd(predSe, na.rm = TRUE)) 
+
+
+plasma_ea <- geodata_ea %>% select(-dist_in_m) %>% st_drop_geometry() %>%
+  left_join(., plasma.df %>% 
+            select(selenium, wealth_quintile, urbanity, region,
+                                                           survey_cluster1))
+
+variable_colour <- "urbanity"
+
+pred_ea %>% 
+  right_join(., plasma_ea) %>% mutate_at("survey_cluster1", as.character) %>% 
+  dplyr::filter(!is.na(!!sym(variable_colour))) %>% 
+  ggplot(aes(log(predSe), selenium, colour = !!sym(variable_colour))) + geom_point() +
+  geom_hline(yintercept = 84.9, colour = "red") +
+  theme_minimal() +
+  theme(legend.position = "top") # +
+#  paletteer::scale_color_paletteer_d("beyonce::X41")
+ # paletteer::scale_color_paletteer_d("cartography::harmo.pal", dynamic = TRUE)
+#  paletteer::scale_color_paletteer_d("nbapalettes::nuggets_statement")
 
 
 ## Checking the value with (observed aggregated values)
@@ -386,6 +414,8 @@ check %>%
 maize.df  <- readRDS(here::here("data", "inter-output",
                                 "mwi-grain-se_raw_admin.RDS"))
 names(maize.df)
+
+maize.df$Se_raw[maize.df$Se_raw>0.5]
 
 # Selecting only values measured in maize
 unique(maize.df$Crop)

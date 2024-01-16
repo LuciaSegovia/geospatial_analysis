@@ -187,7 +187,7 @@ These variables provide information at individual level and, below are the varia
 -   **v005** (Woman's sample weights, divide it by 1000000 before applying the weighting factor). Not to be used for MNS, as MNS is a subset and has its own survey weights. 
 -   **v106** (Highest educational level)
 -   **v155** (Literacy)
--   **v190** (Wealth index)
+-   **v190** (Wealth index) [1-5 (lowest to highest)]
 -   **v190a** (Wealth index for urban/rural) 
 -   **v002** (Household number)
 -   **v001** (Cluster number)
