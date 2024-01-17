@@ -14,7 +14,15 @@ library(tmap) # (spatial) visualisation
 
 ##########################################################################################
 
-# Loading Shapefilees 
+# Loading Shapefiles 
+
+# Admin Boundaries for Malawi 
+
+# Districts
+dist_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+                              "mwi-boundaries",
+                              "mwi_adm_nso_hotosm_20230329_shp", 
+                              "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
 
 # Admin Boundaries for Malawi 
 
@@ -40,8 +48,10 @@ head(ea_bnd)
 table(sf::st_is_valid(ta_bnd))
 table(sf::st_is_valid(ea_bnd))
 table(sf::st_is_valid(parks))
+table(sf::st_is_valid(dist_bnd))
 
 ta_bnd <- st_make_valid(ta_bnd) # Check this
+dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 sort(unique(ta_bnd$ADM2_PCODE))
 length(unique(ta_bnd$ADM2_PCODE))
@@ -66,6 +76,72 @@ sort(unique(ta_bnd$ADM2_EN))
 #tm_shape(ta_bnd) +
 #tm_polygons("ADM2_EN", show.legend = FALSE) 
 
+
+## Combining EAs with "authentic" District
+
+test <-  st_join(ea_bnd, dist_bnd)
+
+sum(is.na(eadist_bnd$ADM2_PCODE))
+sum(is.na(dist_bnd$ADM2_PCODE))
+
+sum(is.na(eadist_bnd$EACODE))
+
+test %>% filter(EACODE == "30299930")
+ea_bnd %>% filter(EACODE == "30111910")
+ea_bnd %>% filter(DISTRICT == "Lake Chilwa")
+ea_bnd %>% filter(TA == "Kuluunda") %>% 
+  tm_shape()+
+  tm_polygons()
+
+test$DISTRICT[test$DIST_CODE == "205"]
+
+dist <- test$DISTRICT[is.na(test$ADM2_PCODE)]
+eas <- test$EACODE[is.na(test$ADM2_PCODE)]
+
+test$EACODE[is.na(test$ADM2_PCODE) & test$DISTRICT == "Mwanza"]
+
+## Checking the "missing EAs" in their districts -----
+
+# No.1 is in Mangochi, for some reason when removing the shape of the Namizimu Forest Reserve, Malaui
+# The piece of land was removed. (to be added manually).
+# No. 2 is a piece of land that seems to fall inside the lake it is "one EA" from the TA Kuluunda. It's also not
+# reported in the DHS, so we are removing it. 
+# No. 3 is in Salima too but I can't see it either...Also not in the DHS...
+# No. 4 is in Mangochi & I can't see it, also not in the DHS
+# No. 5 is in Mangochi & I can't see it, but in this case it is in the DHS (cluster = 23), so adding the district (check TA), 
+# Funny enough, there is no TA assigned and acc. to docu there is no HH living in it... 
+# No 6, 8 is the lake Chilwa, there is one EA on the top part of the lake,
+# There's only one EA, and acc. to the data there is no HHs recorded.
+# No. 8 is the EA in Neno, but it's located in Mwanza (I don't know why it doesn't pick it up)
+# No. 9 seemed to be the same
+# No.10 is in Chikwawa
+## Solution--> Use the DISTRICT variable to complete ADM2_EN in all cases but in the Mwanza, as it should be Neno. 
+
+
+i=5
+
+tm_shape(test %>% filter(DISTRICT %in% dist[i])) +
+  tm_polygons(border.col = "black") +
+  tm_shape(dist_bnd %>% filter(ADM2_EN %in% c(dist[i]))) +
+  tm_polygons("ADM2_EN", border.alpha = 0.01) +
+#  tm_shape(test$geometry[is.na(test$ADM2_PCODE)]) +
+  tm_shape(test$geometry[test$EACODE %in% eas[i]]) +
+  tm_polygons( col = "red") 
+
+ta_bnd %>% filter(ADM2_EN %in% c(dist[i])) %>% 
+tm_shape() +
+  tm_polygons("ADM3_EN") 
+
+# Fixing the District Issues as per above 
+dist_fix <- gsub("Mwanza", "Neno", dist)
+
+test$ADM2_EN[test$EACODE %in% eas]
+test$ADM2_EN[is.na(test$ADM2_EN)] <- dist_fix
+
+
+eadist_bnd$boundaries_check <- ifelse(eadist_bnd$DISTRICT == eadist_bnd$ADM2_EN, TRUE, FALSE)
+
+eadist_bnd %>% filter(boundaries_check == FALSE) %>% count()
 
 # Loading EA boundaries data (shapefile) (as raster)
  ea  <-   rgdal::readOGR(here::here( "..", "PhD_geospatial-modelling",

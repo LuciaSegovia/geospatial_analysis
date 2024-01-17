@@ -8,7 +8,8 @@ library(dplyr) # data wrangling
 #library(plyr) # weighted data analysis
 library(ggplot2) # visualisation
 library(scales) # visualisation - colours
-library(paletteer) # visualisation - colours
+library(paletteer) # visualisation - ggplot2 add-on colours
+library(ggridges)  # visualisaiton - ggplot2 add-on for ridges
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 
@@ -495,7 +496,37 @@ unique(data.df$DISTRICT[data.df$urbanity=="1"])
          axis.text.x = element_text(size = 10, angle =30))
 
  
- # Plasma and maize at EA level (What's the cluster?) ----
+ # Map: Plasma visually checking buffer areas and EAs (00_cleaning-location.R) ----
+ 
+malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
+malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
+
+# Tested green (#2D8733)
+
+tm_shape(ea_admin) +
+  tm_polygons(col = "white", 
+              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
+tm_shape(malawi_bnd) +
+  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
+  tm_shape(malawi_bnd_lakes) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+    tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
+  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
+  tm_shape(geodata.df) +
+  tm_borders(col = "steelblue" )
+
+
+# Map: Plasma visually checking cluster EAs are w/i District (00_cleaning-location.R) ----
+
+tm_shape(dist_bnd) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
+  tm_polygons(col ="firebrick4", border.col = "#666666", border.alpha = 0.3) +
+  tm_shape(geodata.df) +
+  tm_borders(col = "steelblue" )
+
+
+ # Point: Plasma and maize at EA level (What's the cluster?) ----
 
  ## Loading data
  
@@ -531,15 +562,11 @@ my_colour <-   c(paletteer::paletteer_c("ggthemes::Green", 35),
  
  
  
- # install.packages("ggridges")
- library(ggridges)
- # install.packages("ggplot2")
- library(ggplot2)
+ # Ridges: Maize distribution per cluster ----
  
  unique(plasma_ea$unique_id)[1:10]
  
 
- 
  pred_ea %>% 
    right_join(., plasma_ea) %>% 
   dplyr::filter(survey_cluster1 %in%  unique(plasma_ea$survey_cluster1)[1]) %>% 
@@ -549,7 +576,7 @@ my_colour <-   c(paletteer::paletteer_c("ggthemes::Green", 35),
  pred_ea %>% 
    right_join(., plasma_ea) %>%  mutate_at("survey_cluster1", as.character) %>% 
  #  dplyr::filter(survey_cluster1 %in%  unique(plasma_ea$survey_cluster1)[1]) %>% 
-   ggplot(aes(x = predSe, y = survey_cluster1, fill = stat(x))) +
+   ggplot(aes(x = predSe, y = survey_cluster1, fill = stat(quantiles))) +
    geom_density_ridges_gradient() +
    scale_fill_viridis_c(name = "Maize Se", option = "C") +
    coord_cartesian(clip = "off") + # To avoid cut off

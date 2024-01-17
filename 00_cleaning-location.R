@@ -43,7 +43,7 @@ table(sf::st_is_valid(parks))
 # EA code, EA area, TA code, district & geometry)
 ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
                                      ignore.case = TRUE)) %>% 
-  select(c(4, 10, 11, 17, 18))
+  dplyr::select(c(4, 10, 11, 17, 18))
 
 # Maize Se conc.  ----
 # Loading the data (from cleaned from 00_cleaning-maize.R)
@@ -221,7 +221,7 @@ names(plasma.df)
 
 # Getting only cluster location (to avoid duplicates), 
 # renaming buffer as geometry for converting into spatial object
-geodata.df <- plasma.df %>% select(survey_cluster1, buffer) %>% 
+geodata.df <- plasma.df %>% dplyr::select(survey_cluster1, buffer) %>% 
   distinct() %>% 
   dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
 
@@ -246,6 +246,7 @@ geodata.df$dist_in_m <- NA
 #Se_admin = st_intersection(data.df, admin)
 geodata_ea <-  st_join(geodata.df, ea_admin)
 
+length(unique(geodata.df$survey_cluster1))
 # geoplasma_ea %>% st_drop_geometry() %>% select(survey_cluster1, EACODE) %>% 
 #   distinct() %>% 
 #   dplyr::group_by(survey_cluster1) %>% 
@@ -260,33 +261,33 @@ plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  #removing geometry
 # saveRDS(plasma.df, here::here("data", "inter-output", 
 #                              paste0("dhs_se_gps_admin.RDS")))
 
+setdiff(tolower(unique(plasma.df$DISTRICT)), unique(plasma.df$dist_name))
+setdiff(unique(plasma.df$dist_name), tolower(unique(plasma.df$DISTRICT)))
+
+plasma.df$dist_name2 <- plasma.df$dist_name
+
+plasma.df$dist_name2 <- gsub("")
+
+plasma.df$boundaries_check <- ifelse(tolower(plasma.df$DISTRICT) == plasma.df$dist_name, TRUE, FALSE)
+
+plasma.df %>% dplyr::filter(boundaries_check == FALSE) %>% 
+  select(survey_cluster1, DISTRICT, dist_name) %>% distinct() %>% View()
+
 # Checking no. of EAs per buffer
 geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
-  dplyr::count() %>% arrange(desc(n)) %>% View()
+  dplyr::count() %>% arrange(desc(n))
+
+# Checking no. of EAs per buffer
+geodata_ea %>%  st_drop_geometry() %>% mutate_at("survey_cluster1", as.character) %>% 
+  ggplot(aes(survey_cluster1, fill = DISTRICT)) + geom_bar() 
 
 # Getting the unique EAs where the HHs buffer are co-located
 EAselected <- unique(geodata_ea$EACODE)
 
 
 
-# Visually checking buffer areas and EAs
-# malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
-# malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
-# 
-# # Tested green (#2D8733)
-# 
-# tm_shape(ea_admin) +
-#   tm_polygons(col = "white", 
-#               border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
-# tm_shape(malawi_bnd) +
-#   tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
-#   tm_shape(malawi_bnd_lakes) +
-#   tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
-#     tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
-#   tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
-#   tm_shape(geodata.df) +
-#   tm_borders(col = "steelblue" )
-# 
+
+# Check: Visualisation on (viz-maps.R & on data-processing.qmd)
 
 ## Checking matches between EAs in plasma & EAs in maize
 geodata_ea %>% select(-dist_in_m) %>% 
