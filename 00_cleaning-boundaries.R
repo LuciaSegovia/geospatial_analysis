@@ -37,10 +37,26 @@ ta_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
 ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
+# Removing lakes from boundaries dataset
+# Selecting only variables that are interesting 
+# fid, EA code, TA name, TA code, district, dist code, EA area & geometry)
+ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
+                                     ignore.case = TRUE)) %>% 
+  dplyr::select(c(1, 4, 9, 10, 11, 12, 17, 18))
+
+ea_admin$region <- NA
+
+for(i in 1:3){
+  ea_admin$region[grepl(paste0("^", i), ea_admin$EACODE)] <- i
+}
+
+ea_admin %>% filter(is.na(region))
+
 # National parks
 
 parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
-                              "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
+                              "mwi-boundaries", "protected_areas_geo",
+                              "protected_areas_geo.shp"))
 
 # Explore the shapefile
 head(ea_bnd)
@@ -59,38 +75,44 @@ length(unique(ta_bnd$ADM2_PCODE))
 # Getting the admin units (the one with the higher no of unique id/names)
 dim(ea_bnd) # 9235
 sum(duplicated(ea_bnd$EACODE))
-length(unique(ea_bnd$EACODE)) #9219
-length(unique(ea_bnd$DISTRICT)) #28/30 #dist code/ district
+length(unique(ea_bnd$EACODE)) # 9219
+length(unique(ea_bnd$DISTRICT)) #27/30 #dist code/ district
+length(unique(dist_bnd$ADM2_EN)) #32 #district bc Blantyre, Lilongwe, Mzuzu and Zomba are divided into dist. and city
 length(unique(ea_bnd$TA_CODE)) #351/350 #ta code/ ta
 sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
 
-# Checking comparabiity between the two boundaries dataset
+# Checking comparability between the two boundaries dataset
 # Even district are different
 sort(unique(ea_bnd$DISTRICT))
 sort(unique(ta_bnd$ADM2_EN))
 
 #Commenting maps generation for speeding the processing
-#tm_shape(ea_bnd) +
-#tm_polygons("DISTRICT", show.legend = FALSE) 
-#
-#tm_shape(ta_bnd) +
+# ea_bnd %>% 
+# tm_shape() +
+# tm_polygons() +
+# ea_admin %>% filter(is.na(region)) %>% 
+# tm_shape() +
+# tm_polygons("DISTRICT", show.legend = FALSE) 
+
+#ta_bnd %>% 
+#dist_bnd %>% filter(grepl("Blantyre", ADM2_EN))  %>%  
+#tm_shape() +
 #tm_polygons("ADM2_EN", show.legend = FALSE) 
 
 
 ## Combining EAs with "authentic" District
 
-test <-  st_join(ea_bnd, dist_bnd)
+test <-  st_join(ea_admin, dist_bnd)
 
-sum(is.na(eadist_bnd$ADM2_PCODE))
+sum(is.na(test$ADM2_PCODE))
 sum(is.na(dist_bnd$ADM2_PCODE))
-
-sum(is.na(eadist_bnd$EACODE))
+sum(is.na(test$EACODE))
 
 test %>% filter(EACODE == "30299930")
-ea_bnd %>% filter(EACODE == "30111910")
+ea_admin %>% filter(EACODE == "30111910")
 ea_bnd %>% filter(DISTRICT == "Lake Chilwa")
-ea_bnd %>% filter(TA == "Kuluunda") %>% 
-  tm_shape()+
+ea_admin %>% filter(TA == "Kuluunda") %>% 
+  tm_shape() +
   tm_polygons()
 
 test$DISTRICT[test$DIST_CODE == "205"]
@@ -118,7 +140,7 @@ test$EACODE[is.na(test$ADM2_PCODE) & test$DISTRICT == "Mwanza"]
 ## Solution--> Use the DISTRICT variable to complete ADM2_EN in all cases but in the Mwanza, as it should be Neno. 
 
 
-i=5
+i=7
 
 tm_shape(test %>% filter(DISTRICT %in% dist[i])) +
   tm_polygons(border.col = "black") +
@@ -132,16 +154,21 @@ ta_bnd %>% filter(ADM2_EN %in% c(dist[i])) %>%
 tm_shape() +
   tm_polygons("ADM3_EN") 
 
-# Fixing the District Issues as per above 
+# Fixing the District Issues as per above -----
 dist_fix <- gsub("Mwanza", "Neno", dist)
 
 test$ADM2_EN[test$EACODE %in% eas]
 test$ADM2_EN[is.na(test$ADM2_EN)] <- dist_fix
 
+# Saving the new dataset with "correct" district for each EA ----
 
-eadist_bnd$boundaries_check <- ifelse(eadist_bnd$DISTRICT == eadist_bnd$ADM2_EN, TRUE, FALSE)
+st_write(test, here::here( "data", "inter-output", 
+           "boundaries", "mwi_admbnda_adm4_nso.shp"))
 
-eadist_bnd %>% filter(boundaries_check == FALSE) %>% count()
+
+# eadist_bnd$boundaries_check <- ifelse(eadist_bnd$DISTRICT == eadist_bnd$ADM2_EN, TRUE, FALSE)
+
+# eadist_bnd %>% filter(boundaries_check == FALSE) %>% count()
 
 # Loading EA boundaries data (shapefile) (as raster)
  ea  <-   rgdal::readOGR(here::here( "..", "PhD_geospatial-modelling",

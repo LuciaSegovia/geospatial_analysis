@@ -229,7 +229,15 @@ tm_shape(malawi_bnd) +
 
 ```
 
-When we checked the EAs that were included in each cluster, we realised that there were some clusters that were very close to the district boundaries, thus including some EAs from different district. According to the DHS documentation, displacement was performed to respect district boundaries, hence households will be within their district (see district information on DHS dataset) and because here we are looking at administrative boundaries, we removed the EAs that did not below to the district for each cluster. 
+When we checked the EAs that were included in each cluster, we realised that there were some clusters that were very close to the district boundaries, thus including some EAs from different district. According to the DHS documentation, displacement was performed to respect district boundaries, hence households will be within their district (see district information on DHS dataset) and because here we are looking at administrative boundaries, we need to remove the EAs that did not below to the district for each cluster. However, there were some cluster without district information.
+
+Review the two datasets in the DHS to see, if any of the two have the information on the district, if they don't, then we may need to think of a different approach, that could be:
+  
+  a) the highest mass within the buffered area
+  b) the highest number of EAs w/i each buffer and district
+  
+
+
 
 
 
