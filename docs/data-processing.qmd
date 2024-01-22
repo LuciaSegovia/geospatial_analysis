@@ -2,15 +2,7 @@
 
 ## Methods: Data processing
 
-Once the datasets are selected and cleaned. The next step is preparing the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se concentration and predicted Se concentration for each aggregation level that will be compared with the plasma Se concentration in women in Malawi. 
-
-The datasets that we used are listed below:
-
--`ea_admin`: This file contains the boundaries of Malawi Enumeration Areas, information of the District. The boundaries of the lakes (e.g., Lake Malawi) were excluded as maize grain nor plasma Se could have been taken within those boundaries. 
-
--`maize.df`: This file contains the sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT). See section XX for more information on the dataset.
-
--`plasma.df`: This file contains the displaced cluster location (lon/lat), plasme Se concentration, and other individual level information (wealth quintile, BMI, etc.). See section XX for more information on the dataset.
+Once the datasets are selected and cleaned. The next step is preparing the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se concentration and predicted Se concentration for each aggregation level that will be compared with the plasma Se concentration in Malawian women. 
 
 
 ```{r set-up, message=FALSE, warning=FALSE}
@@ -44,10 +36,20 @@ plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>%
 ```
 
 
+The datasets that we used are listed below:
+
+-   `ea_admin`: This (shape)file contains the boundaries of Malawi smallest administrative units, Enumeration Areas (EAs), and information on their corresponding districts and regions. Note that the boundaries of the lakes (e.g., Lake Malawi) were excluded as maize grain nor plasma Se could have been taken within those boundaries. 
+
+-   `maize.df`: This file contains the GPS sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT). See section XX for more information on the dataset.
+
+-   `plasma.df`: This file contains the displaced [cluster location](#gps-location) (lon/lat), plasma Se concentration, and other individual level information (wealth quintile, BMI, etc.). See {@se-biomarker-dataset-dhs-mns} for more information on the dataset.
+
 ## Generating predicted maize grain Se concentration for Malawi
 
+-`predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
 
--`predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022). See section XX for full information. 
+
+**TODO: Write the full info of the model**
 
 
 Then, in order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 
@@ -55,7 +57,7 @@ Then, in order to calculate the mean/median value for each level of aggregation 
 
 ## Generating the boundaries
 
-The first two aggregations (areal units) were are based on administrative boundaries (e.g., Enumeration Areas (EAs), districts) whereas the other two boundaries were based on the cluster location. 
+The first two aggregations (areal units) were based on administrative boundaries (e.g., EAs, districts) whereas the other two aggregation levels were based on the cluster location. 
 
 ### Administrative boundaries areas
 
@@ -63,7 +65,7 @@ The first two aggregations (areal units) were are based on administrative bounda
 
 In our maize grain Se dataset, we do not have information about the administrative boundaries where each sample point lies in. Therefore, in order to calculate the mean/media maize Se concentration for each administrative unit, we need to link the dataset with the administrative boundaries of Malawi (`ea_admin`) with the maize grain Se dataset (`maize.df`).
 
-The first step is to identify the Enumeration Areas where each maize grain were sampled. We started with the EAs because there are the smallest administrative units, and they are nested within the other (bigger) administrative units (Districts and Regions). 
+The first step is to identify the EAs where each maize grain were sampled. We started with the EAs because are the smallest administrative units, and they are nested within the other (bigger) administrative units (Districts and Regions). 
 
 To do so, we need to spatially merge the boundaries dataset (`ea_admin`) and the maize Se dataset. Hence, some data preparation need to be done before carrying the spatial join. For instance, both datasets need to be spatial objects. 
 

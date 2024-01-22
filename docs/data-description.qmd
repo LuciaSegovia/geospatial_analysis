@@ -396,14 +396,15 @@ For more information on that see the exploratory analysis and the variable selec
 
 #### Limitations of the maize data
 
-- **Low data availability in Southern Malawi region**. For instance,in our main dataset, the GeoNutrition, mainly other crops (e.g., sorghum, millet, etc.) were collected (~11%).
+- **Low data availability in Southern Malawi region**. For instance,in our main dataset, the GeoNutrition, mainly other crops (e.g., sorghum, millet, etc.) were collected (~11%) in the Southern region.
   
 - **High proportion of below limit of detection values** (~25%). Risk of bias:
     - Potential over-estimation (or under-) of maize Se concentration
     - Not at-random missing values --> Spatial pattern
 
+- **Different sampling time** For the Chilimba study, the samples were collected during 2009/10 while the GeoNutrion are much recent (2018). This may lead to differences in the composition of the maize due to environmental factors (e.g., rainfall) that may influence the results. Testing for sensitivity (e.g., excluding those data point). 
 
-## Se biomarker dataset (DHS-MNS)
+## Se biomarker dataset (DHS-MNS) {#sec-plasma}
 
 ### Micronutrient survey data (MW_WRA)
 

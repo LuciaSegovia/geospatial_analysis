@@ -10,8 +10,8 @@ book:
     - "Claire Dooley"
     - "Edward Joy"
   date: "22/01/2024"
-  repo-url: https://github.com/LuciaSegovia/geospatial_analysis
-  repo-actions: [edit]
+  repo-url: https://github.com/LuciaSegovia/geospatial_analysis/
+  repo-actions: [edit, issue]
   downloads: [pdf, epub]
   sharing: [twitter, facebook]
   chapters:
@@ -34,7 +34,7 @@ format:
     theme: cosmo
     number-sections: true
     number-offset: 1
-    number-depth: 3
+    number-depth: 4
     toc-title: "On this page"
     code-fold: show 
     embed-resources: true

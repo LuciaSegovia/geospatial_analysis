@@ -42,6 +42,10 @@ table(sf::st_is_valid(parks))
 ea_admin <- st_read(here::here( "data", "inter-output", 
                         "boundaries", "mwi_admbnda_adm4_nso.shp"))
 
+class(ea_admin$region)
+ea_admin$region <- as.factor(ea_admin$region)
+
+
 # Maize Se conc.  ----
 # Loading the data (from cleaned from 00_cleaning-maize.R)
 maize.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) 
@@ -58,8 +62,8 @@ maize.df <-  subset(maize.df, !is.na(Se_raw) &
 
 # Selecting only variables that are interesting 
 # EA code, EA area, TA code, district & geometry)
-ea_admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
-head(ea_admin)
+# ea_admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
+#head(ea_admin)
 
 # Transforming maize data.frame into a spatial object (geometry) 
 geomaize.df <- st_as_sf(maize.df , coords =c("Longitude", "Latitude"),
@@ -249,39 +253,68 @@ length(unique(geodata.df$survey_cluster1))
 #   dplyr::group_by(survey_cluster1) %>% 
 #   dplyr::count() %>% arrange(desc(n)) %>% View()
 
+# Checking no. of EAs per buffer
+geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
+  dplyr::count() %>% arrange(desc(n))
+
+# Checking the EAs per buffer and district
+geodata_ea %>%  st_drop_geometry() %>% mutate_at("survey_cluster1", as.character) %>% 
+  ggplot(aes(survey_cluster1, fill = DISTRICT)) + geom_bar() 
 
 # Converting back from spatial obj to dataframe
 plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  #removing geometry
   right_join(., plasma.df)  # adding back the long/lat variable
 
+## Fixing issues with districts
+
+setdiff(tolower(unique(plasma.df$ADM2_EN)), unique(plasma.df$dist_name))
+setdiff(unique(plasma.df$dist_name2), tolower(unique(plasma.df$ADM2_EN)))
+
+# New variable to check the correct district (based on survey)
+plasma.df$dist_name2 <- as.character(plasma.df$dist_name)
+
+# Changing the spelling to fit the NSO boundaries file 
+plasma.df$dist_name2 <- gsub("nkhota kota", "nkhotakota", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("lilongwe rural", "lilongwe", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("ndanje", "nsanje", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("zomba rural", "zomba", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("blantyre rural", "blantyre", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("mulange", "mulanje", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("chradzulu", "chiradzulu", plasma.df$dist_name2)
+# Checking the names
+unique(plasma.df$dist_name2)
+
+# Dummy variable to check whether districts are the same or not
+plasma.df$boundaries_check <- ifelse(tolower(plasma.df$ADM2_EN) == plasma.df$dist_name2, TRUE, FALSE)
+
+# Checking district that are the same and those with NA (some dist_name were NA)
+plasma.df %>% dplyr::filter(boundaries_check == TRUE | is.na(boundaries_check) ) %>% 
+  select(survey_cluster1, ADM2_EN, dist_name2) %>% distinct() %>% View()
+
+# Checking unique cluster has a corresponding district
+plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
+  distinct(survey_cluster1, ADM2_EN, dist_name2) %>% View()
+
+# Getting the cluster and corresponding district
+district <- plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
+  distinct(survey_cluster1, ADM2_EN) 
+
+# Excluding EAs that were not with the corresponding district for each cluster
+plasma.df <- left_join(district, plasma.df)
+
+# Checking no. of EAs per cluster & district (each cluster 1 colour == 1 district)
+# plasma.df %>%  distinct(survey_cluster1, EACODE, ADM2_EN, region) %>% 
+#   mutate_at("survey_cluster1", as.character) %>% 
+#   ggplot(aes(survey_cluster1, fill = ADM2_EN)) + geom_bar() +
+#   facet_wrap(~region, scales = "free_x")
+
+
+# Getting the unique EAs where the HHs buffer are co-located
+EAselected <- unique(plasma.df$EACODE)
+
 # Saving dataset with aggregation unit for modelling 
 # saveRDS(plasma.df, here::here("data", "inter-output", 
 #                              paste0("dhs_se_gps_admin.RDS")))
-
-setdiff(tolower(unique(plasma.df$DISTRICT)), unique(plasma.df$dist_name))
-setdiff(unique(plasma.df$dist_name), tolower(unique(plasma.df$DISTRICT)))
-
-plasma.df$dist_name2 <- plasma.df$dist_name
-
-plasma.df$dist_name2 <- gsub("")
-
-plasma.df$boundaries_check <- ifelse(tolower(plasma.df$DISTRICT) == plasma.df$dist_name, TRUE, FALSE)
-
-plasma.df %>% dplyr::filter(boundaries_check == FALSE) %>% 
-  select(survey_cluster1, DISTRICT, dist_name) %>% distinct() %>% View()
-
-# Checking no. of EAs per buffer
-geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
-  dplyr::count() %>% arrange(desc(n))
-
-# Checking no. of EAs per buffer
-geodata_ea %>%  st_drop_geometry() %>% mutate_at("survey_cluster1", as.character) %>% 
-  ggplot(aes(survey_cluster1, fill = DISTRICT)) + geom_bar() 
-
-# Getting the unique EAs where the HHs buffer are co-located
-EAselected <- unique(geodata_ea$EACODE)
-
-
 
 
 # Check: Visualisation on (viz-maps.R & on data-processing.qmd)

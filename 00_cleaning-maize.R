@@ -222,6 +222,10 @@ data.df$Se_std[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey 
 data.df$Se_zero[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey == "Chilimba"]
 data.df$Crop[data.df$survey == "Chilimba"] <-  "Maize"
 
+# Adding year of the sampling
+
+data.df$year <- ifelse(is.na(data.df$year), stringr::str_extract(data.df$SamplingEnd, "[:digit:]{4}$"), year)
+
 sum(is.na(data.df$Se_zero))
 
 # Saving dataset for modelling 
