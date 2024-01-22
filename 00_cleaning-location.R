@@ -38,12 +38,9 @@ head(ea_bnd)
 table(sf::st_is_valid(ea_bnd))
 table(sf::st_is_valid(parks))
 
-# Removing lakes from boundaries dataset
-# Selecting only variables that are interesting 
-# EA code, EA area, TA code, district & geometry)
-ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
-                                     ignore.case = TRUE)) %>% 
-  dplyr::select(c(4, 10, 11, 17, 18))
+# Reading the EA shapefile w/ updated districts (See 00_cleaning-boundaries.R)
+ea_admin <- st_read(here::here( "data", "inter-output", 
+                        "boundaries", "mwi_admbnda_adm4_nso.shp"))
 
 # Maize Se conc.  ----
 # Loading the data (from cleaned from 00_cleaning-maize.R)

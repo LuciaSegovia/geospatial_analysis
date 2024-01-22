@@ -1,7 +1,0 @@
-# Preface {.unnumbered}
-
-## About this book {.unnumbered}
-
-
-## Acknowledgements {.unnumbered}
-
