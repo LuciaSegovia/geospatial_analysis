@@ -1,16 +1,6 @@
----
-title: "Methods: Data processing"
-format: 
-  html:
-    number-sections: true
-    number-offset: 1
-    code-fold: show 
-    embed-resources: true
-editor: source
----
 
 
-## Introduction
+## Methods: Data processing
 
 Once the datasets are selected and cleaned. The next step is preparing the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se concentration and predicted Se concentration for each aggregation level that will be compared with the plasma Se concentration in women in Malawi. 
 

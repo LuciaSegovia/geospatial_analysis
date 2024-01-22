@@ -1,13 +1,7 @@
----
-title: "Reproducible data documentation for the study on geospatial relationship between plasma Se concetration in WRA & maize grain Se concentration in Malawi"
-format: 
-  html:
-    number-sections: true
-    number-offset: 1
-    code-fold: show 
-    embed-resources: true
-editor: source
----
+
+
+
+## Introduction {.unnumbered}
 
 ```{r set-up, message=FALSE, warning=FALSE}
 
@@ -19,32 +13,6 @@ library(spdep) # grid and neighbours
 # library(raster) # (spatial) raster data manipulation
 library(tmap) # (spatial) visualisation
 
-# Data
-# Biomarkers data DHS (00_cleaning-dhs, line 25)
-Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) 
-
-# Survey analysis: Cleaned dataset weight (00_cleaning-dhs, line 574)
-EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
-
-# Loading maize data (Kumssa - GeoNut, 00_cleaning-maize, line 16)
-data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Grain & soil chem data
- "MWI_CropSoilData_Raw.csv"))
-
-# Loading maize data (complementary) (Chilimba, 00_cleaning-maize, line 16)
-maize  <- readxl::read_excel(here::here("data", "maize",
- "AllanChilimbaFieldData_forLucia_20230615.xlsx"), sheet = 1)
-
-# Admin Boundaries for Malawi 
-
-# EAs
-ea_bnd  <- st_read(here::here("data", "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"), quiet = TRUE)
-
-# TAs
-ta_bnd  <- st_read(here::here("data", "mwi-boundaries",
- "mwi_adm_nso_hotosm_20230329_shp","mwi_admbnda_adm3_nso_hotosm_20230329.shp"), 
-                   quiet = TRUE)
-
-
 # Loading stat functions
 source(here::here("functions", "CEPHaStat_3.R"))
 
@@ -52,7 +20,6 @@ source(here::here("functions", "CEPHaStat_3.R"))
 ```
 
 
-## Introduction {.unnumbered}
 
 ### Objectives {.unnumbered}
 
@@ -72,6 +39,17 @@ In this section we explained the datasets and variables that were evaluated for 
 ### Geo-referenced crop (maize) composition (Se concentration) data in Malawi
 
 #### Main dataset: GeoNutrition
+
+```{r}
+
+# Loading maize data (Kumssa - GeoNut, 00_cleaning-maize, line 16)
+# Grain & soil chem data
+data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", 
+ "MWI_CropSoilData_Raw.csv"))
+
+
+```
+
 
 This dataset was obtained from this [open repository](https://doi.org/10.6084/m9.figshare.15911973), and it is described by Kumssa et al, (2022) & Gashu et al, (2021). We decided to use this dataset instead of the one reported in the repository accompanying Gashu and colleagues study (2021) (see excluded data sources below) because it provided the raw dataset (i.e., including below detection limit values), as well as more metadata.
 
@@ -93,6 +71,15 @@ File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_CropSoilData_Raw.csv`
 File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_Crop_LOD_ByICPRun.csv`
 
 #### Complementary dataset: Chilimba 
+
+
+```{r, message=FALSE}
+
+# Loading maize data (complementary) (Chilimba, 00_cleaning-maize, line 16)
+maize  <- readxl::read_excel(here::here("data", "maize",
+ "AllanChilimbaFieldData_forLucia_20230615.xlsx"), sheet = 1)
+
+```
 
 Malawi maize grain and soil Se concentration dataset (2009-2010): It is publicly available [here](), but we obtained a more extensive dataset from the co-authors of the manuscript (E.L.A.) which included the values of pH (in water) of the soil where samples were collected. 
 
@@ -148,6 +135,13 @@ Malawi DHS - MNS 2015-2016. Access need to be requested to DHS data [here](https
 
 #### Micronutrient survey data (MW_WRA)
 
+```{r}
+
+# Biomarkers data DHS (00_cleaning-dhs, line 25)
+Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) 
+
+```
+
 
 This dataset provided information on biomarkers and other biological data for women of reproductive age in Malawi. The recode and all information about the variable description can be found [here](~\MW_2015-16_DHS_09262022_949_164775.zip\MWOB7ASV). Here's the selection of variables that were considered for cleaning and exploration.
 
@@ -179,6 +173,7 @@ This dataset provided information on biomarkers and other biological data for wo
 
 
 #### Questionnaire data (MWIR7) 
+
 
 This dataset provided information on socioeconomic factors for the whole datasets. We downloaded both the .dat and .dta file because the file with .dat extension was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode documentation. 
 
@@ -221,6 +216,30 @@ Information of the boundaries were found from difference sources and data owners
 
 #### Main administrative boudaries file
 
+```{r}
+
+# Admin Boundaries for Malawi 
+
+# Districts
+dist_bnd  <- st_read(here::here("data", "mwi-boundaries",  "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm2_nso_hotosm_20230329.shp"), 
+                     quiet = TRUE)
+                              
+
+# EAs
+ea_bnd  <- st_read(here::here("data", "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"), quiet = TRUE)
+
+# TAs
+ta_bnd  <- st_read(here::here("data", "mwi-boundaries",
+ "mwi_adm_nso_hotosm_20230329_shp","mwi_admbnda_adm3_nso_hotosm_20230329.shp"), 
+                   quiet = TRUE)
+
+```
+
+
+2. [Malawi NSO from HDX (Humanitarian datasets) (mwi_adm_nso_hotosm_20230329)](https://data.humdata.org/dataset/cod-ab-mwi). This source only have up to Admin2 (District) level. 
+
+File: `mwi-boundaries/mwi_adm_nso_hotosm_20230329_shp/mwi_admbnda_adm3_nso_hotosm_20230329.shp`
+
 3. [Population over Enumeration Areas NSO, (eas_bnd)](https://www.masdap.mw/catalogue/#/dataset/126): this layer shows the distribution of the population over the country of Malawi on the basis of enumeration area boundary. Data producer is the National Statistical Office.
 
 File: `mwi-boundaries/EN_NSO/eas_bnd.shp`
@@ -230,8 +249,6 @@ File: `mwi-boundaries/EN_NSO/eas_bnd.shp`
 
 
 1. [GADM maps and data (gadm40_MWI_shp)](https://gadm.org/download_country.html): The file for the EAs has some issues that led to some data points falling into the lake. Hence, we found a different file with the Malawi boundaries. This is because some of the EAs near the lake has some "ownership" over certain areas of the lake, which were included in the boundaries of those EAs in the shapefile (i.e., as a continuum from land to lake).   
-
-2. [Malawi NSO from HDX (Humanitarian datasets) (mwi_adm_nso_hotosm_20230329)](https://data.humdata.org/dataset/cod-ab-mwi). This source only have up to Admin2 (District) level. 
 
 4. Echo2 prioritization, these files covered up to EAs. (depricated - Updated version: Population over Enumeration Areas NSO).
 
@@ -619,6 +636,16 @@ It could be that this variable is correlated with Malaria, hence by including th
 
 ### Socio-economic data (DHSDATA)
 
+
+```{r}
+
+# Survey analysis: Cleaned dataset weight (00_cleaning-dhs, line 574)
+EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
+
+
+```
+
+
 We extracted the socio-economic information from the DHS survey, however, we are only interested in the data for women and those with reported Plasma Se values. 
 
 
@@ -718,22 +745,9 @@ Then, the next step will be to combine with the information on maize Se at diffe
 
 ```{r}
 
-# Loading Shapefiles 
-
-# Admin Boundaries for Malawi 
-
-# Districts
-dist_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
-                              "mwi-boundaries",
-                              "mwi_adm_nso_hotosm_20230329_shp", 
-                              "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
-
 # Fixing some of the boundaries
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
-# EAs
-ea_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
- "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
 ```
 
