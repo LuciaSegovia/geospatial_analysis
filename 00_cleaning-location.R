@@ -327,7 +327,7 @@ EAselected <- unique(plasma.df$EACODE)
 
 # Saving dataset with aggregation unit for modelling 
 # saveRDS(plasma.df, here::here("data", "inter-output", 
-#                              paste0("dhs_se_gps_admin.RDS")))
+#                              "dhs_se_gps_admin.RDS"))
 
 
 ## Buffer areas ----

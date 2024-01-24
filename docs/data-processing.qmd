@@ -9,6 +9,7 @@ Once the datasets are selected and cleaned. The next step is preparing the varia
 
 # Loading packages
 library(dplyr) # data wrangling 
+library(ggplot2) # data visualisation
 library(sf) # spatial data manipulation
 library(tmap) # spatial data visualisation
 
@@ -16,11 +17,11 @@ library(tmap) # spatial data visualisation
 # Admin Boundaries for Malawi: EAs
 ea_bnd  <- st_read(here::here("data", "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"), quiet = TRUE)
 
-# Admin boundaries w/o Lake
-# Selecting only variables that are interesting:
-  # EA code, EA area, TA code, district & geometry
-ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT, ignore.case = TRUE)) %>% 
-  select(c(4, 10, 11, 17, 18))
+# Reading the EA shapefile w/ updated districts (See 00_cleaning-boundaries.R)
+ea_admin <- st_read(here::here( "data", "inter-output", 
+                                "boundaries", "mwi_admbnda_adm4_nso.shp"))
+class(ea_admin$region)
+ea_admin$region <- as.factor(ea_admin$region)
 
 # Maize Se conc.(from cleaned from 00_cleaning-maize.R)
 maize.df<- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) %>%
@@ -130,8 +131,8 @@ When we checked the EAs that were included in each cluster, we realised that the
 
 # Checking the EAs per buffer and district
 
-(g1 <- geodata_ea %>%  st_drop_geometry() %>% mutate_at("survey_cluster1", as.character) %>% 
-   # ggplot(aes(sort(survey_cluster1), fill = DISTRICT)) +
+(g1 <- geodata_ea %>%  st_drop_geometry() %>% 
+  mutate_at("survey_cluster1", as.character) %>% 
   ggplot(aes(x=reorder(survey_cluster1, survey_cluster1, function(x)-length(x)))) +
   geom_bar(aes(fill = DISTRICT)) +
   theme_bw() +
@@ -148,10 +149,13 @@ Moreover, this extended to including district from different regions.
 
 ```{r}
 
-g1 + facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+g1 + 
+  facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
                                                `2` = "Central", 
                                                `3` = "Southern")),
              scales = "free_x") +
+  theme(legend.position="top") 
+
 ```
 
 
@@ -161,6 +165,12 @@ Some minor renaming was needed in order to identify the correct district and a d
 
 
 ```{r}
+
+# Checking the districts in plasma dataset
+# Converting back from spatial obj to dataframe
+plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  #removing geometry
+  right_join(., plasma.df)  # adding back the long/lat variable
+
 
 # New variable to check the correct district (based on survey)
 plasma.df$dist_name2 <- as.character(plasma.df$dist_name)
@@ -226,8 +236,6 @@ Two buffer distances selected were:
 1) **10km buffer** to cover the max displacement in rural area for the GPS location of the DHS clusters, and,
 
 2) **20-30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the mean distance between households and the closest market in Malawi (REF). 
-
-
 
 
 #### Enumeration Areas of the maize grain Se dataset

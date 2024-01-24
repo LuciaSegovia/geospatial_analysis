@@ -19,7 +19,7 @@ library(tmap) # (spatial) visualisation
 # Admin Boundaries for Malawi 
 
 # Districts
-dist_bnd  <- st_read(here::here("..", "PhD_geospatial-modelling", "data",
+dist_bnd  <- st_read(here::here( "data",
                               "mwi-boundaries",
                               "mwi_adm_nso_hotosm_20230329_shp", 
                               "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
