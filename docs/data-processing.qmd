@@ -238,7 +238,7 @@ Two buffer distances selected were:
 2) **20-30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the mean distance between households and the closest market in Malawi (REF). 
 
 
-#### Enumeration Areas of the maize grain Se dataset
+#### Enumeration Areas of the maize grain Se dataset {#sec-maize-ea}
 
 Similarly, in the maize grain Se dataset, the EAs were not available for each sample point. Therefore, in order to calculate the mean/media maize Se concentration for each administrative unit, we need to link the dataset with the administrative boundaries of Malawi (`ea_admin`) with the maize grain Se dataset (`maize.df`).
 
@@ -334,11 +334,17 @@ geomaize_ea.df$region[grepl("^3", geomaize_ea.df$EACODE)]  <- "3"
 
 Finally, the maize grain dataset was ready for calculating the mean/median Se concentration at the different administrative boundaries and was stored into as intermediary output for further analysis. Before saving the dataset, it was transformed back into a data frame by removing the `geometry` and adding back the information about the samples locations as coordinates (`longitude` and `latitude`).
 
-```{r eval=FALSE}
+
+```{r}
 
 # Converting back from spatial obj to dataframe
 maize.df  <- geomaize_ea.df  %>% st_drop_geometry()  %>%  #removing geometry
             right_join(., maize.df)  # adding back the long/lat variable
+
+```
+
+
+```{r eval=FALSE}
 
 # Saving dataset with aggregation unit for modelling 
 saveRDS(maize.df, here::here("data", "inter-output",
@@ -347,9 +353,6 @@ saveRDS(maize.df, here::here("data", "inter-output",
 ```
 
 
-##### Buffered areas based on the maize sampling sites
-
-The centroid of the EAs with maize sampling sites were used to generate the buffers, which was based on the assumption that the maize Se coordinates (with no offset) were the correct EAs on the assumption that all the EAs where the MNS was carried out were sampled in the GeoNutrition study (@ref-Gashu). In addition, because maize samples were not collected in all EAs, and we are not predicting maize Se values, the EAs with maize Se values would be driving the location. 
 
 ### Co-location: combining datasets by location
 
@@ -358,6 +361,160 @@ Samples, both maize and plasma, were supposed to be co-located (i.e., collected 
 Hence, we decided to use the EAs where maize sample were collected (at the were not displaced), and to co-locate (by closest distance possible) the EAs within the buffer area displaced (2km and 5km for urban and rural respectively). 
 
 Even when doing that, there were still two clusters (group of EAs) that did not have any maize grain Se value co-location. For those clusters, the closest EA (xx m) with maize grain Se values were used. 
+
+#### Cluster level observed maize Se
+
+First, we are getting the cluster and EA information for which we would need the maize Se conc. 
+
+```{r}
+
+# Cluster's EA info
+cluster.df <- plasma.df %>% 
+  distinct(survey_cluster1, EACODE, ADM2_PCODE, ADM2_EN, urbanity)
+
+```
+
+We have already identified in which EAs the observed maize dataset are in in the @sec-maize-ea. Therefore, we only need to merge the two dataset, and get the maize Se conc. for each EA within each cluster. 
+
+```{r}
+
+# Merge cluster's EA and observed maize
+
+maize_cluster <- maize.df %>% right_join(., cluster.df) 
+
+boxplot(maize_cluster$Se_raw ~ maize_cluster$survey_cluster1)
+
+```
+
+Then, we can calculate the mean/median maize Se concentration for each cluster.
+
+```{r}
+
+# Calculating the maize grain Se conc per cluster
+(maize_cluster <- maize_cluster %>% 
+  group_by(survey_cluster1) %>% 
+  summarise(Se_mean = mean(Se_raw, na.rm = TRUE), 
+            Se_sd = mean(Se_raw, na.rm = TRUE), 
+            Se_median = median(Se_raw, na.rm = TRUE), 
+            Se_iqr = IQR(Se_raw, na.rm = TRUE), 
+            Se_n = n()))
+
+```
+
+
+#####  Missing values in the observed Se maize values
+
+```{r}
+
+# Getting the cluster with missing values 
+miss <-  unique(maize_cluster$survey_cluster1[is.na(maize_cluster$Se_mean)])
+
+```
+
+There were four clusters (`r toString(miss)`) from the plasma Se dataset (`plasma.df`) that did not match with any of the EAs in the observed Se maize grain dataset (`maize.df`). However, we need at least one maize Se value per cluster to be compared with the plasma Se. Hence, the approach take was the following:
+
+
+```{r}
+
+# Selecting only the EAs that were included in the missing clusters
+ ea_cluster <- cluster.df %>% filter(survey_cluster1 %in% miss) %>% 
+   distinct(EACODE) %>% left_join(., ea_admin) %>% st_as_sf()
+
+```
+
+
+1) Identify the EAs that were included in each cluster (`r n=unique(ea_cluster$EACODE)`).
+
+2) Assign the closest data point (i.e, maize grain Se conc value) for each EA. To do so, we created a loop that finds the closest data point 20m increment each time for all the EAs. And it store the distance for future reference.
+
+```{r}
+
+missing <- readRDS(here::here("data", "inter-output", "filling-missing-Se-observed-maize.RDS"))
+
+```
+
+Note that we are starting at 230m distance because we found th first match at 250m. 
+
+We need to allocate at least one maize Se concentration for each cluster and hence, we identified the closest data point (the closest maize sample with Se values) in the dataset for each of the four cluster. We decided that instead of:
+  
+```{r}
+cluster.df  %>% 
+  filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
+  select(survey_cluster1, urbanity,EACODE,ADM2_EN, dist_in_m, Se_raw) %>% 
+ group_by(survey_cluster1) %>% 
+  summarise(Se_mean = mean(Se_raw, na.rm = TRUE), 
+            Se_sd = sd(Se_raw, na.rm = TRUE), 
+            dist_mean = mean(dist_in_m, na.rm = TRUE), 
+            dist_sd = sd(dist_in_m, na.rm = TRUE))
+```
+  
+  
+  a) Using the mean/ median of all cluster values because there are many repeated values. For instance, the closest data point for 11 (out of 15) EAs within the cluster 200 were the same (Se= 0.344mcg/kg) as it is shown in @fig-cluster1.
+  
+
+```{r label = "fig-cluster1", fig.cap = "Histogram of the closest maize Se concentration for each EA in each of the missing cluster.", fig.height=7, fig.width=6}
+  
+cluster.df  %>% 
+  filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
+  arrange(survey_cluster1, dist_in_m) %>% 
+  select(survey_cluster1, urbanity,EACODE,ADM2_EN, dist_in_m, Se_raw) %>% 
+  ggplot(aes(Se_raw, fill=as.character(survey_cluster1))) + 
+  geom_histogram() + scale_fill_discrete(name = "Cluster") +
+  theme_bw() + facet_wrap(~survey_cluster1) 
+
+```
+
+
+```{r}
+
+cluster.df  %>% 
+  filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
+  select(survey_cluster1, urbanity, EACODE,ADM2_EN, dist_in_m, Se_raw) %>% filter((urbanity == "1" & dist_in_m <2500) | (urbanity == "2" & dist_in_m <5000)) %>% 
+ group_by(survey_cluster1) %>% 
+  summarise(Se_mean = mean(Se_raw, na.rm = TRUE), 
+            Se_sd = sd(Se_raw, na.rm = TRUE), 
+            dist_mean = mean(dist_in_m, na.rm = TRUE), 
+            dist_sd = sd(dist_in_m, na.rm = TRUE),
+             dist_max =max(dist_in_m, na.rm = TRUE))
+
+```
+
+
+ b) Using those within buffered rage (e.g. 2.5km for urban and 5km for rural). This will lead to exclusion of all the values for the cluster 777 which corresponds to Lilongwe city (See @fig-cluster2).  
+ 
+  
+```{r label = "fig-cluster2", fig.cap = "Graph showing the distance and concentration of the closest maize Se samples for each EA in each of the missing cluster.", fig.height=7, fig.width=6}
+  
+cluster.df  %>% 
+  filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
+  arrange(survey_cluster1, dist_in_m) %>% 
+  select(survey_cluster1, urbanity,EACODE,ADM2_EN, dist_in_m, Se_raw) %>% 
+  ggplot(aes(Se_raw, dist_in_m, colour=as.character(ADM2_EN))) + 
+  geom_point(aes(size=Se_raw))  +  
+  labs(size="Maize Se conc.(mcg/kg)", colour="District") +
+  theme_bw() + facet_wrap(~survey_cluster1) 
+
+```
+
+c) Using the closest value for each cluster. 
+
+```{r}
+
+cluster.df  %>% 
+  filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
+  arrange(survey_cluster1, dist_in_m) %>% 
+  select(survey_cluster1, urbanity,EACODE,ADM2_EN, dist_in_m, Se_raw) %>% 
+  group_by(survey_cluster1) %>% 
+  slice_min(dist_in_m, n=1)
+
+```
+
+
+Finally, we decided to use the closest location with reference to the cluster because for this analysis the aggregation unit, and hence the reference point are the clusters. If we would allocate one value per EA (as for the other approaches) we should do the same for the whole sample. As currently, we have only picked those EAs with observed values given that at least one value was available per EA, and trying at least to avoid duplicated observed values. 
+
+#####   Limitations of the approach
+
+Although the value used for Lilongwe city cluster 777 may not be representative, in part due to the distance to the closest EA was almost double the displacement, this has a logic explanation as there will not be agricultural fields (where to grow maize) inside the city. Furthermore, according to personal communication with local experts (G.O), the acquistion dinamics in the city are quite diverse, with people in the highest quintiles buying from supermarkets and/or bringing from their hometowns, and those form the middle and lowest quintile buy in local market, local millers and/or going back to their family villages for harvest. There will be small family trades like bringing sugar and oil from the city to the home village and taking maize flour, particularly during harvest seasion. In addition, some climatic events that may affect crops and low stock in the lean season may affect as well the origin of the maize. For instance, this year (2023/2024) some of the maize distributed from aids (i.e., WFP) has been grown in Tanzania. Definitely more insights in local trades, and city food acquisition will be needed. 
 
 #### Limitations of the co-location
 

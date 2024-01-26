@@ -45,6 +45,159 @@ ea_admin <- st_read(here::here( "data", "inter-output",
 class(ea_admin$region)
 ea_admin$region <- as.factor(ea_admin$region)
 
+# Plasma Se conc. ----
+
+# Loading the data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
+  filter(!is.na(selenium))
+
+names(plasma.df)
+
+# Getting only cluster location (to avoid duplicates), 
+# renaming buffer as geometry for converting into spatial object
+geodata.df <- plasma.df %>% dplyr::select(survey_cluster1, buffer) %>% 
+  distinct() %>% 
+  dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
+
+class(geodata.df)
+
+# Transforming plasma data.frame into a spatial object (geometry) 
+#geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+#                       crs = "EPSG:4326")
+
+# Transforming the buffer into spatial value
+
+# Transforming the list into spatial class
+# data.df$buffer <- st_as_sfc(data.df$buffer)
+# dim(geodata.df) # 804 plasma
+
+# Adding a variable to store info on distance 
+geodata.df$dist_in_m <- NA
+
+# Getting info on the admin boudaries (EA/district level)
+# Allocating Se values to each admin unit
+
+#Se_admin = st_intersection(data.df, admin)
+geodata_ea <-  st_join(geodata.df, ea_admin)
+
+length(unique(geodata.df$survey_cluster1))
+# geoplasma_ea %>% st_drop_geometry() %>% select(survey_cluster1, EACODE) %>% 
+#   distinct() %>% 
+#   dplyr::group_by(survey_cluster1) %>% 
+#   dplyr::count() %>% arrange(desc(n)) %>% View()
+
+# Checking no. of EAs per buffer
+geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
+  dplyr::count() %>% arrange(desc(n))
+
+
+# Converting back from spatial obj to dataframe
+plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  #removing geometry
+  right_join(., plasma.df)  # adding back the long/lat variable
+
+## Fixing issues with districts
+
+setdiff(tolower(unique(plasma.df$ADM2_EN)), unique(plasma.df$dist_name))
+setdiff(unique(plasma.df$dist_name2), tolower(unique(plasma.df$ADM2_EN)))
+
+# New variable to check the correct district (based on survey)
+plasma.df$dist_name2 <- as.character(plasma.df$dist_name)
+
+# Changing the spelling to fit the NSO boundaries file 
+plasma.df$dist_name2 <- gsub("nkhota kota", "nkhotakota", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("lilongwe rural", "lilongwe", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("ndanje", "nsanje", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("zomba rural", "zomba", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("blantyre rural", "blantyre", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("mulange", "mulanje", plasma.df$dist_name2)
+plasma.df$dist_name2 <- gsub("chradzulu", "chiradzulu", plasma.df$dist_name2)
+# Checking the names
+unique(plasma.df$dist_name2)
+
+# Dummy variable to check whether districts are the same or not
+plasma.df$boundaries_check <- ifelse(tolower(plasma.df$ADM2_EN) == plasma.df$dist_name2, TRUE, FALSE)
+
+# Checking district that are the same and those with NA (some dist_name were NA)
+plasma.df %>% dplyr::filter(boundaries_check == TRUE | is.na(boundaries_check) ) %>% 
+  select(survey_cluster1, ADM2_EN, dist_name2) %>% distinct() # %>% View()
+
+# Checking unique cluster has a corresponding district
+plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
+  distinct(survey_cluster1, ADM2_EN, dist_name2) # %>% View()
+
+# Getting the cluster and corresponding district
+district <- plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
+  distinct(survey_cluster1, ADM2_EN) 
+
+# Excluding EAs that were not with the corresponding district for each cluster
+plasma.df <- left_join(district, plasma.df)
+
+# Checking that all the clusters (n=102) have a unique district and region
+plasma.df %>% distinct(survey_cluster1,  ADM2_PCODE,
+                       ADM2_EN, ADM1_PCODE, ADM1_EN) # %>% View()
+
+# One duplicated due to NAs in some of the variables that we are excluding
+plasma.df %>% distinct(survey_cluster1,  ADM2_PCODE, ADM2_EN, 
+                       ADM1_PCODE, ADM1_EN) %>% count(survey_cluster1) %>% arrange(desc(n))
+
+# This is the master file for the admin boundaries. 
+# Each cluster has its cluster-EA level and
+# their district. The codes can be bind with the shape files (ea_bnd, ea_admin or dist_bnd)
+# plasma.df %>% distinct(survey_cluster1, EACODE, 
+#                        ADM2_PCODE, ADM2_EN, ADM1_PCODE, ADM1_EN) %>% 
+#   filter(!is.na(ADM1_EN))  %>% # Only one NA as per above
+#   saveRDS(here::here("data", "inter-output", "aggregation", "master-cluster-admin-level.RDS"))
+
+# Checking no. of EAs per cluster & district (each cluster 1 colour == 1 district)
+# plasma.df %>%  distinct(survey_cluster1, EACODE, ADM2_EN, region) %>% 
+#   mutate_at("survey_cluster1", as.character) %>% 
+#   ggplot(aes(survey_cluster1, fill = ADM2_EN)) + geom_bar() +
+#   facet_wrap(~region, scales = "free_x")
+
+
+# Getting the unique EAs where the HHs buffer are co-located
+EAselected <- unique(plasma.df$EACODE)
+
+# Saving dataset with aggregation unit for modelling 
+# saveRDS(plasma.df, here::here("data", "inter-output", 
+#                              "dhs_se_gps_admin.RDS"))
+
+
+## Buffer areas ----
+
+# Getting the cluster and their centroid to generate the two buffered areas.
+GPS <- plasma.df %>% distinct(survey_cluster1, Longitude, Latitude)
+
+# Transforming maize data.frame into a spatial object (geometry) 
+geogps <- st_as_sf(GPS , coords =c("Longitude", "Latitude"),
+                   crs = "EPSG:4326")
+
+# Choice of buffers
+buffer <- c(10, 25, 30)
+
+# Loop over the number of buffers:
+for(i in 1:length(buffer)){
+  
+  data.df <- GPS
+  distance <- as.numeric(paste0(buffer[i], "000"))
+  #variable <- paste0("buffer", buffer[i]) 
+  
+  # Buffer in meters (10km & 25km)
+  data.df$buffer <- st_buffer(geogps$geometry, dist = distance)
+  
+  # Saving the shapefile with the buffers
+  st_write(data.df, here::here( "data", "inter-output", 
+                                "boundaries", 
+                                paste0("mwi_gps-buffer", buffer[i], ".shp")))
+  
+}
+
+
+test1  <- st_read(here::here("data", "inter-output",
+                             "boundaries", "mwi_gps-buffer25.shp"))
+
+
 
 # Maize Se conc.  ----
 # Loading the data (from cleaned from 00_cleaning-maize.R)
@@ -60,10 +213,6 @@ length(maize.df$Se_raw[!is.na(maize.df$Se_raw) & maize.df$Crop == "Maize"])
 maize.df <-  subset(maize.df, !is.na(Se_raw) & 
                     Crop == "Maize")
 
-# Selecting only variables that are interesting 
-# EA code, EA area, TA code, district & geometry)
-# ea_admin  <- ea_bnd[, c(4, 10, 11, 17, 18)]
-#head(ea_admin)
 
 # Transforming maize data.frame into a spatial object (geometry) 
 geomaize.df <- st_as_sf(maize.df , coords =c("Longitude", "Latitude"),
@@ -77,20 +226,39 @@ geomaize.df$dist_in_m <- NA
 # Getting info on the admin boudaries (EA/district level)
 # Allocating Se values to each admin unit
 
-#Se_admin = st_intersection(maize.df, admin)
+# Se_admin = st_intersection(maize.df, admin)
 geomaize_ea.df  <-  st_join(geomaize.df, ea_admin)
+
+
+test <- geomaize_ea.df %>% filter(!is.na(EACODE)) %>% 
+  left_join(.,plasma.df %>% select(EACODE, survey_cluster1) %>% distinct())
+
+geomaize_ea.df %>% filter(!is.na(EACODE)) %>% 
+  right_join(.,plasma.df %>% select(EACODE, survey_cluster1) %>% distinct()) %>% 
+  filter(is.na(Se_raw)) 
+
 
 dim(geomaize_ea.df)
 sum(is.na(geomaize_ea.df$EACODE))
+sum(is.na(geomaize_ea.df$survey_cluster1))
+
+geomaize_ea.df %>% filter(!is.na(survey_cluster1)) %>% distinct(survey_cluster1)
 
 # 60   61  976 1893 1895
 missing  <- geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),]
 
 #Checking missing values
-tm_shape(ea_bnd) +
+tm_shape(ea_admin) +
 tm_polygons() +
 tm_shape(missing) +
 tm_symbols(col ="red", size =0.1)
+
+
+#Checking missing values
+tm_shape(ea_cluster) +
+  tm_polygons() +
+  tm_shape(test$geometry[test$survey_cluster1 == "16"]) +
+  tm_polygons(col ="red")
 
 # Checking the closest EA for those missing EA GPS loc. 
 st_join(missing[,1:ncol(geomaize.df)-1], ea_admin, st_is_within_distance, 
@@ -211,157 +379,6 @@ saveRDS(maize.df, here::here("data", "inter-output",
 #tm_shape(geomaize.df) +
 #tm_symbols(size = 0.09, col = "red")
 
-# Plasma Se conc. ----
-
-# Loading the data
-# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
-plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
- filter(!is.na(selenium))
-
-names(plasma.df)
-
-# Getting only cluster location (to avoid duplicates), 
-# renaming buffer as geometry for converting into spatial object
-geodata.df <- plasma.df %>% dplyr::select(survey_cluster1, buffer) %>% 
-  distinct() %>% 
-  dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
-
-class(geodata.df)
-
-# Transforming plasma data.frame into a spatial object (geometry) 
-#geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
-#                       crs = "EPSG:4326")
-
-# Transforming the buffer into spatial value
-
-# Transforming the list into spatial class
-# data.df$buffer <- st_as_sfc(data.df$buffer)
-# dim(geodata.df) # 804 plasma
-
-# Adding a variable to store info on distance 
-geodata.df$dist_in_m <- NA
-
-# Getting info on the admin boudaries (EA/district level)
-# Allocating Se values to each admin unit
-
-#Se_admin = st_intersection(data.df, admin)
-geodata_ea <-  st_join(geodata.df, ea_admin)
-
-length(unique(geodata.df$survey_cluster1))
-# geoplasma_ea %>% st_drop_geometry() %>% select(survey_cluster1, EACODE) %>% 
-#   distinct() %>% 
-#   dplyr::group_by(survey_cluster1) %>% 
-#   dplyr::count() %>% arrange(desc(n)) %>% View()
-
-# Checking no. of EAs per buffer
-geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
-  dplyr::count() %>% arrange(desc(n))
-
-
-# Converting back from spatial obj to dataframe
-plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  #removing geometry
-  right_join(., plasma.df)  # adding back the long/lat variable
-
-## Fixing issues with districts
-
-setdiff(tolower(unique(plasma.df$ADM2_EN)), unique(plasma.df$dist_name))
-setdiff(unique(plasma.df$dist_name2), tolower(unique(plasma.df$ADM2_EN)))
-
-# New variable to check the correct district (based on survey)
-plasma.df$dist_name2 <- as.character(plasma.df$dist_name)
-
-# Changing the spelling to fit the NSO boundaries file 
-plasma.df$dist_name2 <- gsub("nkhota kota", "nkhotakota", plasma.df$dist_name2)
-plasma.df$dist_name2 <- gsub("lilongwe rural", "lilongwe", plasma.df$dist_name2)
-plasma.df$dist_name2 <- gsub("ndanje", "nsanje", plasma.df$dist_name2)
-plasma.df$dist_name2 <- gsub("zomba rural", "zomba", plasma.df$dist_name2)
-plasma.df$dist_name2 <- gsub("blantyre rural", "blantyre", plasma.df$dist_name2)
-plasma.df$dist_name2 <- gsub("mulange", "mulanje", plasma.df$dist_name2)
-plasma.df$dist_name2 <- gsub("chradzulu", "chiradzulu", plasma.df$dist_name2)
-# Checking the names
-unique(plasma.df$dist_name2)
-
-# Dummy variable to check whether districts are the same or not
-plasma.df$boundaries_check <- ifelse(tolower(plasma.df$ADM2_EN) == plasma.df$dist_name2, TRUE, FALSE)
-
-# Checking district that are the same and those with NA (some dist_name were NA)
-plasma.df %>% dplyr::filter(boundaries_check == TRUE | is.na(boundaries_check) ) %>% 
-  select(survey_cluster1, ADM2_EN, dist_name2) %>% distinct() %>% View()
-
-# Checking unique cluster has a corresponding district
-plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
-  distinct(survey_cluster1, ADM2_EN, dist_name2) %>% View()
-
-# Getting the cluster and corresponding district
-district <- plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
-  distinct(survey_cluster1, ADM2_EN) 
-
-# Excluding EAs that were not with the corresponding district for each cluster
-plasma.df <- left_join(district, plasma.df)
-
-# Checking that all the clusters (n=102) have a unique district and region
-plasma.df %>% distinct(survey_cluster1,  ADM2_PCODE,
-                       ADM2_EN, ADM1_PCODE, ADM1_EN) %>% View()
-
-# One duplicated due to NAs in some of the variables that we are excluding
-plasma.df %>% distinct(survey_cluster1,  ADM2_PCODE, ADM2_EN, 
-                       ADM1_PCODE, ADM1_EN) %>% count(survey_cluster1) %>% arrange(desc(n))
-
-# This is the master file for the admin boundaries. 
-# Each cluster has its cluster-EA level and
-# their district. The codes can be bind with the shape files (ea_bnd, ea_admin or dist_bnd)
-# plasma.df %>% distinct(survey_cluster1, EACODE, 
-#                        ADM2_PCODE, ADM2_EN, ADM1_PCODE, ADM1_EN) %>% 
-#   filter(!is.na(ADM1_EN))  %>% # Only one NA as per above
-#   saveRDS(here::here("data", "inter-output", "aggregation", "master-cluster-admin-level.RDS"))
-
-# Checking no. of EAs per cluster & district (each cluster 1 colour == 1 district)
-# plasma.df %>%  distinct(survey_cluster1, EACODE, ADM2_EN, region) %>% 
-#   mutate_at("survey_cluster1", as.character) %>% 
-#   ggplot(aes(survey_cluster1, fill = ADM2_EN)) + geom_bar() +
-#   facet_wrap(~region, scales = "free_x")
-
-
-# Getting the unique EAs where the HHs buffer are co-located
-EAselected <- unique(plasma.df$EACODE)
-
-# Saving dataset with aggregation unit for modelling 
-# saveRDS(plasma.df, here::here("data", "inter-output", 
-#                              "dhs_se_gps_admin.RDS"))
-
-
-## Buffer areas ----
-
-# Getting the cluster and their centroid to generate the two buffered areas.
-GPS <- plasma.df %>% distinct(survey_cluster1, Longitude, Latitude)
-
-# Transforming maize data.frame into a spatial object (geometry) 
-geogps <- st_as_sf(GPS , coords =c("Longitude", "Latitude"),
-                        crs = "EPSG:4326")
-
-# Choice of buffers
-buffer <- c(10, 25, 30)
-
-# Loop over the number of buffers:
-for(i in 1:length(buffer)){
-
-data.df <- GPS
-distance <- as.numeric(paste0(buffer[i], "000"))
-#variable <- paste0("buffer", buffer[i]) 
-
-# Buffer in meters (10km & 25km)
-data.df$buffer <- st_buffer(geogps$geometry, dist = distance)
-
-# Saving the shapefile with the buffers
-st_write(data.df, here::here( "data", "inter-output", 
-                           "boundaries", 
-                      paste0("mwi_gps-buffer", buffer[i], ".shp")))
-
-}
-
-
-test1  <- st_read(here::here("data", "inter-output",
-                              "boundaries", "mwi_gps-buffer25.shp"))
 
 tm_shape(ea_admin) +
   tm_polygons(col = "white", 
