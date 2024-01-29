@@ -91,10 +91,10 @@ length(unique(geodata.df$survey_cluster1))
 geodata_ea %>%  st_drop_geometry() %>% dplyr::group_by(survey_cluster1) %>% 
   dplyr::count() %>% arrange(desc(n))
 
-
 # Converting back from spatial obj to dataframe
-plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  #removing geometry
-  right_join(., plasma.df)  # adding back the long/lat variable
+plasma.df  <- geodata_ea  %>% st_drop_geometry()  %>%  # removing geometry
+  right_join(., plasma.df, relationship = "many-to-many")  # multiple EAs per cluster,
+                                                     # multiple WRA per cluster
 
 ## Fixing issues with districts
 
@@ -112,6 +112,7 @@ plasma.df$dist_name2 <- gsub("zomba rural", "zomba", plasma.df$dist_name2)
 plasma.df$dist_name2 <- gsub("blantyre rural", "blantyre", plasma.df$dist_name2)
 plasma.df$dist_name2 <- gsub("mulange", "mulanje", plasma.df$dist_name2)
 plasma.df$dist_name2 <- gsub("chradzulu", "chiradzulu", plasma.df$dist_name2)
+
 # Checking the names
 unique(plasma.df$dist_name2)
 
