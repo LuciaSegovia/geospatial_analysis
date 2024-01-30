@@ -52,6 +52,7 @@ ea_admin$region <- as.factor(ea_admin$region)
 plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
   filter(!is.na(selenium))
 
+
 names(plasma.df)
 
 # Getting only cluster location (to avoid duplicates), 
@@ -160,7 +161,7 @@ plasma.df %>% distinct(survey_cluster1,  ADM2_PCODE, ADM2_EN,
 # Getting the unique EAs where the HHs buffer are co-located
 EAselected <- unique(plasma.df$EACODE)
 
-# Saving dataset with aggregation unit for modelling 
+# Saving dataset with EAs and other aggregation unit for modelling 
 # saveRDS(plasma.df, here::here("data", "inter-output", 
 #                              "dhs_se_gps_admin.RDS"))
 
@@ -175,7 +176,8 @@ geogps <- st_as_sf(GPS , coords =c("Longitude", "Latitude"),
                    crs = "EPSG:4326")
 
 # Choice of buffers
-buffer <- c(10, 25, 30)
+# buffer <- c(10, 25, 30) # we also tested 12km
+buffer <- c(15, 25, 30)
 
 # Loop over the number of buffers:
 for(i in 1:length(buffer)){
@@ -196,8 +198,11 @@ for(i in 1:length(buffer)){
 
 
 test1  <- st_read(here::here("data", "inter-output",
-                             "boundaries", "mwi_gps-buffer25.shp"))
+                             "boundaries", "mwi_gps-buffer10.shp"))
 
+names(test1)
+
+test1$geometry[test1$srvy_c1=="497"]
 
 
 # Maize Se conc.  ----
@@ -294,10 +299,10 @@ length(unique(geomaize_ea.df$TA_CODE)) #351 --> #ta code
 sum(is.na(ea_bnd$TA_CODE)) # Checking NAs
 
 # Adding a variable for region (1>3 = N>S)
-geomaize_ea.df$region  <-  NA
-geomaize_ea.df$region[grepl("^1", geomaize_ea.df$EACODE)]  <- "1"
-geomaize_ea.df$region[grepl("^2", geomaize_ea.df$EACODE)]  <- "2"
-geomaize_ea.df$region[grepl("^3", geomaize_ea.df$EACODE)]  <- "3"
+# geomaize_ea.df$region  <-  NA
+# geomaize_ea.df$region[grepl("^1", geomaize_ea.df$EACODE)]  <- "1"
+# geomaize_ea.df$region[grepl("^2", geomaize_ea.df$EACODE)]  <- "2"
+# geomaize_ea.df$region[grepl("^3", geomaize_ea.df$EACODE)]  <- "3"
 
 # maize  <- subset(geomaize_ea.df, Crop=="Maize")
 # maize$Se_raw[maize$Se_raw == 0]  <- min(maize$Se_std)

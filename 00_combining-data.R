@@ -9,24 +9,70 @@ library(dplyr) # data wrangling
 library(ggplot2) # visualisation
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
-source(here::here("CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 library(geoR)  # geospatial modelling
 
 
+## Loading data ----
 
-## Loading data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
+  filter(!is.na(selenium)) %>% select(1:48) # removing buffer and other spatial vars
 
-maize.df <- readRDS(here::here("data", "inter-output", 
-                               "raw_maizeSe-mean-predicted.RDS"))
+names(plasma.df)
+
+# Adding district variable to plasma 
+
+cluster.df <- readRDS(here::here("data", "inter-output", 
+                   "aggregation", "master-cluster-admin-level.RDS"))
+
+
+plasma.df  <- plasma.df %>% left_join(., cluster.df %>% 
+                          select(survey_cluster1, ADM2_PCODE, ADM2_EN) %>% 
+                          distinct())
+           
+
+# Maize Se conc. (from 01_maize-aggregation.R)
+
+file <- grep("maize", list.files(here::here("data", "inter-output", "aggregation")), 
+     value = TRUE)
+
+# Generatting the file ----
+
+# Loop to generate a file with plasma data and maize with each aggregation unit
+
+for(i in 1:length(file)){
+
+maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
+                              file[i]))
+names(maize.df)
+
+data.df <- left_join(plasma.df, maize.df) 
+
+if(sum(is.na(data.df$selenium))>0){
+  stop(paste0("Missing values in plamsa Se in ", file[i]))
+  
+}
+
+if(sum(is.na(data.df$Se_mean))>0){
+  stop(paste0("Missing values in maize Se in ", file[i]))
+  
+}
+
+saveRDS(data.df, here::here("data", "inter-output",   "model",  
+                      paste0("plasma-", 
+                             file[i])))
+
+}
+
+
+# END -----
 
 data_id <- readRDS(here::here("data", "inter-output", 
                               "mwi-plasma-se_maize-admin.RDS")) %>% 
   select(unique_id, survey_cluster1, EACODE, DISTRICT, meter)
 
-#  Getting the new dhs dataset with the location (Admin)
 
-plasma.df <- readRDS(here::here("data", "inter-output",
-                                "dhs_se_gps.rds"))
 
 names(plasma.df)
 names(maize.df)

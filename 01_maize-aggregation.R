@@ -38,8 +38,6 @@ dist_bnd  <- st_read(here::here( "data",
                                 "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
-## Buffers for Malawi ----
-
 
 # Cluster's EA info
 
@@ -50,11 +48,14 @@ names(plasma.df)
 cluster.df <- plasma.df %>% 
   distinct(survey_cluster1, EACODE, ADM2_PCODE, ADM2_EN, urbanity)
 
+EAselected <- unique(cluster.df$EACODE)
+
+
 # Maize data ----
 
-## Observed maize ----
+## Observed Se conc. ----
 
-# Observed maize data 
+# Observed maize data (from 00_cleaning-location.R)
 maize.df <- readRDS(here::here("data", "inter-output", 
                              "mwi_maize-se-raw_admin.RDS"))
 
@@ -64,7 +65,14 @@ maize.df$dist_in_m[maize.df$survey == "Chilimba"] <- paste0("MW_Ch", 1:86)
 names(maize.df)
 class(maize.df$region)
 
+# Transforming maize data.frame into a spatial object (geometry) 
+geomaize.df <- maize.df  %>% select(1:25,"Longitude", "Latitude" ) %>% 
+  st_as_sf(coords =c("Longitude", "Latitude"),
+           crs = "EPSG:4326")
 
+dim(geomaize.df) # 1689 maize GeoNut 
+
+### Cluster ----
 # Merge cluster's EA and observed maize
 
 maize_cluster <- maize.df %>% right_join(., cluster.df) 
@@ -73,7 +81,7 @@ maize_cluster <- maize.df %>% right_join(., cluster.df)
 maize_cluster <- maize_cluster %>% # filter(!is.na(Se_raw)) %>% 
   group_by(survey_cluster1) %>% 
   summarise(Se_mean = mean(Se_raw, na.rm = TRUE), 
-            Se_sd = mean(Se_raw, na.rm = TRUE), 
+            Se_sd = sd(Se_raw, na.rm = TRUE), 
             Se_median = median(Se_raw, na.rm = TRUE), 
             Se_iqr = IQR(Se_raw, na.rm = TRUE), 
             Se_n = n()) 
@@ -85,13 +93,7 @@ miss <-  unique(maize_cluster$survey_cluster1[is.na(maize_cluster$Se_mean)])
  ea_cluster <- cluster.df %>% filter(survey_cluster1 %in% miss) %>% 
    distinct(EACODE) %>% left_join(., ea_admin) %>% st_as_sf()
  
- # Transforming maize data.frame into a spatial object (geometry) 
- geomaize.df <- maize.df  %>% select(1:25,"Longitude", "Latitude" ) %>% 
-   st_as_sf(coords =c("Longitude", "Latitude"),
-                         crs = "EPSG:4326")
- 
- dim(geomaize.df) # 1689 maize GeoNut 
- 
+# Checking min. distance to the closest sample 
 
 m=230
 
@@ -212,7 +214,7 @@ hist(cluster_maize$Dist_mean)
  #                                 "obs-maize-cluster.RDS"))
 
 
-## District -----
+### District -----
 
 # Spatially join both dataset
 
@@ -250,10 +252,15 @@ plot(dist_maize$Se_mean, dist_maize2$Se_mean)
 # "obs-maize-district.RDS"))
 
 
-## Buffers  -----
+### Buffers  -----
 
 buff.dist <- na.omit(unique(str_extract(list.files(here::here("data", "inter-output", "boundaries")),
             "[:digit:]{2}")))
+
+geodata.df <- geomaize.df
+
+# Se <- grep("Se", names(geodata.df), value = TRUE)
+Se <- "Se_raw"
 
 for(i in 1:length(buff.dist)){
 
@@ -262,16 +269,16 @@ buffer  <- st_read(here::here("data", "inter-output",
                     paste0("mwi_gps-buffer", buff.dist[i], ".shp"))) %>% 
   rename(survey_cluster1 = "srvy_c1")
 
-maize_buff <- st_join(geomaize.df, buffer) 
+maize_buff <- st_join(geodata.df, buffer) 
 
 #test %>% filter(!is.na(srvy_c1)) %>% count(srvy_c1)
 
 maize_buff %>% st_drop_geometry() %>% 
   group_by(survey_cluster1) %>% 
-  summarise(Se_mean = mean(Se_raw), 
-            Se_sd = sd(Se_raw), 
-            Se_median = median(Se_raw), 
-            Se_iqr = IQR(Se_raw), 
+  summarise(Se_mean = mean(!!sym(Se)), 
+            Se_sd = sd(!!sym(Se)), 
+            Se_median = median(!!sym(Se)), 
+            Se_iqr = IQR(!!sym(Se)), 
             Se_n = n()) %>% 
   arrange(Se_n) %>% 
   saveRDS(., here::here("data", "inter-output",   "aggregation",  
@@ -279,6 +286,119 @@ maize_buff %>% st_drop_geometry() %>%
                         buff.dist[i], ".RDS")))
 
 }
+
+
+data <- maize_buff %>% st_drop_geometry() %>% 
+  group_by(survey_cluster1) %>% 
+  summarise(Se_mean = mean(!!sym(Se)), 
+            Se_sd = sd(!!sym(Se)), 
+            Se_median = median(!!sym(Se)), 
+            Se_iqr = IQR(!!sym(Se)), 
+            Se_n = n())
+
+data$Se_mean[data$survey_cluster1 == "497"]
+
+## Predicted Se conc.  ----
+
+# Loading the data
+# Predicted Se conc. (predicted in 01_maize-model.R)
+predmaize.df  <- read.csv(here::here("data", "predicted","Se_raw_OK_maize.csv"))
+
+names(predmaize.df)
+
+predmaize.df$predSe <- exp(predmaize.df$Zhat)
+
+# Getting only cluster location (to avoid duplicates), 
+# renaming buffer as geometry for converting into spatial object
+geopredmaize.df <-  st_as_sf( predmaize.df , coords =c("Longitude", "Latitude"),
+                              crs = "EPSG:4326")
+
+### Cluster ----
+
+## Checking the EAs of the HHs with predicted maize
+
+bnd_reduced <- ea_admin %>% filter(EACODE %in% EAselected)
+
+geopred_ea <-  st_join(geopredmaize.df, bnd_reduced)
+
+sum(!is.na(geopred_ea$ADM2_EN))
+
+
+# Calculating the maize grain Se conc per cluster
+predmaize_cluster <- geopred_ea %>% 
+  st_drop_geometry() %>% filter(!is.na(ADM2_EN)) %>% 
+  right_join(., cluster.df) %>%  filter(!is.na(predSe)) %>% 
+  group_by(survey_cluster1) %>% 
+  summarise(Se_mean = mean(predSe, na.rm = TRUE), 
+            Se_sd = sd(predSe, na.rm = TRUE), 
+            Se_median = median(predSe, na.rm = TRUE), 
+            Se_iqr = IQR(predSe, na.rm = TRUE), 
+            Se_n = n()) 
+
+
+# Saving observed maize grain Se concentration per cluster (smallest admin boundary).
+# saveRDS(predmaize_cluster, here::here("data", "inter-output", "aggregation", 
+#                                 "pred-maize-cluster.RDS"))
+
+
+### District -----
+
+# Spatially join both dataset
+
+dist_maize <- st_join(geopredmaize.df, dist_bnd) 
+
+Se <- "predSe"
+
+dist_maize <- dist_maize %>% 
+  st_drop_geometry() %>% filter(!is.na(ADM2_EN)) %>% 
+  group_by(ADM2_EN) %>% 
+  summarise(Se_mean = mean(!!sym(Se)), 
+            Se_sd = sd(!!sym(Se)), 
+            Se_median = median(!!sym(Se)), 
+            Se_iqr = IQR(!!sym(Se)), 
+            Se_n = n()) %>% 
+  arrange(ADM2_EN) 
+
+# Saving observed maize grain Se concentration per district.
+# saveRDS(dist_maize, here::here("data", "inter-output", "aggregation", 
+# "pred-maize-district.RDS"))
+
+
+### Buffers  -----
+
+
+buff.dist <- na.omit(unique(str_extract(list.files(here::here("data", "inter-output", "boundaries")),
+                                        "[:digit:]{2}")))
+
+geodata.df <- geopredmaize.df
+
+Se <- grep("Se", names(geodata.df), value = TRUE)
+
+for(i in 1:length(buff.dist)){
+  
+  buffer  <- st_read(here::here("data", "inter-output",
+                                "boundaries", 
+                                paste0("mwi_gps-buffer", buff.dist[i], ".shp"))) %>% 
+    rename(survey_cluster1 = "srvy_c1")
+  
+  maize_buff <- st_join(geodata.df, buffer) 
+  
+  #test %>% filter(!is.na(srvy_c1)) %>% count(srvy_c1)
+  
+  maize_buff %>% st_drop_geometry() %>% 
+    group_by(survey_cluster1) %>% 
+    summarise(Se_mean = mean(!!sym(Se)), 
+              Se_sd = sd(!!sym(Se)), 
+              Se_median = median(!!sym(Se)), 
+              Se_iqr = IQR(!!sym(Se)), 
+              Se_n = n()) %>% 
+    arrange(Se_n) %>% 
+    saveRDS(., here::here("data", "inter-output",   "aggregation",  
+                          paste0("pred-maize-buffer", 
+                                 buff.dist[i], ".RDS")))
+  
+}
+
 
 # visual checks
 

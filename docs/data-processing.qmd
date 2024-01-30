@@ -250,11 +250,9 @@ geogps <- st_as_sf(GPS , coords =c("Longitude", "Latitude"),
 
 
 
-
-
 Three buffer distances selected were:
 
-1) **10km buffer** to cover the max displacement in rural area for the GPS location of the DHS clusters, and,
+1) **15km buffer** to cover the maximum displacement in rural area for the GPS location of the DHS clusters. The maximum displacement in rural area is 10km however, when we tested the 10km buffer, we found that one EA (497) did not have an observed sample with that range, thus we decided to increase the buffer size by 5km, we also tested 12km but it did not provide any results.  
 
 2) **25 and 30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the mean distance between households and the closest market in Malawi (REF). 
 
@@ -593,7 +591,7 @@ All districts have sampled locations of the observed maize grain Se concentratio
 
 We decided then, to do a spatial joint between the maize dataset and the distict boundaries. We can see that one district is missing: *Likoma* which we have no maize sample, but also no plasma samples were collected.
 
-One thing is tricking is that there are more maize samples per district when using the EA as opposed to the district boundaries. However, when plotting them against each other it seems that there are in aggreement and closelly aligned. 
+One thing is tricking is that there are more maize samples per district when using the EA as opposed to the district boundaries. However, when plotting them against each other it seems that there are in agreement and closelly aligned. 
 
 **TODO: Review why there is disagreement between the number of samples by the two methods**
 

@@ -20,6 +20,7 @@ book:
     - data-description.qmd
     - data-processing.qmd
    # - modelling.qmd
+    - references.qmd
 
   sidebar:
     tools:
@@ -27,7 +28,7 @@ book:
       #  href: https://dzvoti.github.io/r4hces/r4hces-data.zip
        # aria-label: Download data
 
-#bibliography: references.bib
+bibliography: references.bib
 
 format:
   html:

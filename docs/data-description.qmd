@@ -681,6 +681,11 @@ Here we are exploring the variability of Plasma Se according to those variables.
 
 Plasma Se values were similar across WQ, with higher variability in the two lowest WQ. 
 
+After merging the datasets, some WQ were missing, hence following recommendations form F.S we used the household WQ for those available to impute it. They were available for 17 of the 39 observation with missing values.
+
+For Plasma Se, we only have values for `r sum(!is.na(EligibleDHS$selenium))`. This will condition the model choice.
+
+
 #### Education level
 
 Plasma Se values were slightly higher in the highest education level, with lower variability, while the opposite was true for the primary education level. 
@@ -697,11 +702,7 @@ We checked wealth by region and it seemed that there is a slight unbalance for t
 
 #### Smoking
 
-Only 3 respondent reported smoking cigarettes, if we want to include this variable, we may need to combine with other smoking variables (including the other variables), although I believe that women who smoke in this context it may be very low.
-
-After merging the datasets, some WQ were missing, hence following recommendations form F.S we used the household WQ for those available to impute it. They were available for 17 of the 39 observation with missing values.
-
-For Plasma Se, we only have values for `r sum(!is.na(EligibleDHS$selenium))`. This will condition the model choice.
+Only 3 respondent reported smoking cigarettes, if we want to include this variable, we may need to combine with other smoking variables (including the other variables), although according with the systematic review published in 2015, the prevalence of women who smoke in this context was below 4% [@brathwaiteSystematicReviewTobacco2015], additionally a report published more recently (2021) by the Malawi Government using this survey found very low rates of smoking among women (@ref-kadzamiraSocioeconomicImpactDisease2021).
 
 
 ### GPS location 

@@ -13,6 +13,12 @@ library(dplyr) # data wrangling
 plasma_se <- readRDS(here::here("data", "inter-output",
                                 "raw-maizeSe_plasma-se_ea.RDS" )) # cleaned geo-loc maize Se data
 
+ 
+# Check tomorrow: for two random effects: 
+# https://ourcodingclub.github.io/tutorials/inla/
+
+# Check mean values == 0 in observed value (cluster)
+
 # Checking co-location at EA level for plasma and maize
 head(plasma_se)
 
@@ -20,6 +26,23 @@ head(plasma_se)
 plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
 sum(duplicated(plasma_se$unique_id))
 names(plasma_se)
+
+## Loading the data
+
+file <- grep("plasma", list.files(here::here("data", "inter-output", "model")), 
+             value = TRUE)
+
+plasma_se <- readRDS(here::here("data", "inter-output", "model", file[i]))
+
+# Renaming variable and checking indv. data
+plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
+sum(duplicated(plasma_se$unique_id))
+names(plasma_se)                       
+
+# Removing values < 0 
+sum(plasma_se$Se_mean ==0)
+
+plasma_se <- plasma_se %>% filter(Se_mean != 0)
 
 # First, preparing the data:
 
@@ -31,37 +54,38 @@ names(plasma_se)
 # HIV check again
 
 # Creating the mesh using the point data. (Not sure if it works)
-data.df <- plasma_se %>% 
-  select(Plasma_Se, wealth_quintile, BMI, urbanity,
-         is_smoker, Malaria_test_result, AGE_IN_YEARS,
-         crp, agp,  unique_id, region, survey_cluster1,  
-         EACODE, region, Latitude,  Longitude, geometry)
+#data.df <- plasma_se %>% 
+#  select(Plasma_Se, wealth_quintile, BMI, urbanity,
+#         is_smoker, Malaria_test_result, AGE_IN_YEARS,
+#         crp, agp,  unique_id, region, survey_cluster1, # EACODE,
+#         region, Latitude,  Longitude)
 
 
-var <- "maizeSe_mean"
-
-sum(is.na(plasma_se[, var]))
-hist(plasma_se[, var])
-
-plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0]
-plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- NA
-min(plasma_se$maizeSe_mean[!is.na(plasma_se$maizeSe_mean)])
-plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- 0.002367136
-
-plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
-                      !is.na(crp))
+# var <- "Se_mean"
+# 
+# sum(is.na(plasma_se[, var]))
+# class(plasma_se[, var])
+# hist(plasma_se[, var])
+# 
+# plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0]
+# plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- NA
+# min(plasma_se$maizeSe_mean[!is.na(plasma_se$maizeSe_mean)])
+# plasma_se$maizeSe_mean[plasma_se$maizeSe_mean ==0] <- 0.002367136
+# 
+# plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
+#                       !is.na(crp))
 
 # Dataset for excluding urban WRA
-plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
-                      !is.na(crp) & urbanity == "2")
+# plasma_se <- subset(plasma_se, !is.na(wealth_quintile) & !is.na(BMI) &
+  #                    !is.na(crp) & urbanity == "2")
 
-table(plasma_se$URBAN_RURA)
-dim(plasma_se)
+#table(plasma_se$URBAN_RURA)
+#dim(plasma_se)
 
 # Assign values of covariates to points using value of nearest pixel
 # excluding (for now) is_smoker, Malaria_test_result
-covs <- plasma_se %>% select(wealth_quintile, BMI, # urbanity, 
-                             maizeSe_mean, 
+covs <- plasma_se %>% select(wealth_quintile, BMI,  urbanity, 
+                              Se_mean, 
                               AGE_IN_YEARS, crp, agp) %>% as.list()
 
 # Intercept for spatial model
@@ -118,6 +142,12 @@ spde <- inla.spde2.matern(mesh = mesh,
 # Moraga called indexs
 spde.index <- inla.spde.make.index(name = "spatial.field",
                                    n.spde = spde$n.spde)
+
+# Trying to get the cluster as random effect (treating it as pseudo replication)
+# Not working...
+# mesh.index <- inla.spde.make.index(name = "spatial.field", 
+#                                    n.spde = spde$n.spde, 
+#                                    n.group = length(plasma_se$survey_cluster1))
 
 # Projection matrix (A) obs.
 A <- inla.spde.make.A(mesh = mesh , loc = coord)
@@ -181,22 +211,61 @@ join.stack <- inla.stack(stack, stack.pred)
 #   AGE_IN_YEARS +
 #  log(crp) + log(agp) + f(spatial.field, model = spde)
 
-form <- log(y) ~ -1 + Intercept +  log(maizeSe_mean) +
-  wealth_quintile + BMI + # urbanity + #is_smoker + Malaria_test_result +
+form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
+  wealth_quintile + BMI +  urbanity + #is_smoker + Malaria_test_result +
   AGE_IN_YEARS +
   log(crp) + log(agp) + f(spatial.field, model = spde)
+
+#form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
+#  wealth_quintile + BMI +  urbanity + #is_smoker + Malaria_test_result +
+#  AGE_IN_YEARS +
+#  log(crp) + log(agp) + f(spatial.field, model = spde,
+#    control.group = list(model = "iid"))
 
 # inla calculations
 
 m1 <- inla(form, 
-           data = inla.stack.data(join.stack, spde = spde),
+           data = inla.stack.data(stack),
 family = "gaussian",
-control.predictor = list(A = inla.stack.A(join.stack), compute = TRUE),
+control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
 control.compute = list(cpo = TRUE, dic = TRUE))
 
 # Summary of results
 summary(m1)
 
+# inla calculations
+
+m2 <- inla(form, 
+           data = inla.stack.data(stack),
+           family = "gaussian",
+           control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+           control.compute = list(cpo = TRUE, dic = TRUE))
+
+# Summary of results
+summary(m2)
+
+
+# inla calculations
+
+m4 <- inla(form, 
+           data = inla.stack.data(stack),
+           family = "gaussian",
+           control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+           control.compute = list(cpo = TRUE, dic = TRUE))
+
+# Summary of results
+summary(m4)
+
+# inla calculations
+
+m9 <- inla(form, 
+           data = inla.stack.data(stack),
+           family = "gaussian",
+           control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+           control.compute = list(cpo = TRUE, dic = TRUE))
+
+# Summary of results
+summary(m9)
 
 # Checking the residual spatial variation 
 
