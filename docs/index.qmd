@@ -2,6 +2,17 @@
 
 ## About this book {.unnumbered}
 
+The files needed to reproduce this analysis are the following:
+
+1) 00_cleaning-dhs.R
+2) 00_cleaning-maize.R
+3) 00_cleaning-boundaries.R
+4) 01_maize-model.R
+5) 00_cleaning-locations.R
+6) 01_maize-aggregation.R
+7) 01_combining-data.R
+8) 02_inla-loop.R
+
 
 ## Acknowledgements {.unnumbered}
 

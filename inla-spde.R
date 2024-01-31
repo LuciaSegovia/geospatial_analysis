@@ -39,10 +39,18 @@ plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
 sum(duplicated(plasma_se$unique_id))
 names(plasma_se)                       
 
-# Removing values < 0 
+# Removing values = 0 or NA
 sum(plasma_se$Se_mean ==0)
+sum(is.na(plasma_se$crp))
 
-plasma_se <- plasma_se %>% filter(Se_mean != 0)
+plasma_se <- plasma_se %>%
+  select(Plasma_Se, wealth_quintile, BMI, urbanity,
+        AGE_IN_YEARS, crp, agp,  unique_id, region, 
+        survey_cluster1,  Latitude,  Longitude)
+
+plasma_se <- na.omit(plasma_se)
+
+#plasma_se <- plasma_se %>% filter(Se_mean != 0)
 
 # First, preparing the data:
 
@@ -54,7 +62,7 @@ plasma_se <- plasma_se %>% filter(Se_mean != 0)
 # HIV check again
 
 # Creating the mesh using the point data. (Not sure if it works)
-#data.df <- plasma_se %>% 
+# data.df <- plasma_se %>% 
 #  select(Plasma_Se, wealth_quintile, BMI, urbanity,
 #         is_smoker, Malaria_test_result, AGE_IN_YEARS,
 #         crp, agp,  unique_id, region, survey_cluster1, # EACODE,
@@ -258,6 +266,17 @@ summary(m4)
 
 # inla calculations
 
+m5<- inla(form, 
+           data = inla.stack.data(stack),
+           family = "gaussian",
+           control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+           control.compute = list(cpo = TRUE, dic = TRUE))
+
+# Summary of results
+summary(m5)
+
+# inla calculations
+
 m9 <- inla(form, 
            data = inla.stack.data(stack),
            family = "gaussian",
@@ -266,6 +285,17 @@ m9 <- inla(form,
 
 # Summary of results
 summary(m9)
+
+# inla calculations
+
+m10 <- inla(form, 
+           data = inla.stack.data(stack),
+           family = "gaussian",
+           control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+           control.compute = list(cpo = TRUE, dic = TRUE))
+
+# Summary of results
+summary(m10)
 
 # Checking the residual spatial variation 
 

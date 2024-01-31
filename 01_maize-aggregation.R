@@ -61,7 +61,8 @@ maize.df <- readRDS(here::here("data", "inter-output",
 
 maize.df$ID[maize.df$survey == "Chilimba"] <- paste0("MW_Ch", 1:86)
 maize.df$dist_in_m[maize.df$survey == "Chilimba"] <- paste0("MW_Ch", 1:86)
-
+# Changing 0 to min value (for log transf.)
+maize.df$Se_raw[maize.df$Se_raw == 0] <- 0.00269
 names(maize.df)
 class(maize.df$region)
 
@@ -72,7 +73,7 @@ geomaize.df <- maize.df  %>% select(1:25,"Longitude", "Latitude" ) %>%
 
 dim(geomaize.df) # 1689 maize GeoNut 
 
-### Cluster ----
+### Cluster prep ----
 # Merge cluster's EA and observed maize
 
 maize_cluster <- maize.df %>% right_join(., cluster.df) 
@@ -142,6 +143,8 @@ m <- m + 20
 #missing %>% st_drop_geometry() %>%
  # saveRDS(., here::here("data", "inter-output", "filling-missing-Se-observed-maize.RDS"))
 
+### Cluster  ----
+
 # Loading the data
 #missing <- readRDS(here::here("data", "inter-output", "filling-missing-Se-observed-maize.RDS"))
 
@@ -169,7 +172,7 @@ cluster.df  %>%
   summarise(Se_mean = mean(Se_raw, na.rm = TRUE), 
             Se_sd = sd(Se_raw, na.rm = TRUE), 
             dist_mean = mean(dist_in_m, na.rm = TRUE), 
-            dist_sd = sd(dist_in_m, na.rm = TRUE))
+            dist_sd = sd(dist_in_m, na.rm = TRUE)) %>% View()
 
 missing_clusters <- cluster.df  %>% 
   filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
@@ -211,7 +214,7 @@ hist(cluster_maize$Dist_mean)
 
 # Saving observed maize grain Se concentration per cluster (smallest admin boundary).
 # saveRDS(cluster_maize, here::here("data", "inter-output", "aggregation", 
- #                                 "obs-maize-cluster.RDS"))
+  #                               "obs-maize-cluster.RDS"))
 
 
 ### District -----
@@ -231,17 +234,17 @@ dist_maize <- dist_maize %>%
             Se_n = n()) %>% 
   arrange(ADM2_EN) 
 
-dist_maize2 <- maize.df  %>% select(1:25, "EACODE", "Longitude", "Latitude" ) %>% 
-  left_join(., ea_admin %>% 
-                          select(EACODE, ADM2_EN)) %>% distinct() %>% 
-  filter(is.na(dist_in_m)) %>% 
-  group_by(ADM2_EN) %>% 
-  summarise(Se_mean = mean(Se_raw), 
-            Se_sd = sd(Se_raw), 
-            Se_median = median(Se_raw), 
-            Se_iqr = IQR(Se_raw), 
-            Se_n = n()) %>% 
-  arrange(ADM2_EN)
+# dist_maize2 <- maize.df  %>% select(1:25, "EACODE", "Longitude", "Latitude" ) %>% 
+#   left_join(., ea_admin %>% 
+#                           select(EACODE, ADM2_EN)) %>% distinct() %>% 
+#   filter(is.na(dist_in_m)) %>% 
+#   group_by(ADM2_EN) %>% 
+#   summarise(Se_mean = mean(Se_raw), 
+#             Se_sd = sd(Se_raw), 
+#             Se_median = median(Se_raw), 
+#             Se_iqr = IQR(Se_raw), 
+#             Se_n = n()) %>% 
+#   arrange(ADM2_EN)
 
 plot(dist_maize$Se_mean, dist_maize2$Se_mean)
 

@@ -22,9 +22,13 @@ library(tmap)  #spatial data manipulation and visualisation
 ea_bnd  <- st_read(here::here("data",
                               "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
-#Districts
-dist_bnd <- st_read(here::here("..", "PhD_geospatial-modelling",   #folder for storing (all) shapefiles 
-                               "data", "mwi-boundaries",   "EN_NSO", "dist_bnd.shp"))
+# Districts
+dist_bnd  <- st_read(here::here( "data",
+                                 "mwi-boundaries",
+                                 "mwi_adm_nso_hotosm_20230329_shp", 
+                                 "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
+dist_bnd <- st_make_valid(dist_bnd) # Check this
+
 # National parks
 parks  <-  st_read(here::here( "data",
                                "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
@@ -551,7 +555,8 @@ my_colour <-   c(paletteer::paletteer_c("ggthemes::Green", 35),
  pred_ea %>% 
    right_join(., plasma_ea) %>% mutate_at("survey_cluster1", as.character) %>% 
  #  filter(region == "1") %>% 
-   ggplot(aes(log(predSe), selenium, colour =survey_cluster1)) + geom_point() +
+   ggplot(aes(log(predSe), selenium, colour =survey_cluster1)) + 
+   geom_point() +
    geom_hline(yintercept = 84.9, colour = "red") +
     theme_minimal() +
    theme(legend.position = "none") +
@@ -587,5 +592,19 @@ my_colour <-   c(paletteer::paletteer_c("ggthemes::Green", 35),
               scales = "free")  
  
 
-
+ # Map: Plasma visually checking Se conc. w/i District () ----
+ 
+ geoplasma <-  plasma_se %>% left_join(., dist_bnd) %>% st_as_sf()
+ 
+   st_as_sf(coords =c("Longitude", "Latitude"),
+            crs = "EPSG:4326")
+ 
+ tm_shape(dist_bnd) +
+   tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+   tm_shape(geoplasma) +
+   tm_polygons(col = "Se_mean", border.col = "#666666", border.alpha = 0.3, 
+               legend.show = FALSE) 
+ 
+ #  tm_shape(geodata.df) +
+#   tm_borders(col = "steelblue" ) 
  

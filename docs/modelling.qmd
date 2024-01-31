@@ -1,15 +1,19 @@
----
-title: "Methods: Model selection"
-format: html
-editor: source
----
 
+## Methods: Modelling
 
-# Model considerations
+# To be tested:
+
+1) Different buffer size (from 5km to 60km)
+2) Cluster as random effect
+3) Distance to inland water bodies 
+
+### Model considerations
 
 See model framework
 
-### . Household location
+
+
+### Household location
 
 The coordenates for the HHs are only provided at cluster level (EAs). Hence, we need to check first the variability within cluster. 
 
@@ -89,3 +93,9 @@ However, the addition of more crops will add more complexity to the model due to
 ### Household displacement
 
 In order to see how the displacement may potentially affect the model results. We have displaced all/ X% of the sample within range. Hence, the point locations were displaced by 2km, and the analysis were re-run. 
+
+
+### INLA resources
+
+Tutorial & good visualisation
+https://ourcodingclub.github.io/tutorials/inla/

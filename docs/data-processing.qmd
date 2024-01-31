@@ -366,18 +366,6 @@ geomaize_ea.df[which(is.na(geomaize_ea.df$EACODE)),]  <-  st_join(geomaize_ea.df
 
 ```
 
-Once each sample of maize grain was allocated to their respective EAs and districts, we wanted to know which they were in. This variable was created using the information stored in the EA code, as each `EACODE` starting number is corresponding to the region which they belong to.
-
-
-```{r}
-
-# Adding a variable for region (1>3 = N>S)
-geomaize_ea.df$region  <-  NA
-geomaize_ea.df$region[grepl("^1", geomaize_ea.df$EACODE)]  <- "1"
-geomaize_ea.df$region[grepl("^2", geomaize_ea.df$EACODE)]  <- "2"
-geomaize_ea.df$region[grepl("^3", geomaize_ea.df$EACODE)]  <- "3"
-
-```
 
 Finally, the maize grain dataset was ready for calculating the mean/median Se concentration at the different administrative boundaries and was stored into as intermediary output for further analysis. Before saving the dataset, it was transformed back into a data frame by removing the `geometry` and adding back the information about the samples locations as coordinates (`longitude` and `latitude`).
 
@@ -474,8 +462,6 @@ miss <-  unique(maize_cluster$survey_cluster1[is.na(maize_cluster$Se_mean)])
 
 We need at least one maize Se value per cluster to be compared with the plasma Se. However, there were four clusters (`r toString(miss)`) from the plasma Se dataset (`plasma.df`) that did not match with any of the EAs in the observed Se maize grain dataset (`maize.df`). Hence, the approach taken was the following:
 
-Firstly, we identified the EAs that were included in each of the missing clusters (`r n=unique(ea_cluster$EACODE)`).
-
 ```{r}
 
 # Selecting only the EAs that were included in the missing clusters
@@ -484,14 +470,16 @@ Firstly, we identified the EAs that were included in each of the missing cluster
 
 ```
 
-
-Secondly, we assigned the closest data point (i.e, maize grain Se conc. value) for each EA. To do so, we created a loop that finds the closest data point 20m increment each time for all the EAs. And it store the distance for future reference.
+Firstly, we identified the EAs that were included in each of the missing clusters (`r n=unique(ea_cluster$EACODE)`).
 
 ```{r}
 
 missing <- readRDS(here::here("data", "inter-output", "filling-missing-Se-observed-maize.RDS"))
 
 ```
+
+
+Secondly, we assigned the closest data point (i.e, maize grain Se conc. value) for each EA. To do so, we created a loop that finds the closest data point 20m increment each time for all the EAs. And it store the distance for future reference.
 
 Note that we are starting at 230m distance because we found th first match at 250m. 
 
