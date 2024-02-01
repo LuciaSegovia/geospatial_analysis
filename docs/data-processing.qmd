@@ -50,7 +50,7 @@ The datasets that we used are listed below:
 
 ## Generating predicted maize grain Se concentration for Malawi
 
--`predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
+-   `predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
 
 
 **TODO: Write the full info of the model**
@@ -604,6 +604,19 @@ Re: Does this mean that I should use the predicted surface of the same EAs as of
 
 
 #### Testing assumptions
+
+### Household location
+
+The coordinates for the HHs are only provided at cluster level (EAs). Hence, we need to check first the variability within cluster. 
+
+When we checked with boxplots (See 01_Explora_Malawi_model.R, line 258), the variability of Plasma Se by EAs, we have realised two key things:
+1) In general, we could assume that there is "low" EAs variability in the Plasma Se.
+2) There is high variability within regions. As we can see by the scale of the plots, in northern region the scale ranged from 50-150nmol/mL, in central region from 0-300nmol/mL (#TODO:check the upper values here), with the highest values for Salima district (as expected), and the southern region ranged from 50-250nmol/mL.
+
+
+It is important that we think about the displacement of the household location and the potential impacts on the final results. For instance, when two households are in the same EA, the maize Se value is the same for both households. 
+
+See sensitivity analysis. 
 
 ##### Displaced location EAs
 

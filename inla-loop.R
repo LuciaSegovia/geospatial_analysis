@@ -14,6 +14,19 @@ library(dplyr) # data wrangling
 file <- grep("plasma", list.files(here::here("data", "inter-output", "model")), 
              value = TRUE)
 
+# covariates selection
+
+covar <- c("Se_mean", "wealth_quintile", "urbanity", 
+           "BMI",  "AGE_IN_YEARS", "crp", "agp")
+
+# Formula for the model
+form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
+  wealth_quintile + BMI + urbanity + 
+  AGE_IN_YEARS +
+  log(crp) + log(agp) + f(spatial.field, model = spde) +
+  f(ID, model = 'iid')
+
+
 models <- list()
 
 
@@ -26,10 +39,13 @@ plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
 sum(duplicated(plasma_se$unique_id))
 names(plasma_se)   
 
+plasma_se <- plasma_se %>% dplyr::filter(urbanity == "2")
+
 plasma_se <-plasma_se %>%
-  dplyr::select(Plasma_Se, Se_mean, wealth_quintile, BMI, urbanity, 
-         AGE_IN_YEARS, crp, agp,  unique_id, region, 
+  dplyr::select(Plasma_Se, covar, unique_id, region, 
          survey_cluster1,  Latitude,  Longitude)
+
+
 
 plasma_se <- na.omit(plasma_se)
 
@@ -67,9 +83,7 @@ spde.index <- inla.spde.make.index(name = "spatial.field",
                                    n.spde = spde$n.spde)
 
 # Covariate list
-covs <- plasma_se %>%  dplyr::select(wealth_quintile, BMI,  urbanity, 
-                             Se_mean, 
-                             AGE_IN_YEARS, crp, agp) %>% as.list()
+covs <- plasma_se %>%  dplyr::select(covar) %>% as.list()
 
 
 # Data structure
@@ -100,23 +114,8 @@ stack <- inla.stack(
     
     w = spde.index)) # attach the w 
 
-# Same for predictions
-# stack.pred <- inla.stack(data = list(y = NA),
-#                          A = list(Ap, 1),
-#                          effects = list(c(spde.index,
-#                                           list(Intercept =1)),
-#                                         covs),
-#                          tag = "pred")
-# 
 
-# Join the stacks
-# join.stack <- inla.stack(stack, stack.pred)
 
-# Formula for the model
-form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
-  wealth_quintile + BMI +  urbanity + #is_smoker + Malaria_test_result +
-  AGE_IN_YEARS +
-  log(crp) + log(agp) + f(spatial.field, model = spde)
 
 # inla calculations
 

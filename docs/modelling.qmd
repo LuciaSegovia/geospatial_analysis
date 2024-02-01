@@ -12,74 +12,74 @@
 See model framework
 
 
-
-### Household location
-
-The coordenates for the HHs are only provided at cluster level (EAs). Hence, we need to check first the variability within cluster. 
-
-When we checked with boxplots (See 01_Explora_Malawi_model.R, line 258), the varibility of Plasma Se by EAs, we have realised two key things:
-1) In general, we could assume that there is "low" EAs variability in the Plasma Se.
-2) There is high variability within regions. As we can see by the scale of the plots, in northern region the scale ranged from 50-150nmol/mL, in central region from 0-300nmol/mL (#TODO:check the upper values here), with the highest values for Salima district (as expected), and the southern region ranged from 50-250nmol/mL.
-
-
-It is important that we think about the displacement of the household location and the potential impacts on the final results. For instance, when two households are in the same EA, the maize Se value is the same for both households. 
-
-See sensitivity analysis. 
-
-## Parameter inclusion
-(2023/08/16)
-
-(2023/08/15)
-We run it without the smoking variable (`is_smoker`) first because it was providing some errors (bc the varible class). We could add it in the future, and/or combine with the other smoking variables. 
-
-
-```{r, }
-
-# model to be fitted 
-malawi.form <- log(Plasma_Se) ~ log(maizeSe_mean) +
-wealth_quintile + BMI + urbanity + 
-  had_malaria + ANY_INFLAMMATION
-
-```
-
 ### Test 1: Irregular lattice model (areal data)
 
 At EA level, it seemed that the random effect model was performing better than the spatial model, and convolution model.
 
-At district level, it seemd that the convolution model was performin the best, followed quite closely by the random effect. 
+At district level, it seemed that the convolution model was performing the best, followed quite closely by the random effect. 
 
-For both aggregation levels, the likelihood models were showing opposite resutls as the other parameter. 
+For both aggregation levels, the likelihood models were showing opposite results as the other parameters (DIC and CPO). 
 
-### Test 2: Point pattern model 
+### Test 2: Geostatistics & point data
 
+INLA + SPDE 
 
-
-### Maize Se estimates
-
-Predicted-mean Se concentration in maize at different level of aggregation were calculated using a Linear Mixed Model using pH & MAT as covariates and the aggregation unit as the random effect. The covariates were selected following Gashu et al, (2019) method. The covariates that were selected (significant) for the maize Se map (kriging map) were mean atmospheric temperature (MAT) and pH. See: `Explora_Malawi_model.R`.
-
-#### Maize modelling issues (check notes:`Maize-model_notes.md`)
- 
+## Parameter inclusion
 
 
+The covariates and the rationale for their selection are detailed in section XX. In summary, all the covariates included as potentially explanatory variables for individual variability in plasma Se. The first model to be fitted included all of the covariates plus an spatial random effect modelled using SPDE (@ref-).
 
-### . Other crops 
 
-There were some dissusions around including or not other crops into the model. The rationale for inclusion is: 
+```{r}
 
-1) the model will be more generalisable/ flexible: Because other countries may not have a unique dominant staple crop, as it is maize in Malawi. 
-2) the model will account for spatial variation due to other crops, hence probably yielding more accurate results. 
+# Formula for the model
+form1 <- log(y) ~ -1 + Intercept +  log(Se_mean) +
+  wealth_quintile + BMI +  urbanity + 
+  AGE_IN_YEARS +
+  log(crp) + log(agp) + f(spatial.field, model = spde) 
 
-However, the addition of more crops will add more complexity to the model due to:
- 
- 1) different crops may have a different food system. I.e, the catchment area (or foodshed), may be different. For instance, importing that crop or getting it from further away. 
- 2) other crops are not equally important accross the country, and all of them are less consumed than maize in all districts (see image)
- 3) there are other uncertainties that may play a role, for instance, sesonality and the displacement of the household location, that may be more difficult to characterise with a more complex model.
 
- In addition, with this analysis were are using maize Se as a proxy for a) the spatial variation of Se in crops-livestock-human, b) the foodshed and/or food catchment area, and c) maize is the main crop consumed accross the country in similar proportions (see images), while other grains are consumed in particular region and various amounts [@ref own analysis using IHS4]. We are not aiming to find a model that will be used to predict the plasma se of populations, as there are other potential sources of plasma Se variability that are not taken into consideration in this modelling excersise, such as fish intake, total food intake, etc. 
+```
+
+
+Then, we tested the same model but excluding the urbanity, and only including rural household. 
+
+```{r}
+
+# Formula for the model
+form2 <- log(y) ~ -1 + Intercept +  log(Se_mean) +
+  wealth_quintile + BMI +  urbanity + 
+  AGE_IN_YEARS +
+  log(crp) + log(agp) + f(spatial.field, model = spde) +
+  f(ID, model = 'iid')
+
+
+```
+
+Then, we added the cluster as random effect
+
+# Results
+
+The four models for the 10 aggregation units performed similarly, with the main conclusion being the same. Maize Se and age are important covariates irrespectively of the aggregation level. 
+
+
 
 
 # Model assumptions
+
+### Model testing
+
+#### INLA SPDE
+
+First we select the data, we are testing 10 levels of aggregation as explained in sec. XX, which are the following:
+
+`r print(file)`
+
+We are then applying the same model to the 10 different level of aggregation, so we create a loop that perform the individual steps for all 10 datasets and stores the model output. 
+
+
+
+
 
 
 # Model selection
@@ -90,6 +90,8 @@ However, the addition of more crops will add more complexity to the model due to
 
 ## Sensitivity
 
+The model is robust as the conclusion remained the same through out the three model tested, 
+
 ### Household displacement
 
 In order to see how the displacement may potentially affect the model results. We have displaced all/ X% of the sample within range. Hence, the point locations were displaced by 2km, and the analysis were re-run. 
@@ -99,3 +101,7 @@ In order to see how the displacement may potentially affect the model results. W
 
 Tutorial & good visualisation
 https://ourcodingclub.github.io/tutorials/inla/
+
+
+
+
