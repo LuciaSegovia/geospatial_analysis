@@ -26,8 +26,6 @@ book:
   sidebar:
     tools:
       - icon: cloud-arrow-down
-      #  href: https://dzvoti.github.io/r4hces/r4hces-data.zip
-       # aria-label: Download data
 
 bibliography: references.bib
 

@@ -74,8 +74,10 @@ geomaize.df <- maize.df  %>% select(1:25,"Longitude", "Latitude" ) %>%
 dim(geomaize.df) # 1689 maize GeoNut 
 
 ### Cluster prep ----
-# Merge cluster's EA and observed maize
+# TODO: Check if clusters with highest sd are the same for 
+# plasma and maize.
 
+# Merge cluster's EA and observed maize
 maize_cluster <- maize.df %>% right_join(., cluster.df) 
 
 # Calculating the maize grain Se conc per cluster

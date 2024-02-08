@@ -1,6 +1,6 @@
 
 
-## Methods: Data processing
+# Methods: Data processing
 
 Once the datasets are selected and cleaned. The next step is preparing the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se concentration and predicted Se concentration for each aggregation level that will be compared with the plasma Se concentration in Malawian women. 
 
@@ -12,8 +12,10 @@ library(dplyr) # data wrangling
 library(ggplot2) # data visualisation
 library(sf) # spatial data manipulation
 library(tmap) # spatial data visualisation
+library(DT) # pretty & interactive tables
 
 # Loading data
+
 # Admin Boundaries for Malawi: EAs
 ea_bnd  <- st_read(here::here("data", "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"), 
                    quiet = TRUE)
@@ -25,6 +27,13 @@ ea_admin <- st_read(here::here( "data", "inter-output",
 
 # Changing variable region class to factor
 ea_admin$region <- as.factor(ea_admin$region)
+
+# Districts
+dist_bnd  <- st_read(here::here( "data",
+                                "mwi-boundaries",
+                                "mwi_adm_nso_hotosm_20230329_shp", 
+                                "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
+dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 # Maize Se conc.(from cleaned from 00_cleaning-maize.R)
 maize.df<- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) %>%
@@ -44,13 +53,13 @@ The datasets that we used are listed below:
 
 -   `ea_admin`: This (shape)file contains the boundaries of Malawi smallest administrative units, Enumeration Areas (EAs), and information on their corresponding districts and regions. Note that the boundaries of the lakes (e.g., Lake Malawi) were excluded as maize grain nor plasma Se could have been taken within those boundaries. 
 
--   `maize.df`: This file contains the GPS sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT). See section XX for more information on the dataset.
+-   `maize.df`: This file contains the GPS sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT). See @sec-maize for more information on the dataset.
 
 -   `plasma.df`: This file contains the displaced [cluster location](#gps-location) (lon/lat), plasma Se concentration, and other individual level information (wealth quintile, BMI, etc.). See @sec-plasma for more information on the dataset.
 
 ## Generating predicted maize grain Se concentration for Malawi
 
--   `predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
+This file (`predmaize.df`) contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
 
 
 **TODO: Write the full info of the model**
@@ -61,11 +70,11 @@ Then, in order to calculate the mean/median value for each level of aggregation 
 
 ## Generating the boundaries
 
-The first two aggregations (areal units) were based on administrative boundaries (e.g., EAs, districts) whereas the other two aggregation levels were based on the "food catchment area" (buffered area).  All of the aggregation units took into consideration the cluster displacement nature of the location. 
+The first two aggregations (areal units) were based on administrative boundaries (i.e., EAs, districts) whereas the other two aggregation levels were based on the *food catchment area* or *food-sheds* (buffer area).  All of the aggregation units took into consideration the cluster displacement nature of the location. 
 
 ::: {.callout-note}
 
-Note that the location (GPS coordinates) provided in the DHS are for each cluster, not per individual or household (i.e., one women or more will share the *exact* same GPS coordinates). 
+The location (GPS coordinates) provided in the DHS are for each cluster, not per individual or household (i.e., one women or more will share the ***exact*** same GPS coordinates). 
 
 :::
 
@@ -73,26 +82,42 @@ Note that the location (GPS coordinates) provided in the DHS are for each cluste
 
 We started with the EAs because are the smallest administrative units, and they are nested within the other (bigger) administrative units (Districts and Regions).
 
-Due to the nature of the displaced cluster location, the smallest administrative unit will not be one EA per women, but a number of EAs per cluster for all the women living in the same cluster. For more information on the GPS displacement see @sec-gps-location. 
+Due to the nature of the displaced cluster location, the smallest administrative unit will not be one EA per women, but a number of EAs per cluster for all the women living in the same cluster. For more information on the GPS displacement see @sec-gps-location and the Guidelines on the Use of DHS GPS Data from @ref-perez2013guidelines. 
 
-The EAs included in each cluster are based on the displacement rage (2.5km for urban and 5km per rural) bounded by district, full details are disclosed below. While for the district information it was provided within the DHS dataset. 
+The EAs included in each cluster are based on the displacement range (2.5km for urban and 5km per rural) bounded by district, full details are disclosed below. While for the district information it was provided within the DHS dataset. 
 
 #### Enumeration Areas
 
-In the plasma dataset, we do not have information about the EAs where each women or cluster point lies in. Therefore, in order to calculate the mean/media maize Se concentration for each administrative unit, we need to identify the EAs that were plausible residing place for the women in the DHS survey, as mentioned above. 
+In the DHS plasma dataset, we do not have information about the EAs where each women or cluster point lies in. Therefore, in order to calculate the mean/media maize Se concentration for each administrative unit, we need to identify the EAs that were plausible residing place for the women in the DHS survey, as mentioned above. The buffer areas were added in previous step (See @sec-gps-location).
 
+To do so, we need to spatially merge the boundaries dataset (`ea_admin`) and the plasma Se dataset. Hence, some data preparation need to be done before carrying the spatial join. For instance, both datasets need to be spatial objects.
+
+```{r}
+# Checking the class of the two datasets
+class(ea_admin)
+class(plasma.df)
+
+```
+
+We can see that the `plasma.df` is not a spatial object. Therefore, we need to use the `sf package` to convert it into a spatial dataset. Here, we are interested in the buffer areas and that is the variable that was converted into the geometry variable.
 
 ```{r}
 
-# Getting only cluster location (to avoid duplicates), 
+# Getting only cluster location (to avoid duplicates)
+
 geodata.df <- plasma.df %>% select(survey_cluster1, buffer) %>% 
   distinct() %>% 
 # renaming buffer as geometry for converting into spatial object
   dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
 
+# Checking the effect of the line above
+class(geodata.df)
+
 ```
 
-To do so, we used the spatial join to identify the Malawi EAs (`ea_admin`) within the buffered areas for each cluster.
+
+
+Then, after converting and checking that the `plasma.df` is a spatial object, we can proceed with the spatial join to identify the Malawi EAs (`ea_admin`) within the buffered areas for each cluster.
 
 ```{r}
 
@@ -130,7 +155,7 @@ tm_shape(malawi_bnd) +
 
 When we checked the EAs that were included in each cluster, we realised that there were some clusters that were very close to the district boundaries, thus including some EAs from different district. According to the DHS documentation, displacement was performed to respect district boundaries, hence households will be within their district (see district information on DHS dataset) and because here we are looking at administrative boundaries, we need to remove the EAs that did not belong to the district for each cluster. 
 
-```{r}
+```{r label = "fig-dist1", fig.cap = "The bars show the number of EAs in each DHS cluster and the colours represent the districts.", fig.height=7, fig.width=6}
 
 # Checking the EAs per buffer and district
 
@@ -148,9 +173,9 @@ When we checked the EAs that were included in each cluster, we realised that the
 
 ```
 
-Moreover, this extended to including district from different regions.
+Moreover, we can see in @fig-dist2 that some buffer-cluster areas extended beyond the district including district from different regions.
 
-```{r}
+```{r label = "fig-dist2", fig.cap = "The bars show the number of EAs in each DHS cluster divided by regions and the colours represent the districts.", fig.height=7, fig.width=6}
 
 g1 + 
   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
@@ -162,9 +187,9 @@ g1 +
 ```
 
 
-We identified the districts by combining the district names (`dist_name`) in the DHS survey and the district names (`ADM2_EN`) which were combined within the `ea_admin` dataset. For more information on that dataset and variables see @sec-explo-bound. 
+We identified the correct district for each EA by combining the district names (`dist_name`) in the DHS survey and the district names (`ADM2_EN`) in the `ea_admin` dataset. For more information on that dataset and variables see @sec-explo-bound. 
   
-Some minor renaming was needed in order to identify the correct district and a dummy variable to check that districts were the same was generated, as shown in the following code section. 
+Some minor spelling adjustment was needed in order to identify the correct district and a dummy variable to check district name consistency was generated, as shown in the following code block. 
 
 
 ```{r}
@@ -192,11 +217,15 @@ plasma.df$boundaries_check <- ifelse(tolower(plasma.df$ADM2_EN) == plasma.df$dis
 
 # Checking district that are the same and those with NA (some dist_name were NA)
 plasma.df %>% dplyr::filter(boundaries_check == TRUE | is.na(boundaries_check) ) %>% 
-  select(survey_cluster1, ADM2_EN, dist_name2) %>% distinct() %>% knitr::kable()
+  select(survey_cluster1, ADM2_EN, dist_name2) %>% distinct() %>% 
+  # Changing the class of the cluster for table improvement
+  mutate_at("survey_cluster1", as.character) %>% 
+# Make the interactive table
+datatable(., filter = "top")
 
 ```
 
-After checking tha we have identify the correct district for each cluster, a dataset with each cluster (`survey_cluster1`) and their corresponding district was obtained. 
+After identify and checking, we filtered only the correct district for each cluster, and saved as a dataset containing each cluster (`survey_cluster1`) and their corresponding district (`ADM2_EN`). 
 
 ```{r}
 
@@ -204,11 +233,11 @@ After checking tha we have identify the correct district for each cluster, a dat
 district <- plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
   distinct(survey_cluster1, ADM2_EN)
 
-knitr::kable(district)
+# knitr::kable(district)
 
 ```
 
-That dataset (`district`) was used to exclude those EAs that were not in the target district of each cluster. 
+That dataset (`district`) was used to exclude those EAs that were not in the corresponding district for each cluster. 
 
 ```{r}
 
@@ -217,7 +246,7 @@ plasma.df <- left_join(district, plasma.df)
 
 ```
 
-Finally, we generate the administrative boundaries master file which contains information on each cluster (`survey_cluster1`) and its cluster-EA level (all the EAs within the corresponding buffer areas and district) and the district. The codes (`EACODE` and `ADM2_PCODE`) can be bind with the respective shapefiles (`ea_bnd`, `ea_admin` or `dist_bnd`). 
+Finally, we generated the administrative boundaries master file which contains information on each cluster (`survey_cluster1`) and its cluster-EA level (all the EAs within the corresponding buffer areas and district) and the district. The codes (`EACODE` and `ADM2_PCODE`) can be bind with the respective shapefiles (`ea_bnd`, `ea_admin` or `dist_bnd`). 
 
 ```{r, eval=FALSE}
 
@@ -235,7 +264,7 @@ plasma.df %>% distinct(survey_cluster1, EACODE,
 ### Household catchment areas (buffer) 
 
 
-For the household catchment areas, ideally, we would like to test the aggregation of the maize grain Se as function of the distance from each household. For instance, with buffered areas around the household, that could be identified as "food-sheds" or "food catchment areas". However, as explained in previous sections, the location used to generate the buffer are not the real household location but an approximation. By generating bigger than the displacement area buffers we aim to capture the plausible "food catchment area" for each WRA in the sample
+For the household catchment areas, ideally, we would like to test the aggregation of the maize grain Se as function of the distance from each household. For instance, with buffered areas around the household, that could be identified as "food-sheds" or "food catchment areas". However, as explained in previous sections, the location used to generate the buffer are not the real household location but an approximation. By generating bigger than the displacement area buffers we aim to capture the plausible "food catchment area" for each WRA in the sample while accounting for the error/bias due to the displacement.
 
 ```{r}
 
@@ -249,29 +278,28 @@ geogps <- st_as_sf(GPS , coords =c("Longitude", "Latitude"),
 ```
 
 
+The catchment areas represented by buffers around the cluster displaced centroids and three distances selected were:
 
-Three buffer distances selected were:
+1) **15km buffer** to cover the maximum displacement in rural area for the GPS location of the DHS clusters. The maximum displacement in rural area is 10km however, when we tested the 10km buffer, we found that one EA (497) did not have an observed sample within that range, thus we decided to increase the buffer size by 5km, we also tested 12km but it did not provide any improvement from the 10km buffer.  
 
-1) **15km buffer** to cover the maximum displacement in rural area for the GPS location of the DHS clusters. The maximum displacement in rural area is 10km however, when we tested the 10km buffer, we found that one EA (497) did not have an observed sample with that range, thus we decided to increase the buffer size by 5km, we also tested 12km but it did not provide any results.  
+2) **25 and 30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the average distance between households and the closest market in Malawi (REF). 
 
-2) **25 and 30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the mean distance between households and the closest market in Malawi (REF). 
-
-The genereation of the buffer is done using a loop, that save the shapefiles into the `inter-outuput` file, and it is design to be able to change the distances of the buffer if new evidence of bigger or smaller buffer are published. 
+The genereation of the buffer is done using a loop, that save the shapefiles into the `inter-outuput` file, and it is design to be able to change the distances of the buffer if new evidence of bigger or smaller buffer are published. It also allowed us to do sensitivity analysis on buffer size, see section XX. 
 
 
 ```{r, eval=FALSE}
 
-# Choice of buffers
+# Choice of buffers (in km)
 buffer <- c(10, 25, 30)
 
 # Loop over the number of buffers:
 for(i in 1:length(buffer)){
   
   data.df <- GPS
-  distance <- as.numeric(paste0(buffer[i], "000"))
-  #variable <- paste0("buffer", buffer[i]) 
+  # Transforming km in m (e.g., 10km = 1000m)
+  distance <- buffer[i]*10^3
   
-  # Buffer in meters (10km & 25km)
+  # Buffer in meters 
   data.df$buffer <- st_buffer(geogps$geometry, dist = distance)
   
   # Saving the shapefile with the buffers
@@ -284,15 +312,17 @@ for(i in 1:length(buffer)){
 ```
 
 
+## Maize aggregation using observed maize dataset
 
-#### Enumeration Areas of the maize grain Se dataset {#sec-maize-ea}
+### Cluster-level mean of the observed maize Se
+
+#### Identifying enumeration areas of the maize grain sample locations {#sec-maize-ea}
 
 Similarly, in the maize grain Se dataset, the EAs were not available for each sample point. Therefore, in order to calculate the mean/media maize Se concentration for each administrative unit, we need to link the dataset with the administrative boundaries of Malawi (`ea_admin`) with the maize grain Se dataset (`maize.df`).
 
-Here, we could, as first step, identify the EAs where each maize grain were sampled. This could be easily done for the observed dataset, the number of samples are still small, on the other hand, for the predicted maize grain Se dataset, this spatial joint may take very long. Therefore, because the objective is to proivde values for those aggregation units, we could use the cluster-EAs, the district, and the buffered areas. 
+Here, we could, as first step, identify the EAs where each maize grain were sampled. This could be easily done for the observed dataset as the number of samples are still small. On the other hand, for the predicted maize grain Se dataset, this spatial joint may take very long. Therefore, because the objective is to provide maize grain Se values for the aggregation units with plasma Se values, we could use the cluster-EAs, the districts, and the buffered areas. 
 
-To do so, we need to spatially merge the boundaries dataset (`ea_admin`) and the maize Se dataset. Hence, some data preparation need to be done before carrying the spatial join. For instance, both datasets need to be spatial objects. 
-
+To do so, we used the spatial join, as it was done for the `plasma.df`.
 
 ```{r}
 
@@ -300,10 +330,10 @@ To do so, we need to spatially merge the boundaries dataset (`ea_admin`) and the
 class(ea_admin)
 class(maize.df)
 
-
 ```
 
-We can see that the maize grain dataset is not a spatial object. Therefore, we need to use the `sf package`. 
+We can see that the maize grain dataset is not a spatial object. Therefore, we need to be transformed into one, which will be now be the `geomaize.df`.
+
 
 ```{r}
 
@@ -311,16 +341,16 @@ We can see that the maize grain dataset is not a spatial object. Therefore, we n
 geomaize.df <- st_as_sf(maize.df,
               coords =c("Longitude", "Latitude"), crs = "EPSG:4326")
 
-# Checking the effect of the line above
-class(geomaize.df)
-
 # Adding a variable to store info on distance 
 geomaize.df$dist_in_m <- NA
 
+# Checking effect of the transformation
+class(geomaize.df)
 
 ```
 
-Then, we can merge the two dataset. 
+After checking that the `geomaize.df` is the correct class. We can proceed to merging the two spatial datasets. 
+
 
 ```{r}
 
@@ -347,7 +377,7 @@ tm_symbols(col ="red", size =0.1)
 
 ```
 
-Instead of removing the observations, we decided to allocated them to the closest EA (in m). The information on how far (in m) were from the EA that were allocated too, was also stored in the new variable that was generated in previous steps: `dist_in_m`.
+Instead of removing the observations, we decided to allocated them to the closest EA (in m). The information on how far (in m) were from the EA that were allocated to, was also stored in the new variable that was generated in previous steps: `dist_in_m`.
 
 ```{r}
 
@@ -387,19 +417,11 @@ saveRDS(maize.df, here::here("data", "inter-output",
 
 ```
 
+After the dataset are prepared and the spatial aggregation level datasets are ready, we can proceed to calculate the aggregation of maize grain Se at the different aggregation levels. Those were calculated using the script (`01_maize-aggregation.R`) and are described in subsequent sections.
 
+#### Aggregation of the data
 
-### Co-location: combining datasets by location
-
-Samples, both maize and plasma, were supposed to be co-located (i.e., collected at the same EA) as per documentation on Gashu et al, (2021). However, when we checked the co-location of the two datasets: plasma Se values and the maize Se, based on the EAs where they were collected/ reported around 60% of our sample did not share the same EA. This was probably  due to the EA displacement performed within the DHS protocol (see XX). 
-
-Hence, we decided to use the EAs where maize sample were collected (at the were not displaced), and to co-locate (by closest distance possible) the EAs within the buffer area displaced (2km and 5km for urban and rural respectively). 
-
-Even when doing that, there were still two clusters (group of EAs) that did not have any maize grain Se value co-location. For those clusters, the closest EA (xx m) with maize grain Se values were used. 
-
-#### Cluster level observed maize Se
-
-First, we are getting the cluster and EA information for which we would need the maize Se conc. 
+First, we are getting the cluster-EA information for which we would need the maize Se concentration. 
 
 ```{r}
 
@@ -409,7 +431,7 @@ cluster.df <- plasma.df %>%
 
 ```
 
-We have already identified in which EAs the observed maize dataset are in in the @sec-maize-ea. Therefore, we only need to merge the two dataset, and get the maize Se conc. for each EA within each cluster. 
+We have already identified in which EAs the observed maize dataset are in in the @sec-maize-ea, as shown in the @fig-map3. Therefore, we only need to merge the two dataset, and get the maize Se concentration for each EA within each cluster. 
 
 ```{r}
 
@@ -421,7 +443,9 @@ boxplot(maize_cluster$Se_raw ~ maize_cluster$survey_cluster1)
 
 ```
 
-Then, we can calculate the mean/median maize Se concentration for each cluster.
+In the boxplot, we can see that the variability of maize grain Se concentration is quite different for each cluster, which may lead to some high intra-cluster variability. 
+
+Then, we calculated the mean, median, standard deviation (SD) and interquartile range (IQR) of the maize Se concentration for each cluster.
 
 ```{r}
 
@@ -434,22 +458,12 @@ maize_cluster <- maize_cluster %>%
             Se_iqr = IQR(Se_raw, na.rm = TRUE), 
             Se_n = n())
 
-knitr::kable(maize_cluster)
+datatable(maize_cluster, filter = "top")
 
 ```
 
 
-We can see that there were `r sum(is.na(maize_cluster$Se_mean))` clusters without any maize Se concentration, this is because there were no samples collected for any of the EAs with that clusters. 
-
-```{r}
-
-par(mfrow = c(1, 2))
-hist(maize_cluster$Se_mean)
-hist(maize_cluster$Se_sd)
-
-```
-
-Here, we identified the clusters without any observe maize Se concentration value.
+We can see that there were `r sum(is.na(maize_cluster$Se_mean))` clusters without any maize Se concentration, this is because there were no samples collected for any of the EAs within that clusters. We identified the clusters without any observed maize Se concentration value.
 
 ```{r}
 
@@ -458,7 +472,7 @@ miss <-  unique(maize_cluster$survey_cluster1[is.na(maize_cluster$Se_mean)])
 
 ```
 
-#####  Missing values in the observed Se maize values
+####  Missing values 
 
 We need at least one maize Se value per cluster to be compared with the plasma Se. However, there were four clusters (`r toString(miss)`) from the plasma Se dataset (`plasma.df`) that did not match with any of the EAs in the observed Se maize grain dataset (`maize.df`). Hence, the approach taken was the following:
 
@@ -470,22 +484,59 @@ We need at least one maize Se value per cluster to be compared with the plasma S
 
 ```
 
-Firstly, we identified the EAs that were included in each of the missing clusters (`r n=unique(ea_cluster$EACODE)`).
+Firstly, we identified the EAs that were included in each of the missing clusters (n=`r unique(ea_cluster$EACODE)`).
 
-```{r}
+Secondly, we assigned the closest data point (i.e, maize grain Se conc. value) for each EA. To do so, we created a loop that finds the closest data point 20m increment each time for all the EAs and it store the distance for future reference.
 
-missing <- readRDS(here::here("data", "inter-output", "filling-missing-Se-observed-maize.RDS"))
+```{r, eval=FALSE}
+
+
+for(i in 1:nrow(ea_cluster)){
+  
+  m <- 230
+  
+  if(sum(ls()=="missing")==0){
+    missing <- test
+  }
+  
+  missing <- rbind(missing, test)
+  
+  print(nrow(missing))
+  
+repeat {
+
+m <- m + 20 
+
+  test <- st_join(geomaize.df, ea_cluster[i,], st_is_within_distance,  
+          dist = units::set_units(m, "m")) %>% 
+          filter(!is.na(EACODE))%>% 
+          mutate(dist_in_m = m)
+  
+  print(i)
+  print(m)
+  
+  if(nrow(test)>0) { break}  
+    
+}
+
+}
+
+# Saving output of the loop
+missing %>% st_drop_geometry() %>%
+  saveRDS(., here::here("data", "inter-output", "filling-missing-Se-observed-maize.RDS"))
+
 
 ```
 
 
-Secondly, we assigned the closest data point (i.e, maize grain Se conc. value) for each EA. To do so, we created a loop that finds the closest data point 20m increment each time for all the EAs. And it store the distance for future reference.
-
 Note that we are starting at 230m distance because we found th first match at 250m. 
 
-We need to allocate at least one maize Se concentration for each cluster and hence, we identified the closest data point (the closest maize sample with Se values) in the dataset for each of the four cluster. We decided that instead of:
+At least one maize Se concentration value was found per each EA, however we only need, at least, one value per cluster and hence, a number of possibilities of dealing with the multiple matches were considered, and are described below. 
   
 ```{r}
+
+missing <- readRDS(here::here("data", "inter-output", "filling-missing-Se-observed-maize.RDS"))
+
 cluster.df  %>% 
   filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
   select(survey_cluster1, urbanity,EACODE,ADM2_EN, dist_in_m, Se_raw) %>% 
@@ -496,8 +547,7 @@ cluster.df  %>%
             dist_sd = sd(dist_in_m, na.rm = TRUE))
 ```
   
-  
-  a) Using the mean/ median of all cluster values because there are many repeated values. For instance, the closest data point for 11 (out of 15) EAs within the cluster 200 were the same (Se= 0.344mcg/kg) as it is shown in @fig-cluster1.
+Firstly, we considered using the mean/ median of all EA values per cluster, however there were many repeated values. For instance, the closest data point for 11 (out of 15) EAs within the cluster 200 were the same maize sample (Se= 0.344mcg/kg) as it is shown in @fig-cluster1. Hence, we decided to exclude duplicated samples to keep consistency with the whole sample. 
   
 
 ```{r label = "fig-cluster1", fig.cap = "Histogram of the closest maize Se concentration for each EA in each of the missing cluster.", fig.height=7, fig.width=6}
@@ -512,6 +562,7 @@ cluster.df  %>%
 
 ```
 
+Then, we tried using those values within buffered range (i.e.,2.5km for urban and 5km for rural). 
 
 ```{r}
 
@@ -527,10 +578,8 @@ cluster.df  %>%
 
 ```
 
-
- b) Using those within buffered rage (e.g. 2.5km for urban and 5km for rural). This will lead to exclusion of all the values for the cluster 777 which corresponds to Lilongwe city (See @fig-cluster2).  
+However, this approach yield zero values for the cluster 777 which corresponds to Lilongwe city, as shown in @fig-cluster2.  
  
-  
 ```{r label = "fig-cluster2", fig.cap = "Graph showing the distance and concentration of the closest maize Se samples for each EA in each of the missing cluster.", fig.height=7, fig.width=6}
   
 cluster.df  %>% 
@@ -544,7 +593,7 @@ cluster.df  %>%
 
 ```
 
-c) Using the closest value for each cluster. 
+Finally, we identified the closest data point (the closest maize sample with Se values) in the dataset for each of the four cluster. 
 
 ```{r}
 
@@ -558,65 +607,91 @@ cluster.df  %>%
 ```
 
 
-Finally, we decided to use the closest location with reference to the cluster because for this analysis the aggregation unit, and hence the reference point are the clusters. If we would allocate one value per EA (as for the other approaches) we should do the same for the whole sample. As currently, we have only picked those EAs with observed values given that at least one value was available per EA, and trying at least to avoid duplicated observed values. 
+We decided to use the closest location with reference to the cluster because for this analysis the aggregation unit, and hence the reference point are the clusters. If we would allocate one value per EA (as for the other approaches) we should do the same for the whole sample, as mentioned above. As currently, we have only picked those EAs with observed values given that at least one value was available per EA, and trying, when possible, to avoid duplicated observed values. 
 
 Some checks were performed to ensure that maize Se samples values were not duplicated. 
 
 
-##### Limitations of the co-location at cluster level
+```{r}
 
-There were only five clusters where the closest samples and the cluster-EAs were not co-located, as shown in the table XX. Four of which were represented by only one sample point and most of them were at close distance and below the displacement distance (less than 2.5km). 
+par(mfrow = c(1, 2))
+hist(maize_cluster$Se_mean)
+hist(maize_cluster$Se_sd)
 
-- **Lilongwe city** (cluster 777): The value of maize grain Se concentration used may not be representative due to a number of issue:
+```
 
- a) Related to the distance of the nearest sampling site: It was the longest distance between the cluster-EAs and the nearest maize sampling site. Additionally, the distance was almost double the displacement for urban areas (2.5km vs 4.3km). This may be explained by the lack of agricultural fields (to grow maize) inside the city which was also confirm by local experts. Furthermore, according to personal communication with local experts (G.O), the acquisition dynamics in the city are quite diverse, with people in the highest quintiles buying from supermarkets and/or bringing from their hometowns, and those form the middle and lowest quintile buy in local market, local millers and/or going back to their family villages for harvest. There will be small family trades like bringing sugar and oil from the city to the home village and taking maize flour, particularly during harvest season. In addition, some climatic events that may affect crops and low stock in the lean season may affect as well the origin of the maize. For instance, this year (2023/2024) some of the maize distributed from aids (i.e., WFP) has been grown in Tanzania. Definitely more insights in local trades, and city food acquisition will be needed. 
+
+#### Limitations of the co-location at cluster-level
+
+There were only five clusters where the closest samples and the cluster-EAs were not co-located (i.e., within the EA boundaries), as described in th previous section. Four of which were represented by only one sample point and most of them were at close distance and below the displacement distance (less than 2.5km). With the exception of **Lilongwe city** (cluster 777), for which the value of maize grain Se concentration used may not be representative due to a number of issue:
+
+ a) [Related to the distance of the nearest sampling site]{.underline}: It was the longest distance between the cluster-EAs and the nearest maize sampling site. The distance was almost double the displacement for urban areas (2.5km vs 4.3km). This may be explained by the lack of agricultural fields (to grow maize) inside the city which was also confirm by local experts. According to personal communication with a local expert (G.O), the acquisition dynamics in the city are quite diverse, with people in the highest quintiles buying maize from supermarkets and/or bringing it from their hometowns, whereas those from middle and lowest quintiles may buy the maize in local market, local millers and/or own production, harvested from their family villages. There will be small family trades like bringing sugar and oil from the city to the home village and taking maize flour, particularly during harvest season. In addition, some climatic events that may affect crops and maize stocks (i.e., reduced stocks) in the lean season which in turn may affect the origin of the maize. For instance, this year (2023/2024) some of the maize distributed from aids (i.e., WFP) has been grown in Tanzania. Definitely more insights in local trades, and city food acquisition will be needed. 
  
- b) Related to the number of samples: In part, due to the distance to the nearest sample locations, we only have one maize grain Se concentration value for whole city, in addition, only one cluster was included in "Lilongwe city" as such, and hence the variation and representation it may be further reduced. 
+ b) [Related to the number of samples]{.underline}: In part, due to the distance to the nearest sample locations, we only have one maize grain Se concentration value for whole city, in addition, only one cluster was included in "Lilongwe city" as such, and hence the variation and representation it may be further hampered.  
  
-#### District level observed maize Se
+### District-level observed maize Se
 
-All districts have sampled locations of the observed maize grain Se concentration. Hence, a number of approaches could have been taken to aggregate the observed maize values. For instance, in order to use the same values for both aggregation units, we could have use the dataset used in the previous steps and using the EAs to identify which sampled points laid within each district. In that case, the optimal case would have been to exclude the samples where the location was not within the EAs boundaries, leading then to disparities between the two dataset. 
+All districts have sampled locations of the observed maize grain Se concentration. Hence, a number of approaches could have been taken to aggregate the observed maize values. For instance, in order to use the same values for both aggregation units, we could have used the dataset developed in the previous steps and using the EAs to identify which sampled points laid within each district. However, because values for 4 clusters were manually added by closest proximity, we will probably include duplicated values, unless we have exclude the samples where the distnace to the closest location was higher than 0m (indicating that sample was not within the EAs boundaries), and leading then to disparities between the cluster-level and district-level datasets. Hence, we decided to use the same approach as in the previous step, and spatially joint the districts boundaries and the `geomaize.df`. 
 
-We decided then, to do a spatial joint between the maize dataset and the distict boundaries. We can see that one district is missing: *Likoma* which we have no maize sample, but also no plasma samples were collected.
+We can see that, of the n=`r length(unique(dist_bnd$ADM2_EN))`, one district is missing: *Likoma* which we have no maize sample, but also no plasma samples were collected.
 
-One thing is tricking is that there are more maize samples per district when using the EA as opposed to the district boundaries. However, when plotting them against each other it seems that there are in agreement and closelly aligned. 
+One thing is striking is that there are more maize samples per district when using the EA as opposed to the district boundaries, this is because of the duplication of values due to closest sample points. Despite that when plotting the two district-level datasets against each other, values were in agreement and closely aligned. 
 
-**TODO: Review why there is disagreement between the number of samples by the two methods**
+**TODO: Review further the sourve of disagreement between the number of samples by the two methods**
 
+### Buffer areas 
 
-##### Further thoughts on data processing steps and results interpretation
+All the aggregations for each buffer were performed using a loop, as we already identified that all buffers have at least one sampled value and the structure of the datasets were equal. 
 
-The "co-location" issues were only problematic at the smallest area tested (e.g., cluster level) and for observed mean/median (that calculated using only sampled (observed/analytical) values). Hence, the concern when comparing with the predicted surface will be:
+## Maize aggregation using predicted maize dataset
+
+The predicted maize had values for all the surface in Malawi, hence, no issues of missing values were found. 
+
+The process was the same as the observed, and it was done as described in previous sections. 
+
+## Joining datasets
+
+The final step to get the dataset ready for modelling is to join the `plasma.df` dataset with the different values of maize Se for each of the aggregation level. That was perfomed in the script `` and it yielded 10 datasets: 5 aggregation levels (cluster, district, 15km, 25km and 30km buffer) x 2 maize Se values (observed, predicted).
+
+## Limitation of the data aggregation
+
+The "co-location" issues were only problematic at the smallest area tested (e.g., cluster level) and for observed mean/median (that calculated using only the original sampled values). Hence, the concern when comparing with the predicted values will be:
 
 **What are we really measuring/ comparing?**
 
-We want to know whether: 
+Additionally, it is important that we think about the displacement of the household location and the potential impacts on the final results. For instance, when two households are in the same EA, the maize Se value is the same for both households. 
 
+See sensitivity analysis. 
 
-a)  Does observed estimates provides better prediction/ explanation of the plasma Se than predicted surfaces? 
+Some test were performed to check the influence of some of the decission/assumptions made during the data preparation and processing. 
 
+### Testing assumptions
 
-b)  At what level of data aggregation we can see better explanation of the plasma Se values? 
+#### Sensitivity analysis
 
-Re: Does this mean that I should use the predicted surface of the same EAs as of the observed, regardless that I could actually use the mean of the same EAs as reported in the DHS cluster?
+We compared the predicted mean/ median with the observed values of the same EA only. To see if the results of our analysis are actually measuring methodological differences (i.e., between normal aggregated mean and predicted mean), or on the contrary, the difference in spatial variation in maize Se values (i.e., there is a difference between choosing the nearest EAs and peaking the "actual" EAs). 
 
-  --> Sensitivity analysis: Compare predicted surface mean/ median of the actual cluster (aggregated EA) values with the same EA only of the observed values (i.e., replicating the same area of the observed values). To see if the results of our analysis are actually measuring methodological differences (i.e., between normal aggragated mean and predicted surface), or on the contrary are picking spatial variation in maize Se values (i.e., there is a difference between picking the nearest EAs and peaking the "actual" EAs). 
-
-
-#### Testing assumptions
 
 ### Household location
 
 The coordinates for the HHs are only provided at cluster level (EAs). Hence, we need to check first the variability within cluster. 
 
-When we checked with boxplots (See 01_Explora_Malawi_model.R, line 258), the variability of Plasma Se by EAs, we have realised two key things:
-1) In general, we could assume that there is "low" EAs variability in the Plasma Se.
-2) There is high variability within regions. As we can see by the scale of the plots, in northern region the scale ranged from 50-150nmol/mL, in central region from 0-300nmol/mL (#TODO:check the upper values here), with the highest values for Salima district (as expected), and the southern region ranged from 50-250nmol/mL.
+When we checked the variability of Plasma Se by clusters (See @fig-4), we have realised two key things:
+
+1) In general, we could assume that there is "low" cluster variability in the Plasma Se.
+
+2) There is high variability within regions, driven mainly by three clusters. As we can see by the scale of the plots in @fig-4, in northern region the scale ranged from 50-150ng/mL, in central region from 0-300ng/mL, with the highest values for clusters within Salima district (as expected), and the southern region ranged from 50-250ng/mL.
+
+**TODO:check the variability of maize Se values by clusters**
 
 
-It is important that we think about the displacement of the household location and the potential impacts on the final results. For instance, when two households are in the same EA, the maize Se value is the same for both households. 
+##### Co-location: combining datasets by location
 
-See sensitivity analysis. 
+Samples, both maize and plasma, were supposed to be co-located (i.e., collected at the same EA) as per documentation on Gashu et al, (2021). However, when we checked the co-location of the two datasets: plasma Se values and the maize Se, based on the EAs where they were collected/ reported around 60% of our sample did not share the same EA. This was probably  due to the EA displacement performed within the DHS protocol (see XX). 
+
+Hence, we decided to use the EAs where maize sample were collected (at the were not displaced), and to co-locate (by closest distance possible) the EAs within the buffer area displaced (2km and 5km for urban and rural respectively). 
+
+Even when doing that, there were still two clusters (group of EAs) that did not have any maize grain Se value co-location. For those clusters, the closest EA (xx m) with maize grain Se values were used. 
 
 ##### Displaced location EAs
 
@@ -630,4 +705,4 @@ Following the guidelines on the use of DHS GPS data, (@perez2013guidelines), we 
 - compared that with the results above, i.e.,  with EAs were the same and which one were different
 - checked for those most probable which one had maize Se conc. and which one not 
 
-The list of the EAs where the WRA potentially lived was obtained in the scripts (00_cleaning-locations.R), and it was used to generate the centroids and buffers for further modelling in the 00_cleaning-boundaries.R.
+The list of the EAs where the WRA potentially lived was obtained in the scripts (`00_cleaning-locations.R`), and it was used to generate the centroids and buffers for further modelling in the `00_cleaning-boundaries.R`.

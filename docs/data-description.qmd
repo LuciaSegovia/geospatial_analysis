@@ -279,7 +279,7 @@ d. Sales vs stored trees (12months) (AG_MOD_Q)
 
 ## Cleaning & Exploratory Analysis {#sec-explo}
 
-### Maize grain Se concentration in Malawi
+### Maize grain Se concentration in Malawi {#sec-maize}
 
 #### GeoNutrition (Kumssa et al., 2022)
 
@@ -705,15 +705,17 @@ We checked wealth by region and it seemed that there is a slight unbalance for t
 Only 3 respondent reported smoking cigarettes, if we want to include this variable, we may need to combine with other smoking variables (including the other variables), although according with the systematic review published in 2015, the prevalence of women who smoke in this context was below 4% [@brathwaiteSystematicReviewTobacco2015], additionally a report published more recently (2021) by the Malawi Government using this survey found very low rates of smoking among women (@ref-kadzamiraSocioeconomicImpactDisease2021).
 
 
-### GPS location 
+### GPS location {#sec-gps-location}
 
 Due to confidentiality and anonymity protection, household locations are not available. Instead, the displaced GPS location of each cluster (i.e., EA) is provided. This means that the population centroid of each cluster was register in the original survey, and then displaced within 2km for urban clusters and 5km for rural clusters, with 10% of the rural clusters displaced within 10km buffer. Therefore, it is often not advised to used and/or link this type of data to distance-based measurement and/or small areas where high risk of missclassification may exist. This is because the location of the households could be in any of the EAs within the displaced buffer area. 
 
 Hence, we decided to use the buffer areas instead of the point locations (GPS coordinates) to standardise/ minimise the measurement error from the off-setting of the coordinates, and in turn, use the buffer area to identify the probable EAs where the households may be located. Hence, here we are adding a buffer around each of the GPS locations that account for the 2km and 5km displacement in urban and rural respectively. In that sense, we are assuming that each HHs can be in any place with that buffered area. 
 
+**TO DO: Adding the script that added the buffer**
+
 Final cleaned dataset was stored in: `data/inter-output/dhs-gps.rds`
 
-Then, the next step will be to combine with the information on maize Se at different aggregation level. To do so, first we need to "clean the location" as due to the GPS displacement Plasma Se and maize Se values were not co-located. The steps to "co-locate" Plasma Se and Maize Se are performed in the script "00_cleaning-locations.R". 
+Then, the next step will be to combine with the information on maize Se at different aggregation level. To do so, first we need to "clean the location" as due to the GPS displacement Plasma Se and maize Se values were not co-located. The steps to "co-locate" Plasma Se and Maize Se are performed in the script `00_cleaning-locations.R`. 
 
 
 #### Limitation to DHS-MNS data

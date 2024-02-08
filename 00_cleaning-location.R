@@ -183,7 +183,8 @@ buffer <- c(15, 25, 30)
 for(i in 1:length(buffer)){
   
   data.df <- GPS
-  distance <- as.numeric(paste0(buffer[i], "000"))
+ # distance <- as.numeric(paste0(buffer[i], "000"))
+  distance <- buffer[i]*10^3)
   #variable <- paste0("buffer", buffer[i]) 
   
   # Buffer in meters (10km & 25km)

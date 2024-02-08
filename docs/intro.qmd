@@ -4,6 +4,13 @@
 
 
 
+### Aims of the study
+
+We want to know whether: 
+
+a)  Observed estimates provides better prediction/ explanation of the plasma Se than predicted estimates? 
+
+b)  At what level of maize Se aggregation plasma Se concentration is better explained? 
 
 
 ### Objectives {.unnumbered}
