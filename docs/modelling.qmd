@@ -58,6 +58,12 @@ form2 <- log(y) ~ -1 + Intercept +  log(Se_mean) +
 
 Then, we added the cluster as random effect
 
+## Model 3
+
+We added the variable distance to water body (`dist_to_wb`) to the model. This variable was not normally distrubuted following the skewerness and ocktile skerness ranges. Hence, we needed to log tranform and hence we decided to change the 0 values to 200. On the basis that this distance was smaller than the min. distance and smaller than the displacement (2.5km smalles for urban), as it is impossible that the distance to a water body is 0m. 
+
+Then we tested againt the 10aggregation unit. Again, the main conclusion remained the same, hence only age and maize Se concentation were significantly associated with plasma Se concentration. However, adding distance to the water body improved the overall performance of the models. 
+
 # Results
 
 The four models for the 10 aggregation units performed similarly, with the main conclusion being the same. Maize Se and age are important covariates irrespectively of the aggregation level. 

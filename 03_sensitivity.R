@@ -1,6 +1,6 @@
 ################################################################################
 #
-#                     Sensitivit analysis: 
+#                     Sensitivity analysis: 
 #        Buffer-distance from 1km to 60km in Malawi
 #         
 #        

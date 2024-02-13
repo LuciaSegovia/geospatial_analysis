@@ -5,11 +5,11 @@ library(ggregplot)
 library(stringr)
 library(magrittr)
 
-ggplot(plasma_se, aes(Longitude, Latitude )) + 
-  geom_jitter(aes(colour = factor(survey_cluster1))) + coord_fixed() + 
-  labs(colour = "survey_cluster1")
+#ggplot(plasma_se, aes(Longitude, Latitude )) + 
+#  geom_jitter(aes(colour = factor(survey_cluster1))) + coord_fixed() + 
+#  labs(colour = "survey_cluster1")
 
-Efxplot(list(models[[1]], models[[2]], models[[3]], models[[4]], models[[5]]))
+# Efxplot(list(models[[1]], models[[2]], models[[3]], models[[4]], models[[5]]))
 
 INLADICFig(models)
 

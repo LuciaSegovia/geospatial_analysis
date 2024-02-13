@@ -14,16 +14,20 @@ library(dplyr) # data wrangling
 file <- grep("plasma", list.files(here::here("data", "inter-output", "model")), 
              value = TRUE)
 
+dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-wb.RDS"))
+#dist$dist_to_wb[dist$dist_to_wb == 0] <-  200
+
 # covariates selection
 
 covar <- c("Se_mean", "wealth_quintile", "urbanity", 
-           "BMI",  "AGE_IN_YEARS", "crp", "agp")
+           "BMI",  "AGE_IN_YEARS", "crp", "agp", "dist_to_wb")
 
 # Formula for the model
 form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
   wealth_quintile + BMI + urbanity + 
   AGE_IN_YEARS +
-  log(crp) + log(agp) + f(spatial.field, model = spde) +
+  log(crp) + log(agp) + dist_to_wb +
+  f(spatial.field, model = spde) +
   f(ID, model = 'iid')
 
 
@@ -32,14 +36,17 @@ models <- list()
 
 for(i in 1:length(file)){
 
-plasma_se <- readRDS(here::here("data", "inter-output", "model", file[i]))
+plasma_se <- readRDS(here::here("data", "inter-output", "model",
+                                file[i])) %>%
+  # Joining the variable distance to inland water body
+                     left_join(., dist) 
 
-# Renaming variable and checking indv. data
+  # Renaming variable and checking indv. data
 plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
 sum(duplicated(plasma_se$unique_id))
 names(plasma_se)   
 
-plasma_se <- plasma_se %>% dplyr::filter(urbanity == "2")
+# plasma_se <- plasma_se %>% dplyr::filter(urbanity == "2")
 
 plasma_se <-plasma_se %>%
   dplyr::select(Plasma_Se, covar, unique_id, region, 

@@ -240,6 +240,11 @@ File: `mwi-boundaries/EN_NSO/eas_bnd.shp`
 
 Other excluded boundaries: Agro-Ecological Zones, Traditional Authorities (more information on data exploration: @sec-explo-bound).
 
+### In-land water bodies 
+
+This dataset was obtained from XX 
+
+
 
 ### Geo-referenced apparent food consumption in Malawi (Se intake) - REMOVE?
 
@@ -703,6 +708,15 @@ We checked wealth by region and it seemed that there is a slight unbalance for t
 #### Smoking
 
 Only 3 respondent reported smoking cigarettes, if we want to include this variable, we may need to combine with other smoking variables (including the other variables), although according with the systematic review published in 2015, the prevalence of women who smoke in this context was below 4% [@brathwaiteSystematicReviewTobacco2015], additionally a report published more recently (2021) by the Malawi Government using this survey found very low rates of smoking among women (@ref-kadzamiraSocioeconomicImpactDisease2021).
+
+#### Limitations of DHS data
+
+•	Time influence:
+o	DHS survey was performed in 2015 while GeoNut was in 2018 and Chilimba in 2009. 
+o	Seasonal variation: DHS survey was performed during Feb.- which are normally referred as the "hunger season" were food intake is at its lowest and food patterns and behaviours may be influenced by maize scarcity (at HH level). Including, other crop intakes and unrefined/ maize bran flour intake.
+o	Justification: Food patterns (related to maize intake) were fairly constant between IHS3-IHS5
+o	Check seasonal pattern for maize intake, sub-grouped by: maize fraction, wealth and urbanity (focus on rural). 
+
 
 
 ### GPS location {#sec-gps-location}
