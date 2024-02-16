@@ -36,7 +36,7 @@ plasma.df  <- plasma.df %>% left_join(., cluster.df %>%
 file <- grep("maize", list.files(here::here("data", "inter-output", "aggregation")), 
      value = TRUE)
 
-# Generatting the file ----
+# Generating the file ----
 
 # Loop to generate a file with plasma data and maize with each aggregation unit
 

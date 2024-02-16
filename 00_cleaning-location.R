@@ -141,7 +141,8 @@ plasma.df %>% distinct(survey_cluster1,  ADM2_PCODE,
 
 # One duplicated due to NAs in some of the variables that we are excluding
 plasma.df %>% distinct(survey_cluster1,  ADM2_PCODE, ADM2_EN, 
-                       ADM1_PCODE, ADM1_EN) %>% count(survey_cluster1) %>% arrange(desc(n))
+                       ADM1_PCODE, ADM1_EN) %>% count(survey_cluster1) %>% 
+  arrange(desc(n))
 
 # This is the master file for the admin boundaries. 
 # Each cluster has its cluster-EA level and
@@ -184,7 +185,7 @@ for(i in 1:length(buffer)){
   
   data.df <- GPS
  # distance <- as.numeric(paste0(buffer[i], "000"))
-  distance <- buffer[i]*10^3)
+  distance <- buffer[i]*10^3
   #variable <- paste0("buffer", buffer[i]) 
   
   # Buffer in meters (10km & 25km)

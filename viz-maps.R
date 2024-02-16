@@ -58,12 +58,15 @@ ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
 # Maize data (from 00_cleaning-location.R)
 maize.df <- readRDS(here::here("data", "inter-output",  "mwi_maize-se-raw_admin.RDS"))
 
-# Loading Plasma Se with the EACODE allocated
-data.df  <- readRDS(here::here("data", "inter-output","mwi-plasma-se_admin.RDS"))
+# Loading Plasma Se with the EACODE allocated ("mwi-plasma-se_admin.RDS")
+data.df  <- readRDS(here::here("data", "inter-output", "dhs_se_gps_admin.RDS"))
 # Loading Maize Se (pred)
 maize_values  <- "predicted-maizeSe" # cleaned  predicted maize Se data
 file_name  <- paste0("mwi-", maize_values, "_admin.RDS")
 maizedata.df  <- readRDS(here::here("data", "inter-output", file_name))
+
+# Getting the unique EAs where the HHs buffer are co-located
+EAselected <- unique(data.df$EACODE)
 
 names(maizedata.df)
 
@@ -83,8 +86,8 @@ dplyr::filter(n > 1) # Checking those larger than one
 
 
 # Transforming plasma se into a spatial dataset
-geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
+#geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
+ #crs = "EPSG:4326")
 
 # Selecting the Se variable to model
 var  <- "logSe"
@@ -502,22 +505,50 @@ unique(data.df$DISTRICT[data.df$urbanity=="1"])
  
  # Map: Plasma visually checking buffer areas and EAs (00_cleaning-location.R) ----
  
+geodata.df <- data.df %>% dplyr::select(survey_cluster1, buffer) %>% 
+   distinct() %>% 
+   dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
+ 
 malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
 malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
 
-# Tested green (#2D8733)
-
-tm_shape(ea_admin) +
+map_eabase <- tm_shape(ea_admin) +
   tm_polygons(col = "white", 
               border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
-tm_shape(malawi_bnd) +
+  tm_shape(malawi_bnd) +
   tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
   tm_shape(malawi_bnd_lakes) +
-  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
-    tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5)
+
+
+# Tested green (#2D8733)
+eabase +
+  tm_shape(ea_admin$geometry[ea_admin$EACODE %in% EAselected]) +
   tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
   tm_shape(geodata.df) +
   tm_borders(col = "steelblue" )
+
+## EA Maize aggregation MAP -----
+
+file <- grep("cluster", list.files(here::here("data", "inter-output", "aggregation")), 
+             value = TRUE)
+
+master <- readRDS(here::here("data", "inter-output", "aggregation", 
+                              file[1])) %>% left_join(., ea_bnd %>% select(EACODE, geometry))
+
+i = 2
+maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
+                               file[i])) %>% left_join(., master)  %>% 
+  st_sf(., crs = "EPSG:4326")
+
+maize.df$log_Se <- log(maize.df$Se_mean)
+
+# For the log-trasformed to keep the scale consistent we need to reverse it
+# using "-palette.name". (e.g., palette = "-YlOBr")
+map_eabase +
+  tm_shape(maize.df) +
+  tm_polygons(col = "log_Se", palette = "-YlOrBr") +
+  tm_layout(legend.outside = TRUE, legend.text.size = 1.5)
 
 
 # Map: Plasma visually checking cluster EAs are w/i District (00_cleaning-location.R) ----
