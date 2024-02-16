@@ -15,3 +15,4 @@ INLADICFig(models)
 
 Efxplot(models)
 
+summary(models[[7]])

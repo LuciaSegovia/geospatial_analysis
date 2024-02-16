@@ -24,7 +24,7 @@ cluster  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # c
 cluster <- st_as_sf(cluster , coords =c("Longitude", "Latitude"),
                         crs = "EPSG:4326")
 
-names(plasma.df)
+## Test 1: ESACCI raster ------
 
 # Loading data (WB) water bodies
 wb  <- raster(here::here("data", "covariates", "ESACCI", 
@@ -84,6 +84,38 @@ tm_shape(r) +
 cluster %>% st_drop_geometry() %>% 
   saveRDS(., here::here("data", "inter-output", 
                         "cluster-distance-to-wb.RDS"))
+
+## Test 2: WorldPop raster ------
+
+# Loading data distance to water bodies (WB) 
+wb  <- raster(here::here("data", "covariates",  
+                         "mwi_esaccilc_dst_water_100m_2000_2012.tif"))
+
+
+#Checking projection WGS84
+crs(wb)
+
+#Visualising the MAT data & maize sample locations
+tm_shape(wb) + 
+  tm_raster(legend.show = FALSE) + 
+  tm_shape(cluster) + 
+  tm_symbols(size = 0.1)
+
+
+# Extracting distance from WB from the raster for cluster sample loc
+cluster$dist_to_wb  <- extract(wb, cluster)
+head(cluster)
+
+# Checking data
+hist(cluster$dist_to_wb)
+sum(cluster$dist_to_wb==0)
+
+#Changing 0 to 0.0001 for log-transf
+cluster$dist_to_wb[cluster$dist_to_wb==0] <- 0.0001
+
+cluster %>% st_drop_geometry() %>% 
+  saveRDS(., here::here("data", "inter-output", 
+                        "worldpop_cluster-distance-to-wb.RDS"))
 
 # inland water bodies 
 data  <- st_read(here::here( "data", "covariates", "GLWD2", "glwd_2.shp")) 
