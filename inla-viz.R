@@ -9,10 +9,9 @@ library(magrittr)
 #  geom_jitter(aes(colour = factor(survey_cluster1))) + coord_fixed() + 
 #  labs(colour = "survey_cluster1")
 
-# Efxplot(list(models[[1]], models[[2]], models[[3]], models[[4]], models[[5]]))
 
 INLADICFig(models)
 
 Efxplot(models)
 
-summary(models[[7]])
+summary(models[[3]])

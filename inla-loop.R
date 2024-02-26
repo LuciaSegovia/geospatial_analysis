@@ -14,21 +14,21 @@ library(dplyr) # data wrangling
 file <- grep("plasma", list.files(here::here("data", "inter-output", "model")), 
              value = TRUE)
 
-dist <- readRDS(here::here("data", "inter-output", "worldpop_cluster-distance-to-wb.RDS"))
+dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-mwi-lakes.RDS"))
 #dist$dist_to_wb[dist$dist_to_wb == 0] <-  200
 
 # covariates selection
 
 covar <- c("Se_mean", "wealth_quintile", "urbanity", 
-           "BMI",  "AGE_IN_YEARS", "crp", "agp", "dist_to_wb")
+           "BMI",  "AGE_IN_YEARS", "crp", "agp", "dist_to_lake")
 
 # Formula for the model
 form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
   wealth_quintile + BMI + urbanity + 
   AGE_IN_YEARS +
-  log(crp) + log(agp) + log(dist_to_wb) +
-  f(spatial.field, model = spde) # +
-  # f(ID, model = 'iid')
+  log(crp) + log(agp) + log(dist_to_lake) +
+  f(spatial.field, model = spde)  +
+   f(ID, model = 'iid')
 
 
 models <- list()

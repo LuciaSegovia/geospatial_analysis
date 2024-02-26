@@ -24,6 +24,38 @@ cluster  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # c
 cluster <- st_as_sf(cluster , coords =c("Longitude", "Latitude"),
                         crs = "EPSG:4326")
 
+## Test 0: GLW2 shape ------
+
+# inland water bodies 
+data  <- st_read(here::here( "data", "covariates", "GLWD2", "glwd_2.shp")) 
+st_crs(data) <- "EPSG:4326"
+sf_use_s2(FALSE)  # the input geometries are bad, and wrong spherically
+
+data <- st_make_valid(data) # Check this
+table(sf::st_is_valid(data))
+
+
+
+# Malawi bnd
+malawi  <- st_read(here::here( "data",
+                               "mwi-boundaries",
+                               "mwi_adm_nso_hotosm_20230329_shp", 
+                               "mwi_admbnda_adm0_nso_hotosm_20230329.shp"))
+
+
+
+lakes <- ea_bnd %>% dplyr::filter(grepl("Lake", DISTRICT))
+
+st_crs(data) <- st_crs(malawi)
+
+d1_mwi <- st_crop(data, ea_bnd)
+
+tm_shape(d1_mwi) +
+  tm_polygons() +
+  tm_shape(lakes) +
+  tm_polygons()
+
+
 ## Test 1: ESACCI raster ------
 
 # Loading data (WB) water bodies
@@ -117,33 +149,42 @@ cluster %>% st_drop_geometry() %>%
   saveRDS(., here::here("data", "inter-output", 
                         "worldpop_cluster-distance-to-wb.RDS"))
 
-# inland water bodies 
-data  <- st_read(here::here( "data", "covariates", "GLWD2", "glwd_2.shp")) 
-st_crs(data) <- "EPSG:4326"
-sf_use_s2(FALSE)  # the input geometries are bad, and wrong spherically
+## Test 3: Distance to lake/s ------
 
-data <- st_make_valid(data) # Check this
-table(sf::st_is_valid(data))
+# Loading data on Malawi lake boundaries
+lakes <-  st_read(here::here("data",
+                             "mwi-boundaries", "EN_NSO" , "eas_bnd.shp")) %>% 
+  dplyr::filter(grepl("Lake", DISTRICT))
+
+# Calculating distance to lake malawi
+cluster$dist_to_lake <- as.vector(st_distance(lakes[5,], cluster))
+
+# Checking data
+hist(cluster$dist_to_lake)
+sum(cluster$dist_to_lake==0)
+
+# Saving the distance to lake Malawi
+cluster %>% st_drop_geometry() %>% 
+  saveRDS(., here::here("data", "inter-output", 
+                        "cluster-distance-to-mwi-lake.RDS"))
+
+# Distance to main lakes
+dist_to_lakes <- as.matrix.data.frame(st_distance(lakes, cluster))
+#Getting the closest of the 5
+cluster$dist_to_lake <- apply(dist_to_lakes, 2, min)
+
+# Checking data
+hist(cluster$dist_to_lake)
+sum(cluster$dist_to_lake==0)
+
+# Saving the distance to lake Malawi
+cluster %>% st_drop_geometry() %>% 
+  saveRDS(., here::here("data", "inter-output", 
+                        "cluster-distance-to-mwi-lakes.RDS"))
 
 
-
-# Malawi bnd
-malawi  <- st_read(here::here( "data",
-                                 "mwi-boundaries",
-                                 "mwi_adm_nso_hotosm_20230329_shp", 
-                                 "mwi_admbnda_adm0_nso_hotosm_20230329.shp"))
-
-
-
-
-lakes <- ea_bnd %>% dplyr::filter(grepl("Lake", DISTRICT))
-
-st_crs(data) <- st_crs(malawi)
-
-d1_mwi <- st_crop(data, ea_bnd)
-
-tm_shape(d1_mwi) +
+#Visualising the MAT data & maize sample locations
+tm_shape(lakes) + 
   tm_polygons() +
-  tm_shape(lakes) +
-  tm_polygons()
-                 
+tm_shape(lakes[5,]) + 
+  tm_polygons(col = "blue")

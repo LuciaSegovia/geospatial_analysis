@@ -55,8 +55,37 @@ ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
 # tm_polygons()
 
 # Loading data ----
+
+# Linking survey_cluster1 (cluster id) with corresponding admin units 
+master <- readRDS(here::here("data", "inter-output", "aggregation", 
+                             "master-cluster-admin-level.RDS")) 
+
+
+# Maps! ------
+
+## Base map: Malawi ------
+
+malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
+malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
+
+# The Map:
+# Base map (EAs)
+base_map <- tm_shape(ea_admin) +    
+  tm_polygons(col = "white", 
+              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
+  # Land boundaries
+  tm_shape(malawi_bnd) +   
+  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
+  # Land/ Lake boundaries
+  tm_shape(malawi_bnd_lakes) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) 
+
+#base_map
+
+
 # Maize data (from 00_cleaning-location.R)
-maize.df <- readRDS(here::here("data", "inter-output",  "mwi_maize-se-raw_admin.RDS"))
+maize.df <- readRDS(here::here("data", "inter-output",  
+                               "mwi_maize-se-raw_admin.RDS"))
 
 # Loading Plasma Se with the EACODE allocated ("mwi-plasma-se_admin.RDS")
 data.df  <- readRDS(here::here("data", "inter-output", "dhs_se_gps_admin.RDS"))
@@ -82,12 +111,12 @@ sum(is.na(data.df$selenium))
 
 # Checking the number of Se values (grain samples) per EA
 maizedata.df %>% group_by(EACODE, AREA_KM) %>% dplyr::count()  %>% arrange(desc(n))  %>% 
-dplyr::filter(n > 1) # Checking those larger than one 
+  dplyr::filter(n > 1) # Checking those larger than one 
 
 
 # Transforming plasma se into a spatial dataset
 #geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
- #crs = "EPSG:4326")
+#crs = "EPSG:4326")
 
 # Selecting the Se variable to model
 var  <- "logSe"
@@ -96,7 +125,7 @@ plot(geodata.df[, var], main = "Se conc. in maize (log(mg/kg))")
 
 # Transforming predicted maize Se into a spatial dataset
 maizedata.df   <-  st_as_sf(maizedata.df , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
+                            crs = "EPSG:4326")
 
 # test  <- subset(geodata.df,
 #  survey_cluster1 == "309", 
@@ -114,8 +143,6 @@ test_buffer10  <- st_buffer(test_centroid, dist = 10000) #10km (2Km urban, 5-10k
 
 # ea_bnd$fid[ea_bnd$EACODE == "10203024"] 
 
-## MAP: Malawi (EA) ======
-
 # ea_bnd$EACODE <- as.character(ea_bnd$EACODE )
 # 
 # ea_bnd %>% select(geometry, EACODE) %>% 
@@ -126,25 +153,12 @@ test_buffer10  <- st_buffer(test_centroid, dist = 10000) #10km (2Km urban, 5-10k
 #   tm_polygons(col = "maizeSe_mean")
 
 
-# Visually checking buffer areas and EAs
-malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
-malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
-
 # EAs that are to be shown (interested geographies)
 EAselected <- unique(maize.df$EACODE)
 
-# The Map:
-# Base map (EAs)
-tm_shape(ea_admin) +    
-  tm_polygons(col = "white", 
-              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
-# Land boundaries
-  tm_shape(malawi_bnd) +   
-  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
-# Land/ Lake boundaries
-  tm_shape(malawi_bnd_lakes) +
-  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
-# EAs to be shown 
+# For the base map 
+base_map %>% 
+  # EAs to be shown 
   tm_shape(ea_admin$geometry[ea_admin$EACODE %in% EAselected]) +
   tm_polygons(col ="#314f40", border.col = "black", border.alpha = 0.3)
 
@@ -177,29 +191,29 @@ dist_bnd  %>%
 grepl("^3", EACODE)
 
 ea_bnd  %>% filter(DISTRICT == "Chikwawa")  %>% 
-tm_shape() +
-tm_polygons() +
-tm_shape(data$geometry[data$DISTRICT == "Chikwawa"]) +
-tm_polygons(col = "yellow") +
-tm_shape(maizedata.df$geometry[maizedata.df$DISTRICT== "Chikwawa"]) +
-tm_symbols(col = "blue") +
-tm_shape(test_buffer10$geometry[test_buffer10$DISTRICT == "Chikwawa"]) +
-tm_polygons(col = "red", alpha =.5) 
+  tm_shape() +
+  tm_polygons() +
+  tm_shape(data$geometry[data$DISTRICT == "Chikwawa"]) +
+  tm_polygons(col = "yellow") +
+  tm_shape(maizedata.df$geometry[maizedata.df$DISTRICT== "Chikwawa"]) +
+  tm_symbols(col = "blue") +
+  tm_shape(test_buffer10$geometry[test_buffer10$DISTRICT == "Chikwawa"]) +
+  tm_polygons(col = "red", alpha =.5) 
 
 
 names(test_buffer)
 #tm_shape(nso_bound) 
 
 ea_bnd  %>%  filter(DISTRICT == "Chikwawa")  %>% 
-tm_shape() +
-tm_polygons() +
-tm_shape(test_centroid$geometry[test_centroid$fid=="197"])+
-tm_symbols(size =0.2) +
-tm_shape(test_buffer$geometry[test_buffer$fid=="197"]) +
-tm_polygons(col = "red", alpha =.5) +
-tm_shape(test) +
-tm_symbols(shape = "urbanity", 
-  size = "selenium") +
+  tm_shape() +
+  tm_polygons() +
+  tm_shape(test_centroid$geometry[test_centroid$fid=="197"])+
+  tm_symbols(size =0.2) +
+  tm_shape(test_buffer$geometry[test_buffer$fid=="197"]) +
+  tm_polygons(col = "red", alpha =.5) +
+  tm_shape(test) +
+  tm_symbols(shape = "urbanity", 
+             size = "selenium") +
   tm_scale_bar()
 
 # Generating a vector wit the districts (for visualisation)
@@ -221,74 +235,74 @@ dist[i]
 map  <- list()
 
 for (i in seq_along(dist)) {
-
-test  <- maizedata.df  %>% filter(DISTRICT == dist[i])
-test2  <- geodata.df  %>% filter(DISTRICT == dist[i]) 
-
-map[[i]]  <- ea_bnd  %>% filter(DISTRICT == dist[i])  %>% 
-tm_shape() +
-tm_polygons() +
-tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif & ea_bnd$DISTRICT == dist[i]]) +
-tm_polygons(col = "red") +
-tm_shape(test) +
-tm_symbols(size = "pred.Se", col = "blue") +
-tm_shape(test2) +
-tm_symbols(size = "selenium", col = "green") +
-tm_layout(main.title = paste0(dist[i], " district"))
-
+  
+  test  <- maizedata.df  %>% filter(DISTRICT == dist[i])
+  test2  <- geodata.df  %>% filter(DISTRICT == dist[i]) 
+  
+  map[[i]]  <- ea_bnd  %>% filter(DISTRICT == dist[i])  %>% 
+    tm_shape() +
+    tm_polygons() +
+    tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif & ea_bnd$DISTRICT == dist[i]]) +
+    tm_polygons(col = "red") +
+    tm_shape(test) +
+    tm_symbols(size = "pred.Se", col = "blue") +
+    tm_shape(test2) +
+    tm_symbols(size = "selenium", col = "green") +
+    tm_layout(main.title = paste0(dist[i], " district"))
+  
 }
 
 for (i in seq_along(dist)) {
-
-test  <- maizedata.df  %>% filter(DISTRICT == dist[i])
-test2  <- geodata.df  %>% filter(DISTRICT == dist[i]) 
-
-m  <- ea_bnd  %>% filter(DISTRICT == dist[i])  %>% 
-tm_shape() +
-tm_polygons() +
-tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif & ea_bnd$DISTRICT == dist[i]]) +
-tm_polygons(col = "red") +
-tm_shape(test) +
-tm_symbols(size = "pred.Se", col = "blue") +
-tm_shape(test2) +
-tm_symbols(size = "selenium", col = "green") +
-tm_shape(test_buffer5$geometry[test_buffer5$DISTRICT == dist[i]]) +
-tm_polygons(col = "red", alpha =.5) +
-tm_layout(main.title = paste0(dist[i], " district"))
-
-tmap_save(m, filename=paste0("visuals/map-pred5_", dist[i], ".png"))
-
+  
+  test  <- maizedata.df  %>% filter(DISTRICT == dist[i])
+  test2  <- geodata.df  %>% filter(DISTRICT == dist[i]) 
+  
+  m  <- ea_bnd  %>% filter(DISTRICT == dist[i])  %>% 
+    tm_shape() +
+    tm_polygons() +
+    tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif & ea_bnd$DISTRICT == dist[i]]) +
+    tm_polygons(col = "red") +
+    tm_shape(test) +
+    tm_symbols(size = "pred.Se", col = "blue") +
+    tm_shape(test2) +
+    tm_symbols(size = "selenium", col = "green") +
+    tm_shape(test_buffer5$geometry[test_buffer5$DISTRICT == dist[i]]) +
+    tm_polygons(col = "red", alpha =.5) +
+    tm_layout(main.title = paste0(dist[i], " district"))
+  
+  tmap_save(m, filename=paste0("visuals/map-pred5_", dist[i], ".png"))
+  
 }
 
 do.call(tmap_save, )
 
 # # Loading the data
 grain  <- readxl::read_excel(here::here("..", "GeoNutrition",
-"Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
+                                        "Soil_Crop_comparisons", "Malawi",  "Malawi_grain_soil.xlsx"))
 names(grain) # checking variables
 
 grain.df   <-  st_as_sf(grain , coords =c("Longitude", "Latitude"),
- crs = "EPSG:4326")
+                        crs = "EPSG:4326")
 
 grain.df   <-  grain.df  %>%
- filter(!is.na(Se_triplequad))
- 
+  filter(!is.na(Se_triplequad))
+
 map  <- tm_shape(ea_bnd) +
-tm_polygons() +
-tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif]) +
-tm_polygons(col = "red") +
-tm_shape(grain.df) +
-tm_symbols(col = "Crop", 
-size =0.08) +
-tm_layout(legend.show = FALSE) 
+  tm_polygons() +
+  tm_shape(ea_bnd$geometry[ea_bnd$EACODE %in% test_dif]) +
+  tm_polygons(col = "red") +
+  tm_shape(grain.df) +
+  tm_symbols(col = "Crop", 
+             size =0.08) +
+  tm_layout(legend.show = FALSE) 
 
 tmap_save(map, 
-filename=paste0("visuals/map_GeoNut_se.png"))
+          filename=paste0("visuals/map_GeoNut_se.png"))
 
 data.df  <- data.df  %>% 
-select(selenium, EACODE, survey_cluster1, unique_id, urbanity)  %>% 
-left_join(., maizedata.df, 
-by = c("EACODE"))
+  select(selenium, EACODE, survey_cluster1, unique_id, urbanity)  %>% 
+  left_join(., maizedata.df, 
+            by = c("EACODE"))
 
 # Checking 
 nrow(grain)
@@ -304,7 +318,7 @@ sum(!is.na(grain$Se_triplequad))
 # District shape file
 dist_bnd <- st_read(here::here(
   "..", "PhD_geospatial-modelling", "data", "mwi-boundaries",
-   "EN_NSO", "dist_bnd.shp"))
+  "EN_NSO", "dist_bnd.shp"))
 
 
 # Generating buffer of EAs w/o co-located values
@@ -321,10 +335,10 @@ dist_buffer  <- st_buffer(dist_centroid, dist = 26000) # 45km - will cover almos
 
 
 dist_bnd  %>%  
-tm_shape() +
-tm_polygons(col = "DISTRICT", legend.show = FALSE) +
-tm_shape(dist_buffer) +
-tm_polygons(col = "red", alpha =.5) 
+  tm_shape() +
+  tm_polygons(col = "DISTRICT", legend.show = FALSE) +
+  tm_shape(dist_buffer) +
+  tm_polygons(col = "red", alpha =.5) 
 
 library(leaflet)
 
@@ -347,27 +361,46 @@ head(data.df)
 maizedata.df$EACODE  <- as.character(maizedata.df$EACODE)
 
 test  <- data.df  %>%  dplyr::filter(admin == "EACODE")  %>% 
- left_join(., maizedata.df, by = c("admin_id" = "EACODE")) 
- 
+  left_join(., maizedata.df, by = c("admin_id" = "EACODE")) 
+
 # Counting maize values per EA
 ea  <- test %>% 
- group_by(admin_id)  %>% dplyr::count(maizeSe_mean)  %>% 
- dplyr::filter(n == 1)  %>% arrange(desc(n))  %>% pull(admin_id)
+  group_by(admin_id)  %>% dplyr::count(maizeSe_mean)  %>% 
+  dplyr::filter(n == 1)  %>% arrange(desc(n))  %>% pull(admin_id)
 
 
- test  %>% filter(admin_id %in% ea)  %>% 
- dplyr::select(maizeSe_mean, Se_triplequad, pred.Se)  %>% View()
- 
- 
- ### Visualising EA data ----
- 
- # Loading the plasma Se conc. dataset (cleaned from 01.cleaning-location.R)
- data.df <- readRDS(here::here("data", "inter-output",
-                                 "raw-maizeSe_plasma-se_ea.RDS" )) #
- 
+test  %>% filter(admin_id %in% ea)  %>% 
+  dplyr::select(maizeSe_mean, Se_triplequad, pred.Se)  %>% View()
+
+
+### Plasma Se EA data ----
+
+# Map: Plasma visually checking Se conc. w/i District () ----
+
+geoplasma <-  plasma_se %>% left_join(., dist_bnd) %>% st_as_sf()
+
+st_as_sf(coords =c("Longitude", "Latitude"),
+         crs = "EPSG:4326")
+
+tm_shape(dist_bnd) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+  tm_shape(geoplasma) +
+  tm_polygons(col = "Se_mean", border.col = "#666666", border.alpha = 0.3, 
+              legend.show = FALSE) 
+
+#  tm_shape(geodata.df) +
+#   tm_borders(col = "steelblue" ) 
+
+
+# Loading the plasma Se conc. dataset (cleaned from 01.cleaning-location.R)
+data.df <- readRDS(here::here("data", "inter-output",
+                              "raw-maizeSe_plasma-se_ea.RDS" )) #
+
 names(data.df)
 
 data.df <- dplyr::rename(data.df, urbanicity = "urbanity")
+
+
 
 # Transforming plasma se into a spatial dataset
 geodata.df <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
@@ -380,7 +413,7 @@ plot(geodata.df[, "logSe"])
 
 # Boxplot log(CRP)/(AGP)/(selenium) ~ Malaria
 boxplot(log(selenium) ~ Malaria_test_result, data = data.df,
-         frame = FALSE)
+        frame = FALSE)
 
 #data.df <- data.df %>% st_drop_geometry()
 
@@ -416,140 +449,157 @@ var_col <- "EACODE"
 
 # Visualising data per region ----
 
- ggplot(data = data.df,
-         mapping = aes(x = !!sym(var_x), y =!!sym(var_y), colour = !!sym(var_col))) +
-   geom_point(size = 2, alpha = 0.5) +
-   theme_bw() +
-   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-                                     `2` = "Central", 
-                                     `3` = "Southern"))) +
+ggplot(data = data.df,
+       mapping = aes(x = !!sym(var_x), y =!!sym(var_y), colour = !!sym(var_col))) +
+  geom_point(size = 2, alpha = 0.5) +
+  theme_bw() +
+  facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+                                               `2` = "Central", 
+                                               `3` = "Southern"))) +
   labs(x = "Age (years)", 
        y = expression(paste("Plasma Se conc. (ng ",  mL^{-1}, ")"))) + 
   theme(strip.text = element_text(size = 12),
         axis.text.y = element_text(size = 12), 
         legend.position = "none")
- 
+
 # Boxplots per EA for each district ----
- 
- var_x <- "EACODE"
- var_y <- "selenium" 
- var_col <- "urbanicity"
- 
+
+var_x <- "EACODE"
+var_y <- "selenium" 
+var_col <- "urbanicity"
+
 n_breaks <- unique(data.df[, var_col])
 show_col(hue_pal()(3))
 
 col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
- 
+
 unique(data.df$DISTRICT)
 unique(data.df$DISTRICT[data.df$urbanity=="1"])
- 
- plot_dist <- list()
- 
- for(i in 1:length(unique(data.df$DISTRICT))){
- 
- plot_dist[[i]] <- ggplot(data = data.df  %>% filter(DISTRICT %in%  unique(data.df$DISTRICT)[i]) # for viewing by region
-        ,
-        mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
-                      colour = !!sym(var_col))) +
-   geom_boxplot() +
-   theme_light() +
-   scale_colour_manual(values =  col_break) +
-   labs(title =  unique(data.df$DISTRICT)[i],
-     x = var_x, 
-     y = var_y) # + 
-   #theme(legend.position = "none")
 
- }
+plot_dist <- list()
 
- print(plot_dist[[4]])
- 
- data.df$survey_cluster1 <- as.character(data.df$survey_cluster1)
- 
- var_x <- "survey_cluster1"
- var_y <- "selenium" 
- var_col <- "urbanity"
- 
- 
- n_breaks <- unique(data.df[, var_col])
- show_col(hue_pal()(3))
- 
- # Custom legend colour & labels
- col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
- col_labels <- c("1" = "Urban", "2" = "Rural")
- 
- # Custom X-axis labels 
- col_labels <- c("Urban", "Rural")
- 
- 
- ggplot(data = data.df 
-        ,
-        mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
-                      colour = !!sym(var_col))) +
-   geom_boxplot() +
-   theme_classic() +
-   scale_colour_manual(values =  col_break,
-                    # breaks = col_break,
-                     labels = col_labels) +
-   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-                                                `2` = "Central", 
-                                                `3` = "Southern")),
-              scales = "free_x") +
+for(i in 1:length(unique(data.df$DISTRICT))){
+  
+  plot_dist[[i]] <- ggplot(data = data.df  %>% filter(DISTRICT %in%  unique(data.df$DISTRICT)[i]) # for viewing by region
+                           ,
+                           mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
+                                         colour = !!sym(var_col))) +
+    geom_boxplot() +
+    theme_light() +
+    scale_colour_manual(values =  col_break) +
+    labs(title =  unique(data.df$DISTRICT)[i],
+         x = var_x, 
+         y = var_y) # + 
+  #theme(legend.position = "none")
+  
+}
+
+print(plot_dist[[4]])
+
+data.df$survey_cluster1 <- as.character(data.df$survey_cluster1)
+
+var_x <- "survey_cluster1"
+var_y <- "selenium" 
+var_col <- "urbanity"
+
+
+n_breaks <- unique(data.df[, var_col])
+show_col(hue_pal()(3))
+
+# Custom legend colour & labels
+col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
+col_labels <- c("1" = "Urban", "2" = "Rural")
+
+# Custom X-axis labels 
+col_labels <- c("Urban", "Rural")
+
+
+ggplot(data = data.df 
+       ,
+       mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
+                     colour = !!sym(var_col))) +
+  geom_boxplot() +
+  theme_classic() +
+  scale_colour_manual(values =  col_break,
+                      # breaks = col_break,
+                      labels = col_labels) +
+  facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+                                               `2` = "Central", 
+                                               `3` = "Southern")),
+             scales = "free_x") +
   # scale_x_discrete(label = labels) +
-   labs(
-        y = expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))) + 
-   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-   theme(strip.text = element_text(size = 12),
-         axis.text.y = element_text(size = 12), 
-         axis.text.x = element_text(size = 10, angle =30))
+  labs(
+    y = expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))) + 
+  scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12), 
+        axis.text.x = element_text(size = 10, angle =30))
 
- 
- # Map: Plasma visually checking buffer areas and EAs (00_cleaning-location.R) ----
- 
+
+# Map: Plasma visually checking buffer areas and EAs (00_cleaning-location.R) ----
+
 geodata.df <- data.df %>% dplyr::select(survey_cluster1, buffer) %>% 
-   distinct() %>% 
-   dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
- 
-malawi_bnd_lakes <- st_union(ea_bnd) # Aggregate boundaries the whole country (with lakes)
-malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
-
-map_eabase <- tm_shape(ea_admin) +
-  tm_polygons(col = "white", 
-              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
-  tm_shape(malawi_bnd) +
-  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
-  tm_shape(malawi_bnd_lakes) +
-  tm_borders(col = "black", alpha = 0.6, lwd = 0.5)
+  distinct() %>% 
+  dplyr::rename(geometry = "buffer") %>% st_sf(., crs = "EPSG:4326")
 
 
 # Tested green (#2D8733)
-eabase +
+base_map +
   tm_shape(ea_admin$geometry[ea_admin$EACODE %in% EAselected]) +
   tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) +
   tm_shape(geodata.df) +
   tm_borders(col = "steelblue" )
 
-## EA Maize aggregation MAP -----
-
+## Cluster maize aggregation MAP -----
+# Loading the maize data
+# Getting district files
 file <- grep("cluster", list.files(here::here("data", "inter-output", "aggregation")), 
              value = TRUE)
 
-master <- readRDS(here::here("data", "inter-output", "aggregation", 
-                              file[1])) %>% left_join(., ea_bnd %>% select(EACODE, geometry))
+# Choosing the file to map
+i = 3
 
-i = 2
+# Getting the data, combining with boundaries
 maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
-                               file[i])) %>% left_join(., master)  %>% 
-  st_sf(., crs = "EPSG:4326")
+                               file[i])) %>%   # Aggregated Se conc
+  left_join(., master) %>%              # Admin level info
+  left_join(., ea_bnd %>% select(EACODE, geometry))  # Boundaries for the admin
+st_sf(., crs = "EPSG:4326")  # Boundaries for the admin
 
 maize.df$log_Se <- log(maize.df$Se_mean)
 
 # For the log-trasformed to keep the scale consistent we need to reverse it
 # using "-palette.name". (e.g., palette = "-YlOBr")
-map_eabase +
+base_map +
   tm_shape(maize.df) +
-  tm_polygons(col = "log_Se", palette = "-YlOrBr") +
+  tm_polygons(col = "Se_mean", palette = "YlOrBr") +
+  #  tm_polygons(col = "log_Se", palette = "-YlOrBr") +
   tm_layout(legend.outside = TRUE, legend.text.size = 1.5)
 
+
+## District maize aggregation MAP -----
+
+# Loading the maize data
+# Getting district files
+file <- grep("distric", list.files(here::here("data", "inter-output", 
+                                              "aggregation")),  value = TRUE)
+# Choosing the file to map
+i = 2
+
+# Getting the data, combining with boundaries
+maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
+                               file[i])) %>%          # Aggregated Se conc
+  left_join(., master %>% select(survey_cluster1, ADM2_EN))  %>%  # Admin level info
+  left_join(., dist_bnd %>% select(ADM2_EN, geometry))  %>%  # Boundaries for the admin
+  st_sf(., crs = "EPSG:4326") # Transform into spatial obj
+
+base_map +
+  tm_shape(maize.df) +
+  tm_polygons(col = "Se_sd", palette = "YlOrBr") +
+  #  tm_polygons(col = "log_Se", palette = "-YlOrBr") +
+  # tm_layout(legend.outside = TRUE, legend.text.size = 1.5) +
+  # Legend outside and hist 
+  tm_legend(legend.outside=T, legend.outside.position="right", legend.text.size = 1.5)
 
 # Map: Plasma visually checking cluster EAs are w/i District (00_cleaning-location.R) ----
 
@@ -561,81 +611,71 @@ tm_shape(dist_bnd) +
   tm_borders(col = "steelblue" )
 
 
- # Point: Plasma and maize at EA level (What's the cluster?) ----
+# Point: Plasma and maize at EA level (What's the cluster?) ----
 
- ## Loading data
- 
- # Plasma dataset with admin aggregation unit (from 00_cleaning-location.R)
+## Loading data
+
+# Plasma dataset with admin aggregation unit (from 00_cleaning-location.R)
 plasma.df <- readRDS(here::here("data", "inter-output", 
-                               paste0("dhs_se_gps_admin.RDS")))
- 
- # Selecting variables of interest
+                                paste0("dhs_se_gps_admin.RDS")))
+
+# Selecting variables of interest
 plasma_ea <- plasma.df %>%  select(selenium, wealth_quintile, urbanity, region, 
-                    survey_cluster1, unique_id, EACODE)
+                                   survey_cluster1, unique_id, EACODE)
 
 # Getting colours for the clusters in the different regions 
 my_colour <-   c(paletteer::paletteer_c("ggthemes::Green", 35),
- paletteer_c("ggthemes::Classic Red", 34),
- paletteer_c("ggthemes::Classic Blue", 33))
- 
- 
- names(my_colour) <- plasma.df %>% select(survey_cluster1, region) %>% 
-   distinct() %>% #filter(region == "1") %>% 
+                 paletteer_c("ggthemes::Classic Red", 34),
+                 paletteer_c("ggthemes::Classic Blue", 33))
+
+
+names(my_colour) <- plasma.df %>% select(survey_cluster1, region) %>% 
+  distinct() %>% #filter(region == "1") %>% 
   arrange(region) %>% pull(survey_cluster1)
- 
- pred_ea %>% 
-   right_join(., plasma_ea) %>% mutate_at("survey_cluster1", as.character) %>% 
- #  filter(region == "1") %>% 
-   ggplot(aes(log(predSe), selenium, colour =survey_cluster1)) + 
-   geom_point() +
-   geom_hline(yintercept = 84.9, colour = "red") +
-    theme_minimal() +
-   theme(legend.position = "none") +
-   scale_colour_manual(values = my_colour) # +
-  # facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-  #                                              `2` = "Central", 
-  #                                              `3` = "Southern"))) 
- 
- 
- 
- # Ridges: Maize distribution per cluster ----
- 
- unique(plasma_ea$unique_id)[1:10]
- 
 
- pred_ea %>% 
-   right_join(., plasma_ea) %>% 
+pred_ea %>% 
+  right_join(., plasma_ea) %>% mutate_at("survey_cluster1", as.character) %>% 
+  #  filter(region == "1") %>% 
+  ggplot(aes(log(predSe), selenium, colour =survey_cluster1)) + 
+  geom_point() +
+  geom_hline(yintercept = 84.9, colour = "red") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  scale_colour_manual(values = my_colour) # +
+# facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+#                                              `2` = "Central", 
+#                                              `3` = "Southern"))) 
+
+
+
+# Ridges: Maize distribution per cluster ----
+
+unique(plasma_ea$unique_id)[1:10]
+
+
+pred_ea %>% 
+  right_join(., plasma_ea) %>% 
   dplyr::filter(survey_cluster1 %in%  unique(plasma_ea$survey_cluster1)[1]) %>% 
- ggplot(aes(x = predSe, y = unique_id)) +
-   geom_density_ridges() 
- 
- pred_ea %>% 
-   right_join(., plasma_ea) %>%  mutate_at("survey_cluster1", as.character) %>% 
- #  dplyr::filter(survey_cluster1 %in%  unique(plasma_ea$survey_cluster1)[1]) %>% 
-   ggplot(aes(x = predSe, y = survey_cluster1, fill = stat(quantiles))) +
-   geom_density_ridges_gradient() +
-   scale_fill_viridis_c(name = "Maize Se", option = "C") +
-   coord_cartesian(clip = "off") + # To avoid cut off
-   theme_minimal() +
-   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-                                               `2` = "Central", 
-                                              `3` = "Southern")),
-              scales = "free")  
- 
+  ggplot(aes(x = predSe, y = unique_id)) +
+  geom_density_ridges() 
 
- # Map: Plasma visually checking Se conc. w/i District () ----
- 
- geoplasma <-  plasma_se %>% left_join(., dist_bnd) %>% st_as_sf()
- 
-   st_as_sf(coords =c("Longitude", "Latitude"),
-            crs = "EPSG:4326")
- 
- tm_shape(dist_bnd) +
-   tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
-   tm_shape(geoplasma) +
-   tm_polygons(col = "Se_mean", border.col = "#666666", border.alpha = 0.3, 
-               legend.show = FALSE) 
- 
- #  tm_shape(geodata.df) +
-#   tm_borders(col = "steelblue" ) 
- 
+pred_ea %>% 
+  right_join(., plasma_ea) %>%  mutate_at("survey_cluster1", as.character) %>% 
+  #  dplyr::filter(survey_cluster1 %in%  unique(plasma_ea$survey_cluster1)[1]) %>% 
+  ggplot(aes(x = predSe, y = survey_cluster1, fill = stat(quantiles))) +
+  geom_density_ridges_gradient() +
+  scale_fill_viridis_c(name = "Maize Se", option = "C") +
+  coord_cartesian(clip = "off") + # To avoid cut off
+  theme_minimal() +
+  facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
+                                               `2` = "Central", 
+                                               `3` = "Southern")),
+             scales = "free")  
+
+
+
+# Distribution: Maize Se distribution  ----
+
+ggplot(aes(quartile, Se_conc)) +
+  geom_density()
+

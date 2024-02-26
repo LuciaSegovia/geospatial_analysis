@@ -19,6 +19,7 @@ book:
     - index.qmd
     - intro.qmd
     - data-description.qmd
+    - data-exploration.qmd
     - data-processing.qmd
    # - modelling.qmd
     - references.qmd
