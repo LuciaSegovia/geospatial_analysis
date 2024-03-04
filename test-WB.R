@@ -24,6 +24,12 @@ cluster  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # c
 cluster <- st_as_sf(cluster , coords =c("Longitude", "Latitude"),
                         crs = "EPSG:4326")
 
+dist_bnd  <- st_read(here::here( "data",
+                                 "mwi-boundaries",
+                                 "mwi_adm_nso_hotosm_20230329_shp", 
+                                 "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
+dist_bnd <- st_make_valid(dist_bnd) # Check this
+
 ## Test 0: GLW2 shape ------
 
 # inland water bodies 
@@ -177,14 +183,30 @@ cluster$dist_to_lake <- apply(dist_to_lakes, 2, min)
 hist(cluster$dist_to_lake)
 sum(cluster$dist_to_lake==0)
 
+
+
 # Saving the distance to lake Malawi
 cluster %>% st_drop_geometry() %>% 
   saveRDS(., here::here("data", "inter-output", 
                         "cluster-distance-to-mwi-lakes.RDS"))
 
+#"#F0D1CB"  "#F2F2F2"
 
+cluster$dist_to_lake_km <- cluster$dist_to_lake /1000
 #Visualising the MAT data & maize sample locations
 tm_shape(lakes) + 
   tm_polygons() +
 tm_shape(lakes[5,]) + 
   tm_polygons(col = "blue")
+
+#Visualising the malawi boundaries & distance to the lake
+tm_shape(r) +
+ # tm_raster(palette = "-viridis", alpha = 0.5, legend.show = FALSE) +
+  tm_raster(palette = c("#F1E0DF", "blue"), alpha = 0.5, legend.show = FALSE) +
+  tm_shape(lakes)+
+  tm_polygons(col = "TA") +
+  tm_shape(dist_bnd) + 
+  tm_borders(alpha = 0.8) +  
+  tm_shape(cluster) + 
+  tm_symbols(col = "dist_to_lake_km", size = 0.5) +
+  tm_layout(legend.outside = TRUE)

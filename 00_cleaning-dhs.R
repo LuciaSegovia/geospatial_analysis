@@ -101,8 +101,8 @@ Malaria_test_result, WEIGHT, HEIGHT, is_pregnant, selenium)
 # Checking variables
 str(Malawi_WRA)
 
-# Checking class of discrete variables (imported from stata)
-
+# Formatting variables ----
+## Checking class of discrete variables (imported from stata)
 # Region
 class(Malawi_WRA$region)
 Malawi_WRA$region  <- as.factor(Malawi_WRA$region)
@@ -135,11 +135,11 @@ class(Malawi_WRA$Malaria_test_result)
 sum(is.na(Malawi_WRA$Malaria_test_result)) # 28 NA
 hist(Malawi_WRA$Malaria_test_result)
 table(Malawi_WRA$Malaria_test_result)
-# Review: Recoding others values into NA 
+# Recoding Malaria ----
+# others values into NA 
 Malawi_WRA$Malaria_test_result <- ifelse(Malawi_WRA$Malaria_test_result==4| 
                                         Malawi_WRA$Malaria_test_result==6, 
                                          NA, Malawi_WRA$Malaria_test_result)
-
 Malawi_WRA$Malaria_test_result  <- as.factor(Malawi_WRA$Malaria_test_result)
 
 # survey ids
@@ -148,15 +148,15 @@ sum(duplicated(Malawi_WRA$survey_cluster1))
 sum(duplicated(Malawi_WRA$LINENUMBER))
 table(Malawi_WRA$LINENUMBER)
 
-# Creating a unique id for each WRA
+# Creating a unique id for each WRA ----
 Malawi_WRA$unique_id  <- paste0(Malawi_WRA$survey_cluster1,
                         Malawi_WRA$household_id1, Malawi_WRA$LINENUMBER)
 
 # Checking the unique id
 sum(duplicated(Malawi_WRA$unique_id))
 
+# MNS Weight survey ----
 # Checking survey weight & generating the variable
-# MNS Weight survey
 unique(Malawi_WRA$survey_weight)
 sum(is.na(Malawi_WRA$survey_weight)) # All observations have weight
 sum(Malawi_WRA$survey_weight==0) # All observations have weight > 0
@@ -177,7 +177,7 @@ table(Malawi_WRA$wt)
 ## Description of the sample ----
 
 # Looking at variables of interest: summary stats + histogram
-#Age - Women of reproductive age (15-49 years)
+## Age - Women of reproductive age (15-49 years) ----
 # REVIEW: Not excluding outside WRA age range
 # Note: That in the histogram women = 15yo are counted in the first
 # bar (that's why the freq. is over 50)
@@ -188,18 +188,29 @@ sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49) # 8 younger than ra
 subset(Malawi_WRA, AGE_IN_YEARS<15 | AGE_IN_YEARS>49,
 select = c(region, urbanity, selenium)) # 8 younger than range
 
+# Testing significance (w/o weights)
+Malawi_WRA%>% rstatix::anova_test(AGE_IN_YEARS ~ region)
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(AGE_IN_YEARS ~ region, p.adjust.method = "bonferroni")
+
+Malawi_WRA %>%
+  group_by(urbanity, region) %>%
+  rstatix::shapiro_test(AGE_IN_YEARS)
+
 # Age Weighted mean by region/urbanity
 ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(AGE_IN_YEARS, wt,na.rm = T))
 ddply(Malawi_WRA,~urbanity,summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, Malaria_test_result), summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
 
-# Sex - Female == 2 & pregnancy
+## Sex  ----
+# Female == 2 
 unique(Malawi_WRA$sex)
 which(Malawi_WRA$sex==1) #Label as male
 # REVIEW: Changing coded "men" to "women"
 Malawi_WRA$sex[Malawi_WRA$sex==1]  <- 2 #converting into women
 
-# Pregnancy
+## Pregnancy ----
 dim(Malawi_WRA)
 unique(Malawi_WRA$is_pregnant)
 which(Malawi_WRA$is_pregnant==1) #Label as pregnant
@@ -211,7 +222,8 @@ subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant))  %>% dim()
 # REVIEW: Removing the pregnant women and unknown status
 Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant)) 
 
-# Height - Checking outliers 
+## Height ----
+# Checking outliers 
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >200]
 # REVIEW: Missing values (999 to NA)
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >999] <- NA
@@ -221,7 +233,8 @@ Malawi_WRA$AGE_IN_YEARS[Malawi_WRA$HEIGHT <120]
 # Height Weighted mean by region
 ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(HEIGHT, wt, na.rm = T))
 
-# Weight - Checking outliers (missing values (999) to NA)
+## Weight ----
+# Checking outliers (missing values (999) to NA)
 hist(Malawi_WRA$WEIGHT)
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >200]
 Malawi_WRA$region[Malawi_WRA$WEIGHT >999] # Checking if this "missing values" are affecting more to a particular region
@@ -242,10 +255,11 @@ ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedi
 ddply(Malawi_WRA,.(urbanity), summarise,median=matrixStats::weightedMedian(WEIGHT, wt,na.rm = T))
 
 
-# Creating BMI variable
+## BMI --------
+#Creating BMI variable
 Malawi_WRA$BMI<- Malawi_WRA$WEIGHT/(Malawi_WRA$HEIGHT/100)^2
 
-#BMI - 
+# Checking variable
 hist(Malawi_WRA$BMI)
 summary(Malawi_WRA$BMI)
 summaplot(Malawi_WRA$BMI)
@@ -256,7 +270,7 @@ Malawi_WRA[298, "WEIGHT" ] #Weight & BMI outlier
 
 ddply(Malawi_WRA,.(region, urbanity), summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
 
-# Selenium
+## Selenium -----
 sum(is.na(Malawi_WRA$selenium)) # Checking NA
 
 ggplot(Malawi_WRA, aes(x = as.factor(region), y = selenium)) +   
@@ -280,7 +294,20 @@ summaplot(x)
 
 # Se Weighted mean/median by region/urbanity
 ddply(Malawi_WRA,~region, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,~Malaria_test_result, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,~Malaria_test_result, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, Malaria_test_result), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+Malawi_WRA%>% rstatix::anova_test(selenium ~ region)
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(selenium ~ region, p.adjust.method = "bonferroni")
+
+
+Malawi_WRA %>%
+ # group_by(urbanity, region) %>%
+  group_by(Malaria_test_result, region) %>%
+  rstatix::shapiro_test(selenium)
 
 # Boxplot Se ~ U/R and Region
 boxplot(selenium ~ urbanity*region, data = Malawi_WRA,

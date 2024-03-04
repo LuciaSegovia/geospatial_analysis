@@ -45,6 +45,9 @@ plasma.df <- readRDS(here::here("data", "inter-output",
                                 "dhs_se_gps_admin.RDS")) 
 names(plasma.df)
 
+# Number of WRA with plasma values
+length(unique(plasma.df$unique_id[!is.na(plasma.df$selenium)]))
+
 cluster.df <- plasma.df %>% 
   distinct(survey_cluster1, EACODE, ADM2_PCODE, ADM2_EN, urbanity)
 

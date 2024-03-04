@@ -60,6 +60,20 @@ ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
 master <- readRDS(here::here("data", "inter-output", "aggregation", 
                              "master-cluster-admin-level.RDS")) 
 
+# Linking survey_cluster1 (cluster id) with corresponding admin units 
+plasma.df <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) 
+
+
+# Variables and labels ----
+
+# Discrete variables (factors) from number to text
+lab_region <- c(`1` = "Northern", `2` = "Central", `3` = "Southern")
+lab_reside <- c(`1` = "Urban", `2` = "Rural")
+lab_malaria <- c(`1` = "Positive", `2` = "Negative")
+
+# Variables and units (axis - text)
+plasma_lab <- expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))
+bmi_lab <- expression(paste("BMI (kg /  ",  m^{2}, ")"))
 
 # Maps! ------
 
@@ -446,23 +460,51 @@ var_x <- "AGE_IN_YEARS"
 var_y <- "selenium"
 var_col <- "EACODE"
 
-
 # Visualising data per region ----
 
 ggplot(data = data.df,
        mapping = aes(x = !!sym(var_x), y =!!sym(var_y), colour = !!sym(var_col))) +
   geom_point(size = 2, alpha = 0.5) +
   theme_bw() +
-  facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-                                               `2` = "Central", 
-                                               `3` = "Southern"))) +
+  facet_wrap(~region, labeller = as_labeller(lab_region)) +
   labs(x = "Age (years)", 
        y = expression(paste("Plasma Se conc. (ng ",  mL^{-1}, ")"))) + 
   theme(strip.text = element_text(size = 12),
         axis.text.y = element_text(size = 12), 
         legend.position = "none")
 
-# Boxplots per EA for each district ----
+
+# Boxplots ----
+
+## Age per region and residency ----
+## Age per malaria test and residency ----
+var_x <- "AGE_IN_YEARS"
+var_x <- "selenium"
+x_label <- "Age (years)"
+var_col <- "Malaria_test_result"
+col_lab <- lab_malaria
+
+value_median <- median(plasma.df$AGE_IN_YEARS)
+value_median <- median(plasma.df$selenium, na.rm = TRUE)
+
+plasma.df %>% 
+ # mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
+  ggplot(aes(x = !!sym(var_x), weight=wt, # w/ survey weights
+             region, colour=!!sym(var_col))) +
+  geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
+  geom_boxplot() + 
+  scale_colour_discrete(name = "", label = col_lab) +
+    coord_flip() +
+  scale_y_discrete(label = lab_region) +
+  theme_classic() +
+  labs(y = "",
+       x = x_label) +
+  theme(legend.position = "top") +
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12), 
+        axis.text.x = element_text(size = 10))
+
+## Plasma Se per EA for each district ----
 
 var_x <- "EACODE"
 var_y <- "selenium" 
@@ -496,36 +538,34 @@ for(i in 1:length(unique(data.df$DISTRICT))){
 
 print(plot_dist[[4]])
 
-data.df$survey_cluster1 <- as.character(data.df$survey_cluster1)
 
+# Boxplot: Continuous by two categorical variable by region
 var_x <- "survey_cluster1"
 var_y <- "selenium" 
 var_col <- "urbanity"
 
+data.df$survey_cluster1 <- as.character(data.df$survey_cluster1)
 
 n_breaks <- unique(data.df[, var_col])
 show_col(hue_pal()(3))
 
 # Custom legend colour & labels
 col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
-col_labels <- c("1" = "Urban", "2" = "Rural")
+#col_labels <- c("1" = "Urban", "2" = "Rural")
 
 # Custom X-axis labels 
-col_labels <- c("Urban", "Rural")
+# col_labels <- c("Urban", "Rural")
 
 
-ggplot(data = data.df 
-       ,
+ggplot( data = data.df, 
        mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
                      colour = !!sym(var_col))) +
   geom_boxplot() +
   theme_classic() +
   scale_colour_manual(values =  col_break,
                       # breaks = col_break,
-                      labels = col_labels) +
-  facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-                                               `2` = "Central", 
-                                               `3` = "Southern")),
+                      labels = lab_reside) +
+  facet_wrap(~region, labeller = as_labeller(lab_region),
              scales = "free_x") +
   # scale_x_discrete(label = labels) +
   labs(
@@ -535,6 +575,18 @@ ggplot(data = data.df
         axis.text.y = element_text(size = 12), 
         axis.text.x = element_text(size = 10, angle =30))
 
+# Points ----- 
+
+## Plasma Se and age by region and malaria test ----
+
+plasma.df %>% 
+  ggplot(aes(AGE_IN_YEARS, selenium, colour =Malaria_test_result)) + 
+  geom_point() +
+ # geom_hline(yintercept = 84.9, colour = "red") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+#  scale_colour_manual(values = my_colour) # +
+ facet_wrap(~region, labeller = as_labeller(lab_region)) 
 
 # Map: Plasma visually checking buffer areas and EAs (00_cleaning-location.R) ----
 
@@ -642,9 +694,7 @@ pred_ea %>%
   theme_minimal() +
   theme(legend.position = "none") +
   scale_colour_manual(values = my_colour) # +
-# facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-#                                              `2` = "Central", 
-#                                              `3` = "Southern"))) 
+# facet_wrap(~region, labeller = as_labeller(lab_region)) 
 
 
 
@@ -673,9 +723,29 @@ pred_ea %>%
              scales = "free")  
 
 
+# Ridges: Plasma Se per region and residency----
+
+var_x <- "selenium"
+x_label <- plasma_lab
+  
+Malawi_WRA %>% 
+  mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
+  ggplot(aes(x = !!sym(var_x), weight=wt,  region, fill=urbanity, colour = urbanity)) +
+  #geom_boxplot() + 
+  ggridges::geom_density_ridges(alpha = 0.5)  +
+  scale_fill_discrete(name = "", label = lab_reside) +
+  scale_colour_discrete( guide = "none") +
+  #  geom_violin() + 
+  #  geom_vline(xintercept = median(Malawi_WRA$AGE_IN_YEARS), col = "lightyellow", size = 1) +
+  #  coord_flip() +
+  scale_y_discrete(label = lab_region) +
+  theme_classic() +
+  labs(y = "",
+       x = x_label) +
+  theme(legend.position = "top") # +
+#  ggridges::theme_ridges(center = TRUE)
 
 # Distribution: Maize Se distribution  ----
 
-ggplot(aes(quartile, Se_conc)) +
-  geom_density()
+
 
