@@ -54,6 +54,7 @@ plot(x = EligibleDHS$BMI,
      y = log(EligibleDHS$selenium))
 
 EligibleDHS$selenium[is.na(EligibleDHS$BMI)]
+
 # Collinearity
 cor(EligibleDHS$BMI,  EligibleDHS$selenium, use = "complete.obs")
 
@@ -70,12 +71,13 @@ sum(is.na(EligibleDHS$selenium))
 
 summaplot(log(EligibleDHS$selenium))
 
-# Checking the covariates
-sum(is.na(EligibleDHS$wealth_quintile))
+# Checking the indiv.-level covariates ----
 
+# Wealth Q ----
+sum(is.na(EligibleDHS$wealth_quintile))
 data.df  <- subset(EligibleDHS, !is.na(wealth_quintile)) # Remoing NA in wealth
 
-# Wealth Q
+
 mod<-lm(log(selenium)~wealth_quintile,data=data.df)
 
 summa(mod$residuals)
@@ -84,10 +86,11 @@ summary(mod)
 anova(mod)
 
 # We are including it
+
+# BMI ----
 sum(is.na(EligibleDHS$BMI))
 data.df  <- subset(EligibleDHS, !is.na(wealth_quintile) & !is.na(BMI)) # Remoing NA in wealth
 
-# BMI 
 mod<-lm(log(selenium)~wealth_quintile+BMI,data=data.df)
 
 summa(mod$residuals)
@@ -97,17 +100,19 @@ anova(mod)
 
 # Not including it
 
-# We are including it
+# Malaria  ----
+
 sum(is.na(EligibleDHS$Malaria_test_result))
 data.df  <- subset(EligibleDHS, !is.na(wealth_quintile) & !is.na(Malaria_test_result)) # Remoing NA in wealth
 
-# Malaria 
 mod<-lm(log(selenium)~wealth_quintile+Malaria_test_result,data=data.df)
 
 summa(mod$residuals)
 summaplot(mod$residuals)
 summary(mod)
 anova(mod)
+
+t.test(selenium ~ Malaria_test_result, plasma.df)
 
 # Not including it
 
@@ -198,15 +203,31 @@ data.df  <- data.df %>% dplyr::select( selenium, survey_cluster1,
 head(data.df)
 
 # Distance (Vincenty Sphere)
-points  <-  data.df %>% dplyr::select(Longitude, Latitude)
+# Unique GPS loc. (clusters)
+points  <-  data.df %>% dplyr::select(Longitude, Latitude) %>% distinct()
 
 dist_mat <- distm(points, fun = distVincentySphere)  # Apply distm function
 dist_mat <- dist_mat/1000 
 
-sum(dist_mat<50)
-sum(dist_mat>120)
+# Zero distance, when pair to itself
+sum(dist_mat>0 & dist_mat<50)/2 # because pair are dupli (e.g. clust 1 vs clust 101 & clust 101 vs clust 1)
+sum(dist_mat>0 & dist_mat>120)/2
 
-# Variogram  - changing coordinates lon/lat to nor/east
+# max distance
+max(dist_mat)
+
+# Variogram  -----------
+
+# Loading the data
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
+
+data.df  <- data.df %>% dplyr::select( selenium, survey_cluster1, urbanity, 
+                                       Longitude, Latitude) %>% 
+  filter(!is.na(selenium))
+
+
+#changing coordinates lon/lat to nor/east 
 
 #cord.dec  =  SpatialPoints(cbind(GPS$LONGNUM, -GPS$LATNUM), proj4string = CRS("+proj=longlat"))
 cord.dec  =  SpatialPoints(cbind( GPS$LONGNUM, GPS$LATNUM), proj4string = CRS("+proj=longlat"))
@@ -227,18 +248,6 @@ plot(cord.UTM, axes = TRUE, main = "UTM Coordinates", col = "red", cex.axis = 0.
 
 
 
-
-
-# Loading the data
-# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
-data.df  <- readRDS(here::here("data", "inter-output","dhs-gps.rds")) # cleaned geo-loc plasma Se data
-
-data.df  <- data.df %>% dplyr::select( selenium, survey_cluster1, urbanity, 
-                                       Longitude, Latitude) %>% 
-  filter(!is.na(selenium))
-
-
-
 # This is how you make a sample variogram  
 
 MyData <- data.frame(selenium =data.df$selenium, 
@@ -250,8 +259,28 @@ coordinates(MyData) <- c("Xkm", "Ykm")
 V1 <- variogram(selenium ~ Xkm + Ykm , 
                 data = MyData, 
                 cressie = TRUE,
-                cutoff = 400)
+                cutoff = 866
+               )
+
+V2 <- variogram(selenium ~ Xkm + Ykm , 
+                data = MyData, 
+               # cressie = TRUE,
+                # cutoff = 600
+)
+
+V3 <- variogram(log(selenium) ~ Xkm + Ykm, 
+                data = MyData, 
+                 cressie = TRUE,
+                # cutoff = 600
+)
+
 plot(V1, 
-     xlab = list(label = "Distance", cex = 1.5),
+     xlab = list(label = "Distance (km)", cex = 1.5),
      ylab = list(label = "Cressie's semivariance", cex = 1.5),
      col = 1, pch = 16, smooth = TRUE) 
+plot(V3, 
+     xlab = list(label = "Distance (km)", cex = 1.5),
+     ylab = list(label = "Cressie's semivariance", cex = 1.5),
+     col = 2, pch = 16, smooth = TRUE) 
+abline(v=0.2, col="blue") # Not working
+

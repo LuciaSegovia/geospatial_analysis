@@ -19,12 +19,14 @@ dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-mwi-lake
 
 # covariates selection
 
-covar <- c("Se_mean", "wealth_quintile", "urbanity", "Malaria_test_result",
-           "BMI",  "AGE_IN_YEARS", "crp", "agp", "dist_to_lake")
+covar <- c("Se_mean", "wealth_quintile", "urbanity", 
+          # "Malaria_test_result", "BMI",  
+           "AGE_IN_YEARS", "crp", "agp", "dist_to_lake")
 
 # Formula for the model
 form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
-  wealth_quintile + BMI + urbanity + Malaria_test_result +
+  wealth_quintile +  urbanity + 
+  # BMI + Malaria_test_result +
   AGE_IN_YEARS +
   log(crp) + log(agp) + log(dist_to_lake) +
   f(spatial.field, model = spde)  +

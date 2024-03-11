@@ -1,5 +1,25 @@
 
-## Methods: Modelling
+# Methods: Modelling
+
+## Individual level variable inclusion
+
+From the list of variables that could have an influence in Plasma Se, we decided to include the following:
+
+- Age
+- Residency
+- Wealth quintile
+
+Based on the previous analysis performed in the same dataset by Phiri et al (2019). In addition, based on the literature (Combs, 2015, Combs XX, ...), we explore the inclusion of the following parameter:
+
+- Inflammation 
+- Smoking
+- BMI
+- Malaria
+
+Of those four, we only included inflammation, smoking was excluded due to the low number of women reporting smoking in our sample, and the low prevalence of smoking behaviour among women in Malawi (see variable exploration section for more information), BMI was excluded as most of the women were within normal weight range, and there was no strong correlation between BMI and Plasma Se, and also it has only be reported to be correlated to SEPP1 in literature, and studies done in high income countries, where Se intake and plasma level as well as weight and BMI were higher than in our population. Finally, malaria was excluded because it has low correlation with the plasma Se (no significant difference between the two groups) and similar prevalence was reported across regions, and we because its impact it may be well explained by inflammation. 
+
+
+
 
 # To be tested:
 

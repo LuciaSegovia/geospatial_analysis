@@ -17,7 +17,7 @@ library(geoR)  # geospatial modelling
 
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
 plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
-  filter(!is.na(selenium)) %>% select(1:48) # removing buffer and other spatial vars
+  filter(!is.na(selenium)) # %>% select(1:48) # removing buffer and other spatial vars
 
 names(plasma.df)
 

@@ -382,9 +382,93 @@ data.df$urbanity <- as.factor(data.df$urbanity)
 
 #### Inflammation {#sec-inflam}
 
-According to the NSO (2017) report: Malawi Micronutrient Survey 2015-2016, inflammation was reported around 12% but it was consistent across age groups, residency, and wealth quintiles. However, malaria prevalence was higher in rural areas and for the different wealth quintiles (WQ), with lowest WQ being 6-times higher than the highest WQ. Since, these two variables may influence Plasma Se status we are including it in the model. 
+Both CRP () and AGP () were measured in women, of which we had `r sum(is.na(data.df$crp))` and `r sum(is.na(data.df$agp))` missing values respectively. We can also see that both variables were skewered and hence, we needed to log-transform them, which turned them into normallity.
+
+```{r}
+# Normality check
+summaplot(data.df$crp)
+summaplot(data.df$agp)
+
+# Normality check, after log-transformation
+summaplot(log(data.df$crp))
+summaplot(log(data.df$agp))
+
+```
+
+Then, we checked values that were high (inflammation cut-offs: CRP > 5 mg/L and/or AGP > 1 g/L, REF-BRINDA, REF-DHS docu). From the total sample, after excluding women who were missing plasma Se concentration, only `r sum(na.omit(data.df$crp)>5)` women and `r sum(na.omit(data.df$agp)>1)` had CRP and AGP values that indicate inflammation. According to the 2015-2016 MDHS report, inflammation was reported around 12% but it was consistent across age groups, residency, and wealth quintiles.
+
+However, when we look at the CRP and AGP values by region, we can see in @fig-2_6a and @fig-2_6b that CRP and AGP values were higher among those women who reported positive malaria tests. Interestingly, values in the southern region of Malawi were similarly high for both positive and negative malaria tests. This could be linked to the higher prevalence of other (infectious) diseases such as HIV. 
 
 It could be that this variable is correlated with Malaria, hence by including these two inflammation variables, we may be accounting for the potential influence of the malaria in the plasma Se.
+
+(AGP: 0.54 g/L and CRP: 0.16 mg/L, see Lou et al paper (BRINDA adjustement)
+ 
+
+ However, malaria prevalence was higher in rural areas and for the different wealth quintiles (WQ), with lowest WQ being 6-times higher than the highest WQ. Since, these two variables may influence Plasma Se status we are including it in the model.
+
+```{r label = "fig-2_6a", fig.cap = "Variation in c-reactive protein (CRP) (mg/L) of women in Malawi by region and malaria test resutls."}
+
+## CRP per malaria test and residency ----
+var_x <- "crp"
+x_label <- "log-transformed CRP (mg/l)"
+cut_off <- 5 #crp
+var_col <- "Malaria_test_result"
+col_lab <- lab_malaria
+
+value_median <- log(median(pull(Malawi_WRA[,var_x]), na.rm = TRUE))
+
+Malawi_WRA %>% 
+  ggplot(aes(x = log(!!sym(var_x)), weight=wt, # w/ survey weights
+             region, colour=!!sym(var_col))) +
+  geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
+  geom_vline(xintercept = log(cut_off), col = "red", size = 1) +
+  geom_boxplot() + 
+  scale_colour_discrete(name = "", label = col_lab) +
+    coord_flip() +
+  scale_y_discrete(label = lab_region) +
+  theme_classic() +
+  labs(y = "",
+       x = x_label) +
+  theme(legend.position = "top") +
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12), 
+        axis.text.x = element_text(size = 10))
+
+
+```
+
+
+```{r label = "fig-2_6v", fig.cap = "Variation in  (AGP) (g/L) of women in Malawi by region and malaria test resutls."}
+
+## AGP per malaria test and residency ----
+var_x <- "agp"
+x_label <- "log-transformed AGP (g/l)"
+x_label <- "log c-reactive protein (g/l)"
+cut_off <- 1 #AGP
+var_col <- "Malaria_test_result"
+col_lab <- lab_malaria
+
+value_median <- log(median(pull(Malawi_WRA[,var_x]), na.rm = TRUE))
+
+Malawi_WRA %>% 
+  ggplot(aes(x = log(!!sym(var_x)), weight=wt, # w/ survey weights
+             region, colour=!!sym(var_col))) +
+  geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
+  geom_vline(xintercept = log(5), col = "red", size = 1) +
+  geom_boxplot() + 
+  scale_colour_discrete(name = "", label = col_lab) +
+    coord_flip() +
+  scale_y_discrete(label = lab_region) +
+  theme_classic() +
+  labs(y = "",
+       x = x_label) +
+  theme(legend.position = "top") +
+  theme(strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12), 
+        axis.text.x = element_text(size = 10))
+
+```
+
 
 ### Socio-economic data (DHSDATA)
 

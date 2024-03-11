@@ -444,7 +444,7 @@ DHSDATA$sdist  <- as.factor(DHSDATA$sdist)
 
 
 # Socio-economic data exploration:
-# TODO: Would differences in WQ by region & urbanicity
+# TODO: Would differences in WQ by region & residency
 # impact our results? Probably yes. Check what that would mean for our analysis. 
 
 # Wealth quintile 1-5 (lowest to highest)

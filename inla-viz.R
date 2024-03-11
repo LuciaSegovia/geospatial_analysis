@@ -9,14 +9,45 @@ library(magrittr)
 #  geom_jitter(aes(colour = factor(survey_cluster1))) + coord_fixed() + 
 #  labs(colour = "survey_cluster1")
 
+gps <- plasma_se %>% select(survey_cluster1, Longitude, Latitude) %>% 
+  distinct() %>% arrange(survey_cluster1)
+
+
+# Visualisation ------
 
 INLADICFig(models)
 
 Efxplot(models)
 
-summary(models[[5]])
 
-# Results
+
+# Results ----
+
+## Getting fixed effect -----
+
+fix.effect <-  models[[6]]$summary.fixed
+
+for(i in 7:10){
+  
+  fix.effect <- cbind(fix.effect, models[[i]]$summary.fixed )
+  
+}
+
+# write.csv(round(fix.effect,2), here::here("output", "fixed.effect_v1.0.0.csv"))
+
+# Plotting alpha (https://becarioprecario.bitbucket.io/spde-gitbook/ch-INLA.html)
+plot(m0$marginals.fixed[[1]], type = "l", 
+     xlab = expression(alpha), ylab = "density")
+
+# Compute posterior marginal of variance
+post.var <- inla.tmarginal(function(x) exp(-x), 
+                           models[[9]]$internal.marginals.hyperpar[[1]])
+# Compute summary statistics
+inla.zmarginal(post.var)
+
+
+
+## Spatial Results ----
 
 round(models[[9]]$summary.fix, 4)
 
@@ -35,7 +66,7 @@ inla.zmarginal(spde.est$marginals.kappa[[1]])
 
 Kappa <- inla.emarginal(function(x) x, 
                         spde.est$marginals.kappa[[1]] )
-#Variance
+# Variance --------
 inla.zmarginal(spde.est$marginals.variance.nominal[[1]])
 
 Sigma_u <- inla.emarginal(function(x) x, 
@@ -122,3 +153,22 @@ lattice::xyplot(Latitude ~ Longitude,
        ylab = list(label = "Latitude", cex = 1.5)
 )
 # Better as before!!!!
+
+hist(models[[9]]$summary.random$ID$mean)
+hist(models[[10]]$summary.random$ID$mean)
+
+cluster.sd <- models[[9]]$summary.random$ID$sd
+cluster.mean <- models[[9]]$summary.random$ID$mean
+
+
+cluster.sd <- cbind(gps, cluster.sd)
+
+cluster <- cbind(gps, cluster.mean)
+
+cluster.sd %>% 
+st_as_sf(., coords = c('Longitude', 'Latitude'))  %>% 
+  ggplot() + 
+  geom_sf(aes(color = cluster.sd), size =2) +
+  theme_bw()
+
+

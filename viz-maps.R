@@ -477,23 +477,42 @@ ggplot(data = data.df,
 # Boxplots ----
 
 ## Age per region and residency ----
-## Age per malaria test and residency ----
-var_x <- "AGE_IN_YEARS"
+## Continous per malaria test and residency ----
+#var_x <- "agp"
+#x_label <- "AGP(mg/l)"
+#var_x <- "crp"
+#x_label <- "log c-reactive protein (mg/l)"
+#var_x <- "AGE_IN_YEARS"
+#x_label <- "Age (years)"
 var_x <- "selenium"
-x_label <- "Age (years)"
-var_col <- "Malaria_test_result"
-col_lab <- lab_malaria
+x_label <- plasma_lab
+#var_col <- "Malaria_test_result"
+#col_lab <- lab_malaria
+var_col <- "BMI_cat"
 
-value_median <- median(plasma.df$AGE_IN_YEARS)
-value_median <- median(plasma.df$selenium, na.rm = TRUE)
+value_median <- median(pull(plasma.df[,var_x]), na.rm = TRUE)
+value_median <- log(median(pull(plasma.df[,var_x]), na.rm = TRUE))
+#value_median <- median(plasma.df$AGE_IN_YEARS)
+#value_median <- median(plasma.df$selenium, na.rm = TRUE)
 
 plasma.df %>% 
+  mutate(BMI_cat = as.factor(case_when(
+    BMI<18.5 ~ "low",
+    BMI>18.5 & BMI <24.5 ~ "healthy",
+    BMI>24.5 ~ "high")),
+    BMI_cat = forcats::fct_relevel(BMI_cat, "low", "healthy", "high")) %>% 
+  filter(!is.na(BMI_cat)) %>% 
  # mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
+ # ggplot(aes(x = log(!!sym(var_x)), weight=wt, # w/ survey weights
   ggplot(aes(x = !!sym(var_x), weight=wt, # w/ survey weights
-             region, colour=!!sym(var_col))) +
+             #region, 
+             !!sym(var_col),
+             colour=!!sym(var_col))) +
   geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
-  geom_boxplot() + 
-  scale_colour_discrete(name = "", label = col_lab) +
+ # geom_vline(xintercept = log(5), col = "linewidth", size = 1) +
+  #geom_boxplot() + 
+  geom_violin() + 
+ # scale_colour_discrete(name = "", label = col_lab) +
     coord_flip() +
   scale_y_discrete(label = lab_region) +
   theme_classic() +
@@ -579,14 +598,24 @@ ggplot( data = data.df,
 
 ## Plasma Se and age by region and malaria test ----
 
+# var_x <- "AGE_IN_YEARS"
+var_x <- "BMI"
+
 plasma.df %>% 
-  ggplot(aes(AGE_IN_YEARS, selenium, colour =Malaria_test_result)) + 
+  mutate(BMI_cat= case_when(
+          BMI<18.5 ~ "low",
+          BMI>18.5 & BMI <24.5 ~ "healthy",
+          BMI>24.5 ~ "high")) %>% 
+  #ggplot(aes(AGE_IN_YEARS, selenium, colour =Malaria_test_result)) + 
+  ggplot(aes(!!sym(var_x), log(selenium), colour = BMI_cat)) + 
   geom_point() +
+  geom_smooth(method = "auto") +
  # geom_hline(yintercept = 84.9, colour = "red") +
   theme_minimal() +
-  theme(legend.position = "bottom") +
+   theme(legend.position = "bottom") # +
 #  scale_colour_manual(values = my_colour) # +
- facet_wrap(~region, labeller = as_labeller(lab_region)) 
+ #  facet_wrap(~Malaria_test_result) 
+#  facet_wrap(~region, labeller = as_labeller(lab_region)) 
 
 # Map: Plasma visually checking buffer areas and EAs (00_cleaning-location.R) ----
 

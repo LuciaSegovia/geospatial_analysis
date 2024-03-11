@@ -1,0 +1,41 @@
+---
+title: "Untitled"
+format: html
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+
+## Loading data ----
+
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
+  filter(!is.na(selenium)) # %>% select(1:48) # removing buffer and other spatial vars
+
+# covariates selection
+
+var <- c("selenium", "wealth_quintile", "urbanity", 
+           "AGE_IN_YEARS", "crp", "agp")
+
+
+```
+
+You can add options to executable code like this 
+
+```{r}
+
+plasma.df %>% dplyr::select(var, survey_cluster1) %>% 
+  mutate_at(c("wealth_quintile","urbanity") , as.numeric) %>% group_by(survey_cluster1) %>% 
+    summarise_if(is.numeric, c(mean, sd, min, max), na.rm = TRUE) %>% ungroup() %>%  
+  mutate_at(vars(starts_with("AGE"), starts_with("wealt")), round,0) 
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
