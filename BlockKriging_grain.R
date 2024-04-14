@@ -6,6 +6,9 @@
 library(rgdal)
 library(geoR)
 library(geosphere)
+library(sf) #spatial data manipulation
+library(dplyr) # data wrangling 
+
 
 
 #
@@ -17,8 +20,15 @@ library(geosphere)
 #
 # Read in shape file
 
-dist.shp<-readOGR(dsn=".",layer="mwi_admbnda_adm2_nso_hotosm_20230405")
+dist.shp<-readOGR(dsn=path.expand("data/mwi-boundaries/mwi_adm_nso_hotosm_20230329_shp"),
+                  layer="mwi_admbnda_adm2_nso_hotosm_20230329")
 
+# Districts
+# dist.shp  <- st_read(here::here( "data",
+#                                  "mwi-boundaries",
+#                                  "mwi_adm_nso_hotosm_20230329_shp", 
+#                                  "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
+# dist.shp <- st_make_valid(dist.shp) # Check this
 
 dist.shp@data$ADM2_EN
 
@@ -27,12 +37,18 @@ dist.shp@data$ADM2_EN
 # Plot 
 
 plot(dist.shp) 
-lines(coordinates(dist.shp@polygons[[1]]@Polygons[[1]]),col="red") 
+lines(coordinates(dist.shp@polygons[[26]]@Polygons[[1]]),col="red") 
 
-ndist<-28
+# Exlcude only (Likoma and Zomba City) - See plasma data
+#ndist<-28
+ndist<-30
 
-dist.indx<-(seq(1:32))[-c(7,17,31,32)] #exclude city districts
+#dist.indx<-(seq(1:32))[-c(7,17,31,32)] #exclude city districts
+dist.shp@data$ADM2_EN[c(13,32)] 
+dist.indx<-(seq(1:32))[-c(13,32)] #exclude Likoma and Zomba City
 dist.names<-dist.shp@data$ADM2_EN[dist.indx]
+
+
 ##############################################################################
 
 ##############################################################################
@@ -41,38 +57,55 @@ dist.names<-dist.shp@data$ADM2_EN[dist.indx]
 #
 ##############################################################################
 
-read_in.df<-read.csv("malawi.csv",header=T)
-
-# Now remove any rows which are not maize
-
-read_in.df<-read_in.df[which(read_in.df$Crop=="Maize"),]
-
-# Now extract columns of interest: Latitude, Longitude, and analyses for
-# elements of interest ( Ca, Co, Cu, Fe, I, Mg, Mn, Mo, Se, Zn)
-# (based on MRB email of 22/4/20).
+#read_in.df<-read.csv("malawi.csv",header=T)
 #
-#  Analysis for a specified element (from Ca, Co, Cu, Fe, I, Mg, Mn, Mo, 
-# Se_triplequad, Zn)
-# (based on MRB email of 22/4/20).
+## Now remove any rows which are not maize
+#
+#read_in.df<-read_in.df[which(read_in.df$Crop=="Maize"),]
+#
+## Now extract columns of interest: Latitude, Longitude, and analyses for
+## elements of interest ( Ca, Co, Cu, Fe, I, Mg, Mn, Mo, Se, Zn)
+## (based on MRB email of 22/4/20).
+##
+##  Analysis for a specified element (from Ca, Co, Cu, Fe, I, Mg, Mn, Mo, 
+## Se_triplequad, Zn)
+## (based on MRB email of 22/4/20).
+##
+#
+#element<-"Zn"
+#
+#element.col<-which(colnames(read_in.df)==element)
+#data.df<-read_in.df[,c(3,4,element.col)]
+#
+#
+#
+## Extract missing values [for present, if >=88888, these codes still require
+## explanation
+#
+#missing.rows<-which(data.df[,3]>=77777.0)
+#if(length(missing.rows)>0) {data.df<-data.df[-missing.rows,]}
 #
 
-element<-"Zn"
+# Adding maize data -----
 
-element.col<-which(colnames(read_in.df)==element)
-data.df<-read_in.df[,c(3,4,element.col)]
+data.df  <- readRDS(here::here("data", # cleaned geo-loc maize Se data (2 datasets)
+                               "inter-output", "mwi-grain-se_raw.RDS")) %>% 
+  select(Latitude, Longitude, Se_raw) %>% na.omit()
+names(data.df)
 
-
-
-# Extract missing values [for present, if >=88888, these codes still require
-# explanation
-
-missing.rows<-which(data.df[,3]>=77777.0)
-if(length(missing.rows)>0) {data.df<-data.df[-missing.rows,]}
-
+## Choosing only entries with maize Se values
+data.df <-  subset(data.df, Crop == "Maize")
+# Housekeeping: Check NA and zeros
+sum(is.na(data.df$Se_raw))
+data.df <- subset(data.df, !is.na(Se_raw)) #excluding NA
+sum(data.df$Se_raw == 0)
+min(data.df$Se_raw[data.df$Se_raw>0]) # 
+# Changin zeros to min (for log transformation)
+data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
 
 Np<-nrow(data.df)
 
-z<-data.df[,3]
+z<-log(data.df[,3])
 
 # convert coordinates to UTM 36-S
 
@@ -92,7 +125,8 @@ data.df[,1:2]<-rectsr@coords
 #############################################################################
 
 
-pars<-read.table("Zn fitted_variograms.dat",header=T)[1,]
+#pars<-read.table("Zn fitted_variograms.dat",header=T)[1,]
+pars<-read.table("Se_raw_maize_fitted_variograms.dat",header=T)[1,]
 
 
 #######
@@ -198,14 +232,16 @@ krop[iwo,4]<-kvar
 }
 
 Krop<-data.frame(krop)
+Krop$exp_block<- exp(Krop$Block_mean)
 Krop$District<-dist.names
 
-write.csv(Krop,"Zinc_block_kriging.csv",quote=F,row.names=F)
+write.csv(Krop,"Se_raw_block_kriging_v.1.0.0.csv",quote=F,row.names=F)
 
 
 # Rough map
 
 cscale<-(krop[,3]-19)/(26-19)
+cscale<-(Krop[,6]-19)/(26-19)
 
 cols<-c(rep("lightgreen",90),rep("darkgreen",103))
 
@@ -213,7 +249,7 @@ cols<-c(rep("lightgreen",90),rep("darkgreen",103))
 
 pal<-colorRampPalette(c("ivory","green4"))(15)
 
-cscale<-round(2*(krop[,3]-19),0)+1
+cscale<-round(2*(Krop[,6]-19),0)+1
 par(mar = c(1, 1,3, 0.1))
 plot(dist.shp,col=pal[cscale])
 

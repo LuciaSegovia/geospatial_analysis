@@ -1,0 +1,190 @@
+
+# Methods: Generating predicted maize grain Se concentration for Malawi
+
+Here, we describe all the steps performed to obtain the prediction of maize Se concentration in Malawi. The script used to run the analysis can be found in `01_maize-model.R` and are an adaptation of the script developed for the GeoNutrion project and that are published [here](https://github.com/rmlark/GeoNutrition/blob/main/Geostatistics_and_mapping/Grain_exploratory_spatial_analysis_and_mapping.R).
+
+
+```{r set-up, message=FALSE, warning=FALSE}
+
+# Libraries & functions
+
+library(geosphere)
+source(here::here("functions", "CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "kriging-functions.R")) # Matern functions & others
+
+#  Note that the script contains an adaptation of the scripts develop for 
+# the analysis of the Malawi  and the Ethiopia data sets (GeoNutrition)
+
+# Loading the data
+data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) # cleaned geo-loc maize Se data (2 datasets)
+
+
+```
+
+## Exploratory analysis
+
+The data set that we are using is the output generated in the script (`00_cleaning-maize.R`) which contains the information on crop Se concentration in Malawi. The variables are the GPS sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT) of the two combined datasets (@kumssaCerealGrainMineral2022, @chilimbaMaizeGrainSoil2011) See @sec-maize for more information on the data set.
+
+Then, information for maize only is selected, and some housekeeping actions are performed, such as, removing missing values for the variable of interest (`Se_raw`) which contains the Se concentration including below detection limits, and transforming zeros into the minimum value. This last operation is performed as log-transformation would be required in subsequent steps.
+
+```{r}
+
+## Choosing only entries with maize Se values
+data.df <-  subset(data.df, Crop == "Maize")
+# Housekeeping: Check NA and zeros
+sum(is.na(data.df$Se_raw))
+sum(data.df$Se_raw == 0)
+data.df <- subset(data.df, !is.na(Se_raw) & Se_raw>0) #excluding NA & zeros
+
+```
+
+
+::: {.callout-note}
+
+Zeros were converted to minimum value due to log-transformation of zero is equal to `r log(0)` 
+
+:::
+
+
+Now, we are performing some summary statistics and checking the data skewerness to decide on the log-tranformation.
+
+```{r}
+
+# Now create plot name with Se (element of interest)
+
+element<-"Se_raw"
+Crop.target <- "maize"
+plotname<-expression("Se (raw) /"~mg~kg^{-1})
+plotname2<-expression("Se (raw) /"~log~mg~kg^{-1})
+
+
+# Compute summary statistics of the selected variable
+
+data.df  <- as.data.frame(data.df)
+
+summary<-(summa(data.df[,element]))
+summary<-rbind(summary,(summa(log(data.df[,element]))))
+row.names(summary)<-c("mg/kg,","log mg/kg")
+
+summaplot((data.df[,element]),plotname)
+summaplot(log(data.df[,element]),plotname2)
+
+```
+
+
+Due to the right-side skewerness, we decided to log-transform the variable (Se_raw). Then, we plot the concentration of maize Se in the country by their quartile from the smallest (in blue) to the highest (in red) to see if there are some spatial trend or pattern. We also checked for North to South and West to East trends. 
+
+```{r}
+
+# Plot of conc. 
+
+quantiles<-as.character(cut(data.df[,element],quantile(data.df[,element],
+c(0,0.25,0.5,0.75,1)),include.lowest=T,
+label=c("blue","green","yellow","red")))	
+
+# Classified post-plot
+dev.new()
+options(scipen=5)
+plot(data.df[,"Longitude"],data.df[,"Latitude"], # Lon & Lat variables
+pch=16,col=quantiles,asp=1,
+xlab="Longitude",ylab="Latitude",cex=0.5)
+
+```
+
+
+## Variogram estimation and validation
+
+### Obtaining the variogram estimates
+
+Now, we are studying the spatial structure of the data by generating an empirical variogram. We tested four different estimations: isotropic and directional using the Matheron estimator,and isotropic estimates with Cressie-Hawkins and Dowd. 
+
+In order to store the data we created three matrices, one `semivar` which contains the variogram estimates and was structured as follow:
+
+-   column 1 is isotropic Matheron,
+-   columns 2 are isotropic estimates with Cressie-Hawkins estimators,
+-   columns 3 are isotropic estimates with Dowd estimators
+
+Then, the lag pairs per bin, and the mean lag distance were stored in the objects `npair` and `varlag` (isotropic). 
+
+```{r}
+
+# Matrices for storing the results
+semiv<-matrix(nrow=nlags,ncol=3)
+npair<-matrix(nrow=nlags,ncol=1)
+varlags<-matrix(nrow=nlags,ncol=1)
+
+colnames(semiv)<-c("iso-Ma","iso-CH","iso-Do")
+colnames(npair)<-c("iso")
+colnames(varlags)<-c("iso")
+
+```
+
+Now the lag distance, the number of lag pairs and the estimators are calculated.
+
+```{r}
+
+# Adding the mean lag distance
+varlags[,1]<-as.numeric(by(lag2, lagbins, mean))
+# Adding the number of lag pairs
+npair[,1]<-as.numeric(by(lag2, lagbins, sum))/as.numeric(by(lag2, lagbins, mean))
+
+#
+# Calculating the estimator
+#
+#  Matheron
+semiv[,1]<-0.5*(as.numeric(by((vclo2)^2, lagbins, mean)))
+
+# CH
+semiv[,2]<-(as.numeric(by((sqrt(abs(vclo2))), lagbins, mean)))^4
+semiv[,2]<-0.5*semiv[,2]/(0.457+0.459/npair[,1]+0.045/npair[,1]^2)
+
+# Do
+
+vclo2d<-c(vclo2,-vclo2)
+lagbinsd<-c(lagbins,lagbins)
+
+semiv[,3]<-0.5*(as.numeric(by(vclo2d, lagbinsd, mad)))^2
+
+```
+
+And the results are plotted...
+
+```{r}
+
+#  Now plot the variograms
+
+maxv<-max(semiv[,1:3])
+minv<-min(semiv[,1:3])
+
+plot(varlags[,1],semiv[,1],ylim=c(0,maxv),xlab="Distance /km",ylab="Variance",pch=16)
+points(varlags[,1],semiv[,2],pch=1)
+points(varlags[,1],semiv[,3],pch=17)
+
+locsv<-minv*c(0.6,0.4,0.2)
+points(60,locsv[1],pch=16)
+points(60,locsv[2],pch=1)
+points(60,locsv[3],pch=17)
+
+text(65,locsv[1],"Matheron",pos=4)
+text(65,locsv[2],"Cressie-Hawkins",pos=4)
+text(65,locsv[3],"Dowd",pos=4)
+
+```
+
+### Fit exponential variogram functions to each set of estimates
+
+### Cross-validation
+
+# Check perc. of the sample needed for testing the cross-validation. 
+
+## Kriging of grain Se concentrations
+
+
+
+This file (`predmaize.df`) contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
+
+
+**TODO: Write the full info of the model**
+
+
+Then, in order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 

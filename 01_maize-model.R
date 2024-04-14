@@ -7,17 +7,14 @@
 ###########################################################################
 ###########################################################################
 
-
+# Libraries & functions
 
 library(geosphere)
 source(here::here("functions", "CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "kriging-functions.R")) # Matern functions & others
 
-#  Note  function commands at the bottom of this script must be
-#  run before the analyses are attempted
-#
 #  Note that the script contains an adaptation of the scripts develop for 
-# the  analysis of the Malawi  and the Ethiopia data sets (GeoNutrition)
-# 
+# the analysis of the Malawi  and the Ethiopia data sets (GeoNutrition)
 
 ###################################################################
 #
@@ -25,30 +22,34 @@ source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 #
 
 maize <- read.csv(here::here("data", "maize", "Malawi_Grain.csv"))
-maize$Se_triplequad [maize$Se_triplequad >9000] <- NA
+# maize$Se_triplequad [maize$Se_triplequad >9000] <- NA
 
 # min(maize$Se_triplequad)
 #maize_se  <- readRDS(here::here("data", "inter-output","mwi-maize-se.RDS")) # cleaned geo-loc maize Se data
 data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) # cleaned geo-loc maize Se data (2 datasets)
 names(data.df)
 
+
+## Choosing only entries with maize Se values
+data.df <-  subset(data.df, Crop == "Maize")
 # Housekeeping: Check NA and zeros
 sum(is.na(data.df$Se_raw))
 data.df <- subset(data.df, !is.na(Se_raw)) #excluding NA
 sum(data.df$Se_raw == 0)
-min(data.df$Se_raw[data.df$Se_raw>0]) # 
-# Changin zeros to min (for log transformation)
-data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
-## Choosing only entries with maize Se values
-data.df <-  subset(data.df, Crop == "Maize")
+min(data.df$Se_raw[data.df$Se_raw>0]) 
+sum(data.df$Se_raw == min(data.df$Se_raw[data.df$Se_raw>0]))
+# Changing zeros to min (for log-transformation)
+# data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
+# Removing zeros
+data.df <- subset(data.df, Se_raw >0) # Excluding zeros
 
 
 # Now create plot name with Se (element of interest)
 
 element<-"Se_raw"
-Crop.target <- "maize"
-plotname<-expression("Se_raw /"~mg~kg^{-1})
-plotname2<-expression("Se_raw /"~log~mg~kg^{-1})
+#Crop.target <- "maize"
+plotname<-expression("Se (raw) /"~mg~kg^{-1})
+plotname2<-expression("Se (raw) /"~log~mg~kg^{-1})
 
 
 # Compute summary statistics of the selected variable
@@ -62,7 +63,9 @@ row.names(summary)<-c("mg/kg,","log mg/kg")
 summaplot((data.df[,element]),plotname)
 summaplot(log(data.df[,element]),plotname2)
 summaplot((outliers(data.df[,element],trim=T)))
+summaplot((outliers(log(data.df[,element]),trim=T)))
 summa((outliers(data.df[,element],trim=T)))
+summa((outliers(log(data.df[,element]),trim=T)))
 
 # At this point a decision is made whether to analyse the data on their
 # original units or to replace them with their natural logarithms.
@@ -82,7 +85,16 @@ summa((outliers(data.df[,element],trim=T)))
 
 #ol<-outliers(data.df[,1])
 #no_out_data.df<-data.df[-ol,]
-
+  
+# ## Exploring the location of the outliers (see if it could be spatially aggregated)
+#  plot(data.df[-ol,"Longitude"],data.df[-ol,"Latitude"], # Lon & Lat variables
+#       pch=16,asp=1,
+#       xlab="Longitude",ylab="Latitude",cex=0.5, add = TRUE)
+#  
+## Exploring the plot w/o the outliers
+# plot(data.df[ol,"Longitude"],data.df[ol,"Latitude"], # Lon & Lat variables
+#       pch=16,asp=1, col="red", 
+#       xlab="Longitude",ylab="Latitude",cex=0.5, add = TRUE)
 #
 # Produce a classified post-plot of the data with the bottom
 # quartile in blue, the next in green, the next in yellow and
@@ -161,51 +173,56 @@ nlags<-nlevels(lagbins)
 
 #  i. semiv - variogram estimates, fifth column is isotropic Matheron, columns
 #  1 to 4 are directional (Matheron estimator), columns 6 and 7 are isotropic
-#  estimates with Cressie-Hawkins and Dowd estimators respectively.
+#  estimates with Cressie-Hawkins and Dowd estimators respectively. - Excluded directional 
 #
 #  ii. npair and varlags - respectively the number of lag pairs per bin, and the mean
-#	lag distance.  Columns 1 to 4 are directional (as in semiv) and 5 is isotropic.
+#	lag distance.  Columns 1 to 4 are directional (as in semiv) and 5 is isotropic. - Only isotropic
 
-semiv<-matrix(nrow=nlags,ncol=7)
-npair<-matrix(nrow=nlags,ncol=5)
-varlags<-matrix(nrow=nlags,ncol=5)
-
-
-colnames(semiv)<-c("N-S,Ma","NE-SW,Ma","W-E,Ma","SE-NW,Ma","iso-Ma","iso-CH","iso-Do")
-colnames(varlags)<-c("N-S","NE-SW","W-E","SE-NW","iso")
-colnames(npair)<-c("N-S","NE-SW","W-E","SE-NW","iso")
+#semiv<-matrix(nrow=nlags,ncol=7)
+semiv<-matrix(nrow=nlags,ncol=3)
+#npair<-matrix(nrow=nlags,ncol=5)
+npair<-matrix(nrow=nlags,ncol=1)
+#varlags<-matrix(nrow=nlags,ncol=5)
+varlags<-matrix(nrow=nlags,ncol=1)
 
 
-varlags[,5]<-as.numeric(by(lag2, lagbins, mean))
-npair[,5]<-as.numeric(by(lag2, lagbins, sum))/as.numeric(by(lag2, lagbins, mean))
+#colnames(semiv)<-c("N-S,Ma","NE-SW,Ma","W-E,Ma","SE-NW,Ma","iso-Ma","iso-CH","iso-Do")
+colnames(semiv)<-c("iso-Ma","iso-CH","iso-Do")
+#colnames(npair)<-c("N-S","NE-SW","W-E","SE-NW","iso")
+colnames(npair)<-c("iso")
+#colnames(varlags)<-c("N-S","NE-SW","W-E","SE-NW","iso")
+colnames(varlags)<-c("iso")
+
+varlags[,1]<-as.numeric(by(lag2, lagbins, mean))
+npair[,1]<-as.numeric(by(lag2, lagbins, sum))/as.numeric(by(lag2, lagbins, mean))
 
 #
 # estimator
 #
 #  Matheron
-semiv[,5]<-0.5*(as.numeric(by((vclo2)^2, lagbins, mean)))
+semiv[,1]<-0.5*(as.numeric(by((vclo2)^2, lagbins, mean)))
 
 # CH
-semiv[,6]<-(as.numeric(by((sqrt(abs(vclo2))), lagbins, mean)))^4
-semiv[,6]<-0.5*semiv[,6]/(0.457+0.459/npair[,5]+0.045/npair[,5]^2)
+semiv[,2]<-(as.numeric(by((sqrt(abs(vclo2))), lagbins, mean)))^4
+semiv[,2]<-0.5*semiv[,2]/(0.457+0.459/npair[,1]+0.045/npair[,1]^2)
 
 # Do
 
 vclo2d<-c(vclo2,-vclo2)
 lagbinsd<-c(lagbins,lagbins)
 
-semiv[,7]<-0.5*(as.numeric(by(vclo2d, lagbinsd, mad)))^2
+semiv[,3]<-0.5*(as.numeric(by(vclo2d, lagbinsd, mad)))^2
 
 ####################################################
 
 #  Now plot the variograms
 
-maxv<-max(semiv[,5:7])
-minv<-min(semiv[,5:7])
+maxv<-max(semiv[,1:3])
+minv<-min(semiv[,1:3])
 
-plot(varlags[,5],semiv[,5],ylim=c(0,maxv),xlab="Distance /km",ylab="Variance",pch=16)
-points(varlags[,5],semiv[,6],pch=1)
-points(varlags[,5],semiv[,7],pch=17)
+plot(varlags[,1],semiv[,1],ylim=c(0,maxv),xlab="Distance /km",ylab="Variance",pch=16)
+points(varlags[,1],semiv[,2],pch=1)
+points(varlags[,1],semiv[,3],pch=17)
 
 locsv<-minv*c(0.6,0.4,0.2)
 points(60,locsv[1],pch=16)
@@ -225,15 +242,15 @@ co<-20000
 c1<-30000
 a<-50
 
-maxl<-max(varlags[,5])*1.1
+maxl<-max(varlags[,1])*1.1
 par(mfrow=c(2,2))
 
 # Matheron's estimator
 
 
-h<-varlags[,5]
-sv<-semiv[,5]
-npa<-npair[,5]
+h<-varlags[,1]
+sv<-semiv[,1]
+npa<-npair[,1]
 kap<-0.5
 
 oo<-optim(c(co,c1,a),wls
@@ -251,7 +268,7 @@ upper=c(1000000))
 
 Ahatn<-length(h)*log(oon$value)+2  
 
-plot(varlags[,5],semiv[,5],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
+plot(varlags[,1],semiv[,1],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
 #lines(seq(0,200),rep(oon$par[1],201))
 lines(seq(0,maxl,0.1),oo$par[1]+oo$par[2]*(1-exp(-seq(0,maxl,0.1)/oo$par[3])))
 
@@ -259,9 +276,9 @@ mtext("a). Matheron",3,adj=0,line=0.5)
 
 # Cressie's and Hawkins's estimator  CH
 
-h<-varlags[,5]
-sv<-semiv[,6]
-npa<-npair[,5]
+h<-varlags[,1]
+sv<-semiv[,2]
+npa<-npair[,1]
 kap<-0.5
 
 oo<-optim(c(co,c1,a),wls
@@ -287,9 +304,9 @@ mtext("b). Cressie-Hawkins",3,adj=0,line=0.5)
 # Dowd's estimator Do
 
 
-h<-varlags[,5]
-sv<-semiv[,7]
-npa<-npair[,5]
+h<-varlags[,1]
+sv<-semiv[,3]
+npa<-npair[,1]
 kap<-0.5
 
 oo<-optim(c(co,c1,a),wls
@@ -306,7 +323,7 @@ upper=c(1000000))
 
 Ahatn<-length(h)*log(oon$value)+2  
 
-plot(varlags[,5],semiv[,7],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
+plot(varlags[,1],semiv[,3],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
 lines(seq(0,maxl,0.1),oo$par[1]+oo$par[2]*(1-exp(-seq(0,maxl,0.1)/oo$par[3])))
 mtext("c). Dowd",3,adj=0,line=0.5)
 
@@ -593,76 +610,4 @@ colnames(krop)<-c("Longitude","Latitude","Zhat","kv")
 fname<-paste(element,"_OK_",Crop.target,".csv",sep="")
 
 write.csv(krop,fname,row.names=F)  
-
-
-
-###################################################################################################
-#
-# FUNCTIONS
-#
-###################################################################################################
-
-############################################################################
-#
-#  Matern correlation function
-#
-#
-
-matern<-function (u, phi, kappa) 
-{
-    if (is.vector(u)) 
-        names(u) <- NULL
-    if (is.matrix(u)) 
-        dimnames(u) <- list(NULL, NULL)
-    uphi <- u/phi
-    uphi <- ifelse(u > 0, (((2^(-(kappa - 1)))/ifelse(0, Inf, 
-        gamma(kappa))) * (uphi^kappa) * besselK(x = uphi, nu = kappa)), 
-        1)
-    uphi[u > 600 * phi] <- 0
-    return(uphi)
-}
-
-
-############################
-
-wls<-function(theta){
-
-c0<-theta[1]
-c1<-theta[2]
-phi<-theta[3]
-
-
-nh<-length(h)
-
-wss<-0
-
-for (i in 1:nh){
-svm<-c0+c1*(1-matern(h[i],phi,kap))
-wss<-wss+npa[i]*((sv[i]-svm)^2)
-}
-wss<-wss/nh
-return(wss)
-}
-
-
-wlsnugg<-function(theta){
-
-c0<-theta[1]
-
-nh<-length(h)
-
-wss<-0
-
-for (i in 1:nh){
-svm<-c0
-wss<-wss+npa[i]*((sv[i]-svm)^2)
-}
-wss<-wss/nh
-return(wss)
-}
-
-
-
-
-
 

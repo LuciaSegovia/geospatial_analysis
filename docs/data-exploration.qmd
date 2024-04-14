@@ -6,6 +6,7 @@ In this section we explore the datasets and variables that were included in our 
 ```{r set-up, message=FALSE, warning=FALSE}
 
 # Loading packages
+library(plyr) # weighted data analysis
 library(dplyr) # data wrangling 
 library(sf) # spatial data manipulation
 library(ggplot2) # data visualisation
@@ -126,13 +127,14 @@ Summary of the main cleaning assumptions/ decisions:
 - **Pregnancy**: Pregnant women and those recorded as `NA` were excluded.
 - **Malaria test recode**: 2 (0) == Negative, 1 == Positive, all other `NA`.
 
+
 :::
 
 #### Age
 
 There are some observations (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15)`) that are below the age range for WRA, and none above the range.
 
-In addition, mean (and median) were higher in the northern region compared with southern and center. Whereas, mean/median age were higher in rural areas. We applied survey weights when calculating them.
+In addition, mean (and median) were higher in the northern region compared with southern and central regions (@fig-2_1). Whereas, mean/median age were higher in rural areas. We applied survey weights when calculating them.
 
 ```{r label = "fig-2_1", fig.cap = "Age (in years) of women by residency and region in Malawi. The light grey line is the median age (years) for Malawi"}
 
@@ -164,7 +166,7 @@ There is one entry labelled as "male" while the data set should only contain wom
 
 ```{r}
 
-# Removing the pregnant women and unknown status
+# Excluding the pregnant women and unknown status
 Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant)) 
 
 ```
@@ -185,13 +187,13 @@ Malawi_WRA$Malaria_test_result  <- as.factor(Malawi_WRA$Malaria_test_result)
 ```
 
 
-This variable has `r sum(is.na(Malawi_WRA$Malaria_test_result) & !is.na(Malawi_WRA$selenium))` missing values which would reduce the sample size. Hence, we need to evaluate whether the information provided would influence the results to decided whether to add it or not to the model. 
+This variable has `r sum(is.na(Malawi_WRA$Malaria_test_result) & !is.na(Malawi_WRA$selenium))` missing values which would reduce the sample size. Hence, we need to evaluate whether the information provided would influence the results to decided whether to include this variable into the final model. 
 
-Can we identify if malaria is influencing Se status? - We plotted the results, and they didn't seem to have many differences between positive and negative malaria test, but maybe due to the high number of negative tests (see @sec-inflam).
+Can we identify if malaria is influencing Se status? - In @fig-XX, we can see the plasma Se concentration by malaria test result, and it didn't seem to have many differences between positive and negative malaria test, but maybe due to the high number of negative tests (see @sec-inflam).
 
 We could run the model with and without the variable and see if there is any difference in the final results. 
 
-Interestingly, younger women tented to test positive to malaria in central and southern regions, , as shown in fig-2_1b, which may be producing a confounding factor between age/malaria test and Se status. 
+Interestingly, younger women tented to test positive to malaria in central and southern regions, as shown in @fig-2_1b, which may be producing a confounding factor between age/malaria test and Se status. 
 
 ```{r label = "fig-2_1b", fig.cap = "Age (in years) of women by malaria test and region in Malawi. The light grey line is the median age (years) for Malawi"}
 
@@ -246,7 +248,7 @@ Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >999] <- NA
 
 ### Body Mass Index
 
-We calculated the Body Mass Index (BMI) as it would be added to the model as a proxy for food intakes. We assumed that women with higher food intake may have higher plasma Se due to higher dietary Se intake. For instance, a normal BMI (18.5-24.9 kg/m^2), would likely mean that the food intake was providing enough energy (kcal) to maintain a normal body weight. In Malawi, that food intake is normally represented by maize intake, as it is supplies more than 60% of the total energy supply (REF-Joy et al, , REF). Hence, we added this variable to account for potential differences in the Plasma Se due to food intake. 
+We calculated the Body Mass Index (BMI) as it would be added to the model as a proxy for total food intakes. We assumed that women with higher food intake may have higher plasma Se due to higher dietary Se intake. For instance, a normal BMI (18.5-24.9 kg/m^2), would likely mean that the food intake was providing enough food (i.e, energy) to maintain a normal body weight. In Malawi, that food intake is normally represented by maize consumption, as it is the main staple crop which supplies more than 60% of the total energy supply (REF-Joy et al, , REF). Hence, we added this variable to account for potential differences in the Plasma Se due to (lower) food intake. 
 
 ```{r}
 
@@ -263,7 +265,7 @@ summaplot(Malawi_WRA$BMI)
 
 ```
 
-We can see also in the @fig-2_3 that there is a difference in the BMI between rural and urban women. We can see similar trend with the WQ (@sec-wq), which the Northern region in Malawi has higher BMI than the other two regions.  
+We can see also in the @fig-2_3 that there is a difference in the BMI between rural and urban women. Similar trend was found when we evaluated the wealth quintiles (@sec-wq), where the Northern region in Malawi has higher BMI & wealth quintile than the other two regions. This is unsurprising, as we can assume that BMI and wealth may be related, and it has been reported previously higher body weight in wealthier women in Malawi and in the region (REF, REF, REF). 
 
 ```{r label = "fig-2_3", fig.cap = "BMI (kg/m^2) of women by residency and region in Malawi. The light grey lines represent the healthy BMI range"}
 
@@ -290,7 +292,7 @@ Malawi_WRA %>%
 
 #### Selenium
 
-We can see that the plasma Se is highly skewered, but when log-transformed it shows normality. 
+Plasma Se concentration is highly skewered, but when log-transformed it shows normality. 
 
 ```{r}
 
@@ -328,7 +330,9 @@ Malawi_WRA %>%
 
 Plasma Se median (and mean) values were higher in urban settings than in rural, and the highest in the Southern region. Then, the median dissagregated by region and residency showed that Northern and Southern urban population had the highest plasma Se median concentration, while the Central region were the lowest, particularly for women living in rural settings as shown in @fig-2_5. 
 
-Interestingly, while the women in the Northern-urban areas had higher plasma Se than their southern counterpart, the women in the Southern-rural areas had higher plasma Se those in Northern-rural areas. In addition, women who live in urban setting of the Central region had similar plasma Se median concentration as women in the northern region in rural settings. 
+Interestingly, while the women in the Northern-urban areas had higher plasma Se than their southern counterpart, the women in the Southern-rural areas had higher plasma Se those in Northern-rural areas.
+
+In addition, women who live in urban setting of the Central region had similar plasma Se median concentration as women in the northern region in rural settings. 
 
 ```{r label = "fig-2_5", fig.cap = "Variation in plasma Se concentration (ng/mL) of women in Malawi by cluster. Information is divided by region and colour represents the urbanicity."}
 
@@ -382,7 +386,7 @@ data.df$urbanity <- as.factor(data.df$urbanity)
 
 #### Inflammation {#sec-inflam}
 
-Both CRP () and AGP () were measured in women, of which we had `r sum(is.na(data.df$crp))` and `r sum(is.na(data.df$agp))` missing values respectively. We can also see that both variables were skewered and hence, we needed to log-transform them, which turned them into normallity.
+Both CRP () and AGP () were measured in women, of which we had `r sum(is.na(data.df$crp))` and `r sum(is.na(data.df$agp))` missing values respectively. We can also see that both variables were skewered and hence, we needed to log-transform them, which turned them into normality.
 
 ```{r}
 # Normality check
@@ -470,31 +474,102 @@ Malawi_WRA %>%
 ```
 
 
-### Socio-economic data (DHSDATA)
+## Socio-economic data (DHSDATA)
+
 
 
 ```{r}
 
-# Survey analysis: Cleaned dataset weight (00_cleaning-dhs, line 574)
-EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
+# Loading Wealth index and other variables (00_cleaning-dhs, line 346)
+dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) # survey data DHS
 
 
 ```
 
-
 We extracted the socio-economic information from the DHS survey, however, we are only interested in the data for women and those with reported Plasma Se values. 
 
+```{r}
 
-#### Wealth Quintile {#sec-wq}
+# Renaming and selecting variables of interest (reducing the number of variables)
 
-The NSO (2017) reported significant differences between the number of individuals in each WQ when disaggregated by rural/urban residency. 
+dhs.df <- dhs.df %>% dplyr::rename( 
+  survey_cluster1='v001',
+  household_id1='v002',
+  LINENUMBER='v003', 
+  survey_strata= "v022",
+  PSU = "v021", 
+  region = 'v101', 
+  urbanity = "v102", 
+  # region = 'v024', 
+  age_year = "v012", # for consistency 
+  wealth_quintile= "v190",
+  wealth_idx= "v190a", # to check for wealth missing values
+  Literacy= "v155",
+  education_level= "v106", 
+  source_water = "v113", # source of drinking water
+  # person_id=WomenID,
+  is_lactating= "v404", # breastfeeding yes=1, no=0
+  is_smoker= "v463a" # Only cover cigarettes (other smoking variables)
+) 
+  
+DHSDATA <- dhs.df %>% select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
+             region, urbanity,  age_year, wealth_quintile, wealth_idx, Literacy,
+             education_level, source_water, is_lactating, is_smoker, sdist) %>% 
+  mutate_at(c("region", "urbanity", "wealth_quintile", "wealth_idx", "education_level"  ,"source_water"), as.factor)
+
+# New variable with district names
+DHSDATA$dist_name <- haven::as_factor(DHSDATA$sdist) 
+DHSDATA$sdist  <- as.factor(DHSDATA$sdist)
+
+```
+
+
+
+#### Wealth Quintiles {#sec-wq}
+
+```{r, eval=FALSE}
+
+# Wealth quintile
+class(DHSDATA$wealth_quintile)
+sum(is.na(DHSDATA$wealth_quintile))
+table(DHSDATA$wealth_quintile)
+DHSDATA$wealth_quintile  <- as.factor(DHSDATA$wealth_quintile)
+
+```
+
+
+Wealth index is calculated at household level, and it is based on the goods and housing characteristics. It was assessed using Principle Component Analysis and then made to each quintile to represent 20% of the population. In the report published by the NSO (2017), they reported significant differences between the number of individuals in each WQ when disaggregated by rural/urban residency. 
 
 When plotted the  WQ per region, we can see that the Central and Southern region have more or less even distribution of the WQ, however the Northern region has predominately highest and higher WQ, accounting for more than 60% of the population in the Northern region (unweighted results). 
 
+```{r, eval = FALSE}
+
+# Wealth index (by urban/rural)
+class(DHSDATA$wealth_idx)
+sum(is.na(DHSDATA$wealth_idx))
+table(DHSDATA$wealth_idx)
+DHSDATA$wealth_idx  <- as.factor(DHSDATA$wealth_idx)
+
+```
+
+
+Then, there is another wealth variable (`wealth_idx`) that it is disaggregated by residency (rural/urban). This was developed recently in response of some criticism over the way the index is calculated, for more information see (REf=). 
 
 #### Education
 
-We could see when those two variables plotted together that most of the people with higher education was in the highest  WQ. Similarly, women in the lowest WQ has no high education.
+```{r, eval=FALSE}
+
+# Education
+class(DHSDATA$education_level)
+sum(is.na(DHSDATA$education_level))
+table(DHSDATA$education_level)
+haven::print_labels(DHSDATA$education_level)
+DHSDATA$education_level  <- as.factor(DHSDATA$education_level)
+
+```
+
+
+We could see when wealth and education were plotted together, that most of the people with higher education was in the highest wealth quintile which is in line with the NSO report (NSO, 2017). Similarly, women in the lowest WQ has no high education.
 
 All education and wealth level have representation in all three regions. Again, when looking at the data we could see that there is a slight "over-reporting" of the wealthiest quintiles. 
 
@@ -505,7 +580,7 @@ Hence, we excluded this variable as it could possibly be confounding effect.
 # Wealth quintile 1-5 (lowest to highest)
 # Education 0-3 (low to high)
 
-plot(EligibleDHS$wealth_quintile, EligibleDHS$education_level, 
+plot(DHSDATA$wealth_quintile, DHSDATA$education_level, 
      main="Wealth vs Education",
      xlab="Wealth Q", ylab="Education level", pch=19)
 
@@ -516,10 +591,39 @@ Similarly, when we plotted the Education by region, we could see the same trend 
 
 #### Literacy
 
-This variable was excluded as some of the results were incongruent. For instance,the education and literacy, all the women with secondary education reported literacy (n = `r sum(EligibleDHS$education_level >1 & EligibleDHS$Literacy == 0)`), however, there were women who reported no literacy (0), but secondary education (2).
+This variable was excluded as some of the results were misaligned. For instance, when comparing the literacy with the education level, all the women with secondary education reported literacy (n = `r sum(DHSDATA$education_level >1 & DHSDATA$Literacy == 0)`), however, there were women who reported no literacy (0), but secondary education (2).
+
+#### Source of water
+
+The source of water could have an influence on the plasma Se concentration, specially if the water is coming from local underground water or ponds, as the concentration of drinking Se water may be different according to their location, while drinking water coming from water bottled may have no minerals on it. 
+
+```{r, eval=FALSE}
+
+# source of drinking water 
+class(DHSDATA$source_water)
+table(DHSDATA$source_water)
+haven::print_labels(DHSDATA$source_water)
+
+# New variable with descriptions
+DHSDATA$source_water_ds <- haven::as_factor(DHSDATA$source_water) 
+
+```
 
 
-### Combining DHS datasets: Plasma Se & covariates
+## Combining DHS datasets: Plasma Se & covariates
+
+```{r}
+# Merging with DHS dataset to obtain Wealth index and other variables
+
+EligibleDHS <- Malawi_WRA %>% 
+ left_join(., DHSDATA %>% 
+          select(survey_cluster1, household_id1, LINENUMBER, 
+                 wealth_quintile, wealth_idx, Literacy, education_level, 
+            source_water, is_lactating, is_smoker, sdist, 
+            dist_name)) 
+
+```
+
 
 According to the study of Phiri et al (2019), the influencing factors for Plasma Se (for WRA) in Malawi were soil type and proximity to Lake Malawi. 
 
@@ -528,13 +632,50 @@ In addition, other authors have reported that socio-economic characteristics may
 Here we are exploring the variability of Plasma Se according to those variables. First within the same dataset.
 
 
-#### Wealth
 
-Plasma Se values were similar across WQ, with higher variability in the two lowest WQ. 
 
-After merging the datasets, some WQ were missing, hence following recommendations form F.S we used the household WQ for those available to impute it. They were available for 17 of the 39 observation with missing values.
+#### Wealth & BMI
 
-For Plasma Se, we only have values for `r sum(!is.na(EligibleDHS$selenium))`. This will condition the model choice.
+
+
+#### Wealth & Plasma Se
+
+
+After merging the datasets, some WQ were missing, hence following recommendations form F.S we used the household WQ for those available to impute it. They were available for 17 of the 39 observation with missing values. For Plasma Se, we only have values for `r sum(!is.na(EligibleDHS$selenium))`. 
+
+Then, we compared plasma Se concentration by the two wealth variables. We can see that there are no much differences (Fig.). However, when disaggregating the data by rural and urban, we could see differences in the trends (See Fig). Since we are modeling based on this urban/rural differences, we chosen to use the `wealth_idx` variable in our model. 
+
+```{r}
+
+# Wealth Quintile
+boxplot(selenium ~ wealth_quintile, data = EligibleDHS, 
+     main="Plasma Selenium by Wealth Quintile",
+     xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
+
+# Wealth Idx
+boxplot(selenium ~ wealth_idx, data = EligibleDHS, 
+        main="Plasma Selenium by Wealth Index",
+        xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
+
+```
+
+
+
+```{r}
+boxplot(selenium ~ urbanity*wealth_quintile, data = EligibleDHS, 
+        main="Plasma Selenium by Wealth Quintile & residency",
+        xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19, 
+        col = c("white", "steelblue"), frame = FALSE)
+
+boxplot(selenium ~ urbanity*wealth_idx, data = EligibleDHS, 
+     main="Plasma Selenium by Wealth Index & residency",
+     xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19, 
+     col = c("white", "steelblue"), frame = FALSE)
+```
+
+Finally, when we checked the overall distribution of the variable, seemed more sensible to use the combined (`wealth_quintile`) as the shape of the variable looked more equally distributed for our sample subset.  
+
+`r knitr::kable(cbind(table(EligibleDHS$wealth_quintile,EligibleDHS$urbanity),table(EligibleDHS$wealth_idx,EligibleDHS$urbanity)), row.names = TRUE, caption = "Wealth Quintile vs Wealth Index (urban/rural)")`
 
 
 #### Education level
@@ -555,14 +696,42 @@ We checked wealth by region and it seemed that there is a slight unbalance for t
 
 Only 3 respondent reported smoking cigarettes, if we want to include this variable, we may need to combine with other smoking variables (including the other variables), although according with the systematic review published in 2015, the prevalence of women who smoke in this context was below 4% [@brathwaiteSystematicReviewTobacco2015], additionally a report published more recently (2021) by the Malawi Government using this survey found very low rates of smoking among women (@ref-kadzamiraSocioeconomicImpactDisease2021).
 
+#### Source of water & Plasma Se
+
+We found `r sum(is.na(EligibleDHS$source_water))` missing values in the variable `source_water` in the final dataset.
+
+We then checked the mean Se concentration by the different sources
+
+```{r}
+
+ddply(EligibleDHS, ~source_water, summarise, 
+      median_PlasmaSe=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+```
+
+We could see high plasma Se for those women reporting "other sources" of source of water, however there were only 4 women who were all living in the same cluster. 
+
+`r unique(EligibleDHS$survey_cluster1[as.factor(EligibleDHS$source_water) == "96"])`
+
+Hence, we decided that because most of the women were getting their water from "tube well or borehole" (21) that if there was spatial variation due to the soil Se concentration, it should be captured with the maize Se concentration. In the future, we may want to expore this variable a bit more indepth and use other proxy variable to account for Plasma Se varaibitliy due to drinking water. 
+
+
+```{r, eval=FALSE}
+
+# Survey analysis: Cleaned dataset weight 
+EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
+
+```
+
+
 #### Limitations of DHS data
 
-•	Time influence:
-o	DHS survey was performed in 2015 while GeoNut was in 2018 and Chilimba in 2009. 
-o	Seasonal variation: DHS survey was performed during Feb.- which are normally referred as the "hunger season" were food intake is at its lowest and food patterns and behaviours may be influenced by maize scarcity (at HH level). Including, other crop intakes and unrefined/ maize bran flour intake.
-o	Justification: Food patterns (related to maize intake) were fairly constant between IHS3-IHS5
-o	Check seasonal pattern for maize intake, sub-grouped by: maize fraction, wealth and urbanity (focus on rural). 
-
+  - **Time influence**: DHS survey was performed in 2015 while GeoNut was in 2018 and Chilimba in 2009. However, we could assume that the Se concentration would have been remain fairly similar over time (REF, REF). 
+  
+  - **Seasonal variation**: DHS survey was performed during Feb.- which are normally referred as the "hunger season" were food intake is at its lowest and food patterns and behaviours may be influenced by maize scarcity (at HH level). Including, other crop intakes and unrefined/ maize bran flour intake. However, according to previous studies, food patterns (related to maize intake) were fairly constant between IHS3-IHS5.
+  
+#TODO:
+Check seasonal pattern for maize intake, sub-grouped by: maize fraction, wealth and urbanity (focus on rural). 
 
 
 ### GPS location {#sec-gps-location}

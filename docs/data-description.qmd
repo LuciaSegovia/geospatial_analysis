@@ -17,12 +17,12 @@ This data set (MW_WRA) provided information on biomarkers and other biological d
 -   **mtype** (urban/rural) [U-R = 1-2] 
 -   **m04**  (gender)
 -   **mcluster** (cluster number - PSU)
--   **mnumber** (husehold number - SSU)
--   **mweight** (Micro nutrient survey household weight (6 decimals))
+-   **mnumber** (household number - SSU)
+-   **mweight** (Micronutrient survey household weight (6 decimals))
 -   **m01** (line number - individual ID within HH)
 -   **m07** (age) (age in years)
--   **m435** (weight)
--   **m436** (height)
+-   **m435** (weight, in kg)
+-   **m436** (height, in m)
 -   **sel** (Plasma Se (ng/ml))
 -   **m415** (Took any kind of vitamin or mineral tablet/syrup/powder)
 -   **m431** (Malaria test result)[^1]
@@ -33,7 +33,7 @@ This data set (MW_WRA) provided information on biomarkers and other biological d
 [^1] Malaria test recode: Final result of malaria from blood smear test  
 
 -  2 = Negative (in recode manual = 0)
--  1 = Positive
+-  1 = Positive (1)
 -  6 = Test undetermined (4)
 -  7 = Sample not found in lab database (6)
 -  9 = Missing (m)
@@ -47,9 +47,9 @@ This data set (MWIR7) provided individual-level information for WRA on socioecon
 These variables provide information at individual level and, below are the variables of interest:
 
 -   **v101/V024** (De facto region of residence)
--   **sdist** (district). 
--   **v022** (survey strata)[^2].
--   **v005** (Woman's sample weights, divide it by 1000000 before applying the weighting factor). Not to be used for MNS, as MNS is a subset and has its own survey weights. 
+-   **sdist** (district)
+-   **v022** (survey strata)[^2]
+-   **v005** (Woman's sample weights)[^3]
 -   **v106** (Highest educational level)
 -   **v155** (Literacy)
 -   **v190** (Wealth index) [1-5 (lowest to highest)]
@@ -61,6 +61,8 @@ These variables provide information at individual level and, below are the varia
 -   **v150** (Relationship to household head)
 
 [^2]Note that v022 & v023 are strata Urban/rural district as the information collected here was for the whole DHS survey. This should not be used for MNS because it is a subset of the DHS survey with the representatives (and strata) in at region+rural/urban. We could create our own strata based on the survey design (1/6 (3regions*2urban/rural)).
+
+[^3]Similarly to the above this variable is not to be used for MNS, as MNS is a subset and has its own survey weights. For the DHS, it needs to be divided by 1000000 before applying the weighting factor.
 
 #### Location data 
 
@@ -84,6 +86,8 @@ The data repository contains a number of data files for [Malawi](https://figshar
 -  **Processed crop mineral dataset** (MWI_CropSoilData_NA), which has transformed values for not analysed (NM), below the limit of detection (BLOD), or negative values into `NA`.  
 
 -  **Limit of detection dataset** (MWI_Crop_LOD_ByICPRun), provides information about the limit of detection per each round of ICP.
+
+Se_grain,Selenium,mg kg-1 DM,
 
 File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_CropSoilData_Raw.csv`
 File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_Crop_LOD_ByICPRun.csv`
@@ -156,7 +160,7 @@ Fish intake has been identified as one of the main sources of Se in Malawian die
 
 2. Distance to Lake Malawi: Following the study fro Phiri et al, (2019), and using distance to Lake Malawi. We used the shape files of Malawi (`ea_bnd`) described in @sec-bound, and calculated the Euclidean distance from the DHS cluster centroids to the Lake. 
 
-3. Distance to main Lakes: We decided to use a mixed approach between the other two, where we used the shortest distance to one of the three main lakes in Malawi: Lake Chilwa, Lake XX and Lake Malawi. As they have been shown to be fishing ground in Malawi. For instance, while lake Malawi provides the largest volume of fish, it is followed by lake Chilwa which provides around 20% of the total fish landings in Malawi (Chiwaula et al., 2012, Simmance et al, 2021). We calculate the closest distance to the closest lake using the same boundary file as described above. 
+3. Distance to main Lakes: We decided to use a mixed approach between the other two, where we used the shortest distance to one of the three main lakes in Malawi: Lake Chilwa, Lake Malombe and Lake Malawi. As they have been shown to be fishing ground in Malawi. For instance, while lake Malawi provides the largest volume of fish, it is followed by lake Chilwa which provides around 20% of the total fish landings in Malawi (Chiwaula et al., 2012, Simmance et al, 2021). We calculate the closest distance to the closest lake using the same boundary file as described above. 
 
 
 #### Excluded 
@@ -181,9 +185,7 @@ rivers (World Wildlife Fund, 2019). We excluded this data set because a) it was 
 
 ### Geo-referenced apparent food consumption in Malawi (Se intake)
 
-This dataset was only used as support information. Fourth Integrated Household Survey 2016-2017. https://doi.org/10.48529/g2p9-9r19. It can be accessed through the World Bank microdata website. 
-
-Information about each module and the information contained can be found [here](https://microdata.worldbank.org/index.php/catalog/2936/pdf-documentation).
+This dataset the [Fourth Integrated Household Survey 2016-2017](https://doi.org/10.48529/g2p9-9r19), was only used as support information. It can be accessed through the World Bank microdata website. Information about each module and the information contained can be found [here](https://microdata.worldbank.org/index.php/catalog/2936/pdf-documentation).
 
 Cleaning script, summary statistics and plots can be found in the repository ihs4, under the MAPS project. 
 

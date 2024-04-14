@@ -2,7 +2,7 @@
 
 # Methods: Data processing
 
-Once the datasets are selected and cleaned. The next step is preparing the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se concentration and predicted Se concentration for each aggregation level that will be compared with the plasma Se concentration in Malawian women. 
+Once the datasets are selected and cleaned. The next steps are the preparation of the variables that are going to be used in the model. Particularly, generating the different estimates of maize grain Se concentration and predicted Se concentration for each aggregation level that will be compared with the plasma Se concentration in Malawian women. 
 
 
 ```{r set-up, message=FALSE, warning=FALSE}
@@ -32,7 +32,8 @@ ea_admin$region <- as.factor(ea_admin$region)
 dist_bnd  <- st_read(here::here( "data",
                                 "mwi-boundaries",
                                 "mwi_adm_nso_hotosm_20230329_shp", 
-                                "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
+                                "mwi_admbnda_adm2_nso_hotosm_20230329.shp"), quiet = TRUE)
+
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 # Maize Se conc.(from cleaned from 00_cleaning-maize.R)
@@ -51,21 +52,18 @@ plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>%
 
 The datasets that we used are listed below:
 
--   `ea_admin`: This (shape)file contains the boundaries of Malawi smallest administrative units, Enumeration Areas (EAs), and information on their corresponding districts and regions. Note that the boundaries of the lakes (e.g., Lake Malawi) were excluded as maize grain nor plasma Se could have been taken within those boundaries. 
+-   `ea_admin`: This (shape)file contains the boundaries of Malawi smallest administrative units, Enumeration Areas (EAs), and information on their corresponding districts and regions. This dataset was generated in the `00_cleaning-boundaries.R`. For more information regarding the dataset see the @sec-explo-bound. Note that the boundaries of the lakes (e.g., Lake Malawi) were excluded as maize grain nor plasma Se could have been taken within those boundaries. 
 
 -   `maize.df`: This file contains the GPS sample location (lat/lon), maize grain Se concentration, soil pH and Mean Annual Temperature (MAT). See @sec-maize for more information on the dataset.
 
 -   `plasma.df`: This file contains the displaced [cluster location](#gps-location) (lon/lat), plasma Se concentration, and other individual level information (wealth quintile, BMI, etc.). See @sec-plasma for more information on the dataset.
 
-## Generating predicted maize grain Se concentration for Malawi
-
-This file (`predmaize.df`) contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
+-   `predmaize.df`: This file contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
 
 
-**TODO: Write the full info of the model**
+## Generating the spatial aggregations
 
-
-Then, in order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 
+In order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 
 
 
 ## Generating the boundaries
@@ -237,7 +235,7 @@ district <- plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
 
 ```
 
-That dataset (`district`) was used to exclude those EAs that were not in the corresponding district for each cluster. 
+That dataset (`district`) was used to exclude those EAs that were not in the corresponding district for each cluster. Note that there are two "district" missing, one is "Zomba City" and the other is "Likoma". We checked and the entries corresponding to Zomba were all rural. 
 
 ```{r}
 

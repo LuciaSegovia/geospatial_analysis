@@ -29,6 +29,8 @@ Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data
 # b_admin3  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_3.shp")) #EA boundaries
 # b_admin1  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_1.shp")) #District boundaries
 
+table(Malawi_WRA$mcluster)
+
 # Import checks
 n01 <-  dim(Malawi_WRA)[1]
 names(Malawi_WRA)
@@ -359,6 +361,7 @@ DHSDATA <- dhs.df %>% dplyr::rename(
   # region = 'v024', 
   age_year = "v012", # for consistency 
   wealth_quintile= "v190",
+  wealth_idx= "v190a", # to check for wealth missing values
   Literacy= "v155",
   education_level= "v106", 
   source_water = "v113", # source of drinking water
@@ -366,7 +369,7 @@ DHSDATA <- dhs.df %>% dplyr::rename(
   is_lactating= "v404", # breastfeeding yes=1, no=0
   is_smoker= "v463a" # Only cover cigarettes (other smoking variables)
 ) %>% select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
-             region, urbanity,  age_year, wealth_quintile, Literacy,
+             region, urbanity,  age_year, wealth_quintile, wealth_idx, Literacy,
              education_level, source_water, is_lactating, is_smoker, sdist)
 
 
@@ -438,7 +441,8 @@ class(DHSDATA$sdist)
 sum(is.na(DHSDATA$sdist))
 table(DHSDATA$sdist)
 haven::print_labels(DHSDATA$sdist) 
-# New variable with district names
+
+## District: New variable with district names ----
 DHSDATA$dist_name <- haven::as_factor(DHSDATA$sdist) 
 DHSDATA$sdist  <- as.factor(DHSDATA$sdist)
 
@@ -484,7 +488,7 @@ DHSDATA %>% group_by (region) %>% dplyr::count(wealth_quintile)
 EligibleDHS <- Malawi_WRA %>% 
  left_join(., DHSDATA %>% 
           select(survey_cluster1, household_id1, LINENUMBER, 
-                 wealth_quintile, Literacy, education_level, 
+                 wealth_quintile, wealth_idx, Literacy, education_level, 
             source_water, is_lactating, is_smoker, sdist, 
             dist_name)) 
 
@@ -518,16 +522,29 @@ unique(EligibleDHS$household_id1)
 sum(is.na(EligibleDHS$household_id1)) #All observations have HH ID
 sum(EligibleDHS$household_id1==0) #All observations have weight > 0
 
-#Wealth Quantile
+#Wealth Quantile vs Wealth idx (different for R/U)
 unique(EligibleDHS$wealth_quintile)
 sum(is.na(EligibleDHS$wealth_quintile)) # 29 observations are missing WQ
+sum(is.na(EligibleDHS$wealth_idx)) # 29 observations are missing WQ
 
+
+# Wealth Quintiles ----
 boxplot(selenium ~ wealth_quintile, data = EligibleDHS, 
      main="Plasma Selenium by Wealth Quintile",
      xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
 
+# Wealth Idx
+boxplot(selenium ~ wealth_idx, data = EligibleDHS, 
+        main="Plasma Selenium by Wealth Index",
+        xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
+
 boxplot(selenium ~ urbanity*wealth_quintile, data = EligibleDHS, 
-     main="Plasma Selenium by Wealth Quintile & residency",
+        main="Plasma Selenium by Wealth Quintile & residency",
+        xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19, 
+        col = c("white", "steelblue"), frame = FALSE)
+
+boxplot(selenium ~ urbanity*wealth_idx, data = EligibleDHS, 
+     main="Plasma Selenium by Wealth Index & residency",
      xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19, 
      col = c("white", "steelblue"), frame = FALSE)
 
@@ -535,6 +552,11 @@ boxplot(BMI ~ urbanity*wealth_quintile, data = EligibleDHS,
      main="BMI by Wealth Quintile & residency",
      xlab="Wealth Quantile", ylab="BMI (kg/m^2)", pch=19, 
      col = c("white", "steelblue"), frame = FALSE)
+
+boxplot(BMI ~ urbanity*wealth_idx, data = EligibleDHS, 
+        main="BMI by Wealth Quintile & residency",
+        xlab="Wealth Quantile", ylab="BMI (kg/m^2)", pch=19, 
+        col = c("white", "steelblue"), frame = FALSE)
 
 boxplot(selenium ~ urbanity*region, data = EligibleDHS, 
         main="Plasma Selenium by region & residency",
@@ -597,7 +619,7 @@ boxplot(selenium ~ is_smoker , data = EligibleDHS,
 #Identifying HH ID & cluster of missing socio-eco info
 subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
        select = c("household_id1","survey_cluster1")) %>% left_join(.,DHSDATA) %>% 
-  group_by(survey_cluster1, household_id1) %>% dplyr::count(wealth_quintile) %>% 
+  group_by(survey_cluster1, household_id1) %>% dplyr::count(wealth_quintile, wealth_idx, urbanity) %>% 
   filter(!is.na(wealth_quintile)) %>% 
   View()
 
@@ -605,7 +627,7 @@ subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile),
 Wealth <- subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
        select = c("household_id1","survey_cluster1")) %>% 
    left_join(., DHSDATA %>% 
-             select(c("household_id1","survey_cluster1", "wealth_quintile"))) %>% 
+             select(c("household_id1","survey_cluster1", "wealth_quintile", "wealth_idx"))) %>% 
   group_by(survey_cluster1, household_id1) %>%
   filter(!is.na(wealth_quintile)) %>% 
   distinct()
@@ -624,6 +646,9 @@ for(i in seq_along(Wealth$household_id1)){
   
 EligibleDHS$wealth_quintile[EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[i] &
                               EligibleDHS$household_id1 %in% Wealth$household_id1[i]] <- Wealth$wealth_quintile[i]
+
+EligibleDHS$wealth_idx[EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[i] &
+                              EligibleDHS$household_id1 %in% Wealth$household_id1[i]] <- Wealth$wealth_idx[i]
 }
 
 #Checking results from the loop. 
@@ -665,6 +690,13 @@ boxplot(selenium ~ Malaria_test_result*wealth_quintile, data = EligibleDHS,
         xlab="Wealth Q", ylab="plasma Se (ng/ml)", pch=19, 
         col = c("white", "steelblue"), frame = FALSE)
 
+#Source of water ----
+
+# Checking median plasma Se by water source
+ddply(EligibleDHS, ~source_water, summarise, 
+      medianBMI=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+EligibleDHS$survey_cluster1[EligibleDHS$source_water == "96"]
 
 # Defining Se deficiency ----
 EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)

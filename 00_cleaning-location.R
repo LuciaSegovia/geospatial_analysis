@@ -52,8 +52,9 @@ ea_admin$region <- as.factor(ea_admin$region)
 plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
   filter(!is.na(selenium))
 
-
 names(plasma.df)
+
+unique(plasma.df$dist_name)
 
 # Getting only cluster location (to avoid duplicates), 
 # renaming buffer as geometry for converting into spatial object
@@ -129,6 +130,7 @@ plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
   distinct(survey_cluster1, ADM2_EN, dist_name2) # %>% View()
 
 # Getting the cluster and corresponding district
+# Two districts has no plasma values (Likoma and Zomba City)
 district <- plasma.df %>% dplyr::filter(boundaries_check == TRUE) %>%
   distinct(survey_cluster1, ADM2_EN) 
 

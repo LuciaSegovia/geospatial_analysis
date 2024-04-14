@@ -31,6 +31,8 @@ Of those four, we only included inflammation, smoking was excluded due to the lo
 
 See model framework
 
+p(s_i) = \beta_0(cluster) + \beta_1X_1 + \psi(s_i)
+
 
 ### Test 1: Irregular lattice model (areal data)
 

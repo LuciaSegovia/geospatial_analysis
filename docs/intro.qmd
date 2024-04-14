@@ -4,14 +4,12 @@
 
 
 
-### Aims of the study
+### Aim of the study
 
-We want to know whether: 
 
-a)  Observed estimates provides better prediction/ explanation of the plasma Se than predicted estimates? 
+a)  At what level of spatial aggregation of maize Se concentration, plasma Se concentration was better explained/described, after accounting for individual-level factors of plasma Se concentration variability? 
 
-b)  At what level of maize Se aggregation plasma Se concentration is better explained? 
-
+b)  To confirm that prediction of maize Se concentration provides more accurate estimates when compared with plasma Se concentration in women in Malawi.  
 
 ### Objectives {.unnumbered}
 
@@ -21,4 +19,4 @@ The objectives of these documentation and the exploratory analysis are:
 
 2)  to evaluate the different variables that will be used in the analysis
 
-3) to document and calculate the mean/median maize Se concentration at different level of spatial aggregation (i.e., from 5km radius up to regional averages).
+3) to document and calculate the mean/median maize Se concentration at different level of spatial aggregation (i.e., from 15km radius up to district averages).
