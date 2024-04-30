@@ -21,7 +21,7 @@ source(here::here("functions", "kriging-functions.R")) # Matern functions & othe
 #  Read in the maize data set
 #
 
-maize <- read.csv(here::here("data", "maize", "Malawi_Grain.csv"))
+# maize <- read.csv(here::here("data", "maize", "Malawi_Grain.csv"))
 # maize$Se_triplequad [maize$Se_triplequad >9000] <- NA
 
 # min(maize$Se_triplequad)
@@ -131,18 +131,19 @@ xlab="Latitude",ylab=plotname)
 #  Make a variogram cloud
 #
 
-N<-nrow(data.df)
+N<-nrow(data.df) # No. of observations
 
+NP<-0.5*N*(N-1)   # No. of pairs
 
-NP<-0.5*N*(N-1) 
+# Extracting variables from the data set
+Long<-data.df$Longitude # Lon
+Lat<-data.df$Latitude # Lat
+z<-data.df[,element] # maize Se conc.
 
-Long<-data.df$Longitude
-Lat<-data.df$Latitude
-z<-data.df[,element]
-
-lag<-vector("numeric",NP)
-vclo<-vector("numeric",NP)
-bear<-vector("numeric",NP)
+# Generating vectors to store the data to be calculated (loop below)
+lag<-vector("numeric",NP) # Distance between 2pts (lag)
+vclo<-vector("numeric",NP) # variogram cloud (diff. between two obs.)
+bear<-vector("numeric",NP) # Shortest distance between 2pts (on an ellipsoid or sphere)
 
 ico=0
 
@@ -158,6 +159,8 @@ vclo[ico]<-(zi-zj)
 }
 }
 
+# Setting for the variogram:
+# max. distance (e.g., end of spatial correlation) around 100km 
 lagbins<-cut(lag,seq(0,100,10),labels=seq(5,100,10))   # 10-km bins for Malawi
 
 lag2<-lag[!is.na(lagbins)]
@@ -247,7 +250,6 @@ par(mfrow=c(2,2))
 
 # Matheron's estimator
 
-
 h<-varlags[,1]
 sv<-semiv[,1]
 npa<-npair[,1]
@@ -257,6 +259,7 @@ oo<-optim(c(co,c1,a),wls
 ,method="L-BFGS-B",
 lower=c(0.0,0.0,0),
 upper=c(1000000,1000000,5000))
+
 Ahat<-length(h)*log(oo$value)+6  
 
 ooMa<-oo
@@ -285,8 +288,10 @@ oo<-optim(c(co,c1,a),wls
 ,method="L-BFGS-B",
 lower=c(0.0,0.0,0),
 upper=c(1000000,1000000,5000))
-ooCH<-oo
+
 Ahat<-length(h)*log(oo$value)+6  
+
+ooCH<-oo
 
 oon<-optim(c(120),wlsnugg
 ,method="L-BFGS-B",
@@ -295,8 +300,8 @@ upper=c(1000000))
 
 Ahatn<-length(h)*log(oon$value)+2  
 
-
-plot(varlags[,5],semiv[,6],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
+# Plotting the data
+plot(varlags[,1],semiv[,2],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
 lines(seq(0,maxl,0.1),oo$par[1]+oo$par[2]*(1-exp(-seq(0,maxl,0.1)/oo$par[3])))
 mtext("b). Cressie-Hawkins",3,adj=0,line=0.5)
 
@@ -337,7 +342,7 @@ mtext("c). Dowd",3,adj=0,line=0.5)
 #  
 
 #Nv<-N # no need to subset for Ethiopia
-Nv<-500 # Malawi
+Nv<-1000 # Malawi
 
 
 
@@ -602,7 +607,6 @@ kv<-t(Bd)%*%lam
 lagr<-lam[N+1]
 krop[it,]<-c(Long_t,Lat_t,Zhat,kv)
 }
-
 
 
 colnames(krop)<-c("Longitude","Latitude","Zhat","kv")

@@ -52,6 +52,9 @@ rsconnect/
 # Data file
 data/
 
+# Ethiopia case-study
+ethiopia/
+
 # produced presentations
 presentation/*.html
 presentation/*.pdf

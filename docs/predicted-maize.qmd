@@ -46,7 +46,7 @@ Zeros were converted to minimum value due to log-transformation of zero is equal
 :::
 
 
-Now, we are performing some summary statistics and checking the data skewerness to decide on the log-tranformation.
+Now, we are performing some summary statistics and checking the data skewness to decide on the logtranformation.
 
 ```{r}
 
@@ -65,14 +65,23 @@ data.df  <- as.data.frame(data.df)
 summary<-(summa(data.df[,element]))
 summary<-rbind(summary,(summa(log(data.df[,element]))))
 row.names(summary)<-c("mg/kg,","log mg/kg")
-
 summaplot((data.df[,element]),plotname)
-summaplot(log(data.df[,element]),plotname2)
 
 ```
 
 
-Due to the right-side skewerness, we decided to log-transform the variable (Se_raw). Then, we plot the concentration of maize Se in the country by their quartile from the smallest (in blue) to the highest (in red) to see if there are some spatial trend or pattern. We also checked for North to South and West to East trends. 
+Due to the markedly right-side skewness, we decided to log-transform the variable (Se_raw). We can see in the figure below, that the log-transformed concentration of Se in maize is very close to normality, hence we will proceed with the log-trasformed variable for the variogram estimation. Variograms are particularly sensitive to right-side outliers (e.g., exceptionally large values) (@WwebsterGeostatisticsEnvironmentalScientists2007). 
+
+
+
+```{r}
+
+# Checking the data distrubution after log-transformation
+summaplot(log(data.df[,element]),plotname2)
+
+```
+
+Then, we can see in @fig-ss the log-transformed maize Se concentration coloured by their quartile from the smallest (in blue) to the highest (in red) to see if there are some spatial trend or pattern. We also checked for North to South and West to East trends (see code in the R scripts). 
 
 ```{r}
 
@@ -94,15 +103,79 @@ xlab="Longitude",ylab="Latitude",cex=0.5)
 
 ## Variogram estimation and validation
 
+All these steps are key for getting selecting the best fitting model ang getting the most accurate results. The method for evaluating and selecting the model was based on @gashuNutritionalQualityCereals2021 and best practices suggested by  and @websterGeostatisticsEnvironmentalScientists2007. 
+
 ### Obtaining the variogram estimates
 
-Now, we are studying the spatial structure of the data by generating an empirical variogram. We tested four different estimations: isotropic and directional using the Matheron estimator,and isotropic estimates with Cressie-Hawkins and Dowd. 
+Now, we are studying the spatial structure of the data by generating an empirical variogram. 
+
+To do so, first we need to calculate some information from the data: the distance between all pairs (lag) and the difference in maize Se concentration between two points. 
+
+
+```{r}
+
+#  Exploratory study of empirical variogram
+
+#  Make a variogram cloud
+
+N<-nrow(data.df) # No. of observations
+
+NP<-0.5*N*(N-1)  # No. of pairs
+
+# Extracting variables from the data set
+Long<-data.df$Longitude # Lon
+Lat<-data.df$Latitude # Lat
+z<-data.df[,element]  # maize Se conc.
+
+# Generating vectors to store the data to be calculated in the loop below
+lag<-vector("numeric",NP)   # Distance between 2pts (lag)
+vclo<-vector("numeric",NP)  # variogram cloud 
+bear<-vector("numeric",NP)  # Shortest distance between 2pts (on an ellipsoid or sphere)
+
+ico=0
+
+for (i in 1:(N-1)){
+for (j in (i+1):N){
+ico=ico+1
+# print(ico/NP)
+lag[ico]<-distVincentySphere(c(Long[i],Lat[i]),c(Long[j],Lat[j]))/1000 #
+bear[ico]<-finalBearing(c(Long[i],Lat[i]),c(Long[j],Lat[j]), a=6378137, f=1/298.257223563, sphere=TRUE)
+zi<-(z[i])
+zj<-(z[j])
+vclo[ico]<-(zi-zj)
+}
+}
+
+```
+
+With that information, we are going to decide on the maximum lag distance that will be included in the variogram, and the lag bins. For more information about the use of bin distance (d) and the importance of its selection, see "*Irregular sampling in one dimension*" (@websterGeostatisticsEnvironmentalScientists2007, page 68). 
+
+**To-DO:**Ask ML about the choice of 100km and 10km bins and potential differences in the estimates. 
+
+```{r}
+
+# Setting for the variogram:
+# max. distance (e.g., end of spatial correlation) around 100km 
+# We have tested 100km, 150km and 200km 
+maxdist <- 100
+
+lagbins<-cut(lag,seq(0,maxdist,10),labels=seq(5,maxdist,10))   # 10-km bins for Malawi
+
+lag2<-lag[!is.na(lagbins)]
+vclo2<-vclo[!is.na(lagbins)]
+lagbins<-factor(lagbins[!is.na(lagbins)])
+nlags<-nlevels(lagbins)
+
+
+```
+
+Then, we for generating the variance we tested three different estimatiors: isotropic Matheron (`Ma`), Cressie-Hawkins (`CH`) and Dowd (`Do`).  
 
 In order to store the data we created three matrices, one `semivar` which contains the variogram estimates and was structured as follow:
 
--   column 1 is isotropic Matheron,
--   columns 2 are isotropic estimates with Cressie-Hawkins estimators,
--   columns 3 are isotropic estimates with Dowd estimators
+-   column 1 are estimates with Matheron (`iso-Ma`),
+-   columns 2 are for the robust estimator Cressie-Hawkins (`iso-CH`),
+-   columns 3 are for the robust Dowd estimator (`iso-Do`).
 
 Then, the lag pairs per bin, and the mean lag distance were stored in the objects `npair` and `varlag` (isotropic). 
 
@@ -119,18 +192,17 @@ colnames(varlags)<-c("iso")
 
 ```
 
-Now the lag distance, the number of lag pairs and the estimators are calculated.
+Now the mean distance per lag bin and the number of pairs in each lag (total/mean = n) and the estimators are calculated. 
 
 ```{r}
 
-# Adding the mean lag distance
+# Adding the mean lag distance per bin 
 varlags[,1]<-as.numeric(by(lag2, lagbins, mean))
-# Adding the number of lag pairs
+# Adding the number of pairs in each lag bin 
 npair[,1]<-as.numeric(by(lag2, lagbins, sum))/as.numeric(by(lag2, lagbins, mean))
 
-#
 # Calculating the estimator
-#
+
 #  Matheron
 semiv[,1]<-0.5*(as.numeric(by((vclo2)^2, lagbins, mean)))
 
@@ -139,7 +211,6 @@ semiv[,2]<-(as.numeric(by((sqrt(abs(vclo2))), lagbins, mean)))^4
 semiv[,2]<-0.5*semiv[,2]/(0.457+0.459/npair[,1]+0.045/npair[,1]^2)
 
 # Do
-
 vclo2d<-c(vclo2,-vclo2)
 lagbinsd<-c(lagbins,lagbins)
 
@@ -147,7 +218,7 @@ semiv[,3]<-0.5*(as.numeric(by(vclo2d, lagbinsd, mad)))^2
 
 ```
 
-And the results are plotted...
+And then, results are plotted...
 
 ```{r}
 
@@ -173,12 +244,130 @@ text(65,locsv[3],"Dowd",pos=4)
 
 ### Fit exponential variogram functions to each set of estimates
 
+First, we need to choose initial estimates for the parameters. These will impact the estimates, so also should they be chosen with care! (See Chapter 6 and page 101 of @websterGeostatisticsEnvironmentalScientists2007).
+
+```{r}
+
+# Reasonable initial estimates of the parameters must be entered below
+
+co<-20000
+c1<-30000
+a<-50
+
+maxl<-max(varlags[,1])*1.1
+par(mfrow=c(2,2))
+
+```
+
+Then, we are fitting the model using the different estimators using weighted least squares (See the `wls()` function in the `kringing-functions.R` script under the functions folder). 
+
+
+```{r}
+
+# Matheron's estimator (Ma)
+
+h<-varlags[,1] # mean lag distance per bin 
+sv<-semiv[,1]  # Ma semivariance
+npa<-npair[,1] # No of pairs per bin
+kap<-0.5
+
+# Fitting the model 
+oo<-optim(c(co,c1,a),wls
+,method="L-BFGS-B",
+lower=c(0.0,0.0,0),
+upper=c(1000000,1000000,5000))
+
+Ahat<-length(h)*log(oo$value)+6  
+
+ooMa<-oo # Storing values 
+
+```
+
+Visually inspecting the results of the fitted variogram for the Matheron's estimator.
+
+```{r}
+
+plot(varlags[,1],semiv[,1],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
+lines(seq(0,maxl,0.1),oo$par[1]+oo$par[2]*(1-exp(-seq(0,maxl,0.1)/oo$par[3])))
+
+mtext("a). Matheron",3,adj=0,line=0.5)
+
+```
+
+Then, we fitted the varigram using the Cressie's and Hawkins's estimators. 
+
+
+```{r}
+
+# Cressie's and Hawkins's estimator  (CH)
+
+h<-varlags[,1] # mean lag distance per bin 
+sv<-semiv[,2]  # CH semivariance
+npa<-npair[,1] # No of pairs per bin
+kap<-0.5
+
+# Fitting the model 
+oo<-optim(c(co,c1,a),wls
+,method="L-BFGS-B",
+lower=c(0.0,0.0,0),
+upper=c(1000000,1000000,5000))
+
+Ahat<-length(h)*log(oo$value)+6  
+
+ooCH<-oo # Storing values 
+
+```
+
+Again, we proceed to visually inspect the fitted variogram.
+
+```{r}
+
+plot(varlags[,1],semiv[,2],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
+lines(seq(0,maxl,0.1),oo$par[1]+oo$par[2]*(1-exp(-seq(0,maxl,0.1)/oo$par[3])))
+
+mtext("b). Cressie-Hawkins",3,adj=0,line=0.5)
+
+```
+
+And, finally, we fitted the variogram using the Dowd's estimator. 
+
+```{r}
+
+# Dowd's estimator Do
+
+h<-varlags[,1] # mean lag distance per bin 
+sv<-semiv[,2]  # Do semivariance
+npa<-npair[,1] # No of pairs per bin
+kap<-0.5
+
+# Fitting the model 
+oo<-optim(c(co,c1,a),wls
+,method="L-BFGS-B",
+lower=c(0.0,0.0,0),
+upper=c(1000000,1000000,5000))
+
+Ahat<-length(h)*log(oo$value)+6  
+
+ooDo<-oo # Storing values 
+
+```
+
+Visualising the results....
+
+```{r}
+
+plot(varlags[,1],semiv[,3],ylim=c(0,maxv),xlim=c(0,maxl),xlab="Distance /km",ylab="Variance",pch=16)
+lines(seq(0,maxl,0.1),oo$par[1]+oo$par[2]*(1-exp(-seq(0,maxl,0.1)/oo$par[3])))
+
+mtext("c). Dowd",3,adj=0,line=0.5)
+
+```
+
 ### Cross-validation
 
 # Check perc. of the sample needed for testing the cross-validation. 
 
 ## Kriging of grain Se concentrations
-
 
 
 This file (`predmaize.df`) contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
