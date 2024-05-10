@@ -10,7 +10,7 @@
 # Libraries & functions
 
 library(geosphere)
-source(here::here("functions", "CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "CEPHaStat_3.R")) # stat functions
 source(here::here("functions", "kriging-functions.R")) # Matern functions & others
 
 #  Note that the script contains an adaptation of the scripts develop for 
@@ -237,7 +237,7 @@ text(65,locsv[2],"Cressie-Hawkins",pos=4)
 text(65,locsv[3],"Dowd",pos=4)
 
 
-####  Fit exponential variogram functions to each set of estimates
+#  Fit exponential variogram functions to each set of estimates ----
 
 # Reasonable initial estimates of the parameters must be entered below
 
@@ -342,7 +342,7 @@ mtext("c). Dowd",3,adj=0,line=0.5)
 #  
 
 #Nv<-N # no need to subset for Ethiopia
-Nv<-1000 # Malawi
+Nv<-500 # vs 1000 Malawi - check perc. ()
 
 
 
@@ -494,10 +494,13 @@ colnames(kvopDo)<-c("z_0","Zhat","err","kv","theta")
 #  the median is in the range and closest to 0.455
 #
 
+# Print out mean and median standardized squared prediction
+#  error for each variogram.
 summa(kvopMa[,5])[,c(1,2)]
 summa(kvopCH[,5])[,c(1,2)]
 summa(kvopDo[,5])[,c(1,2)]
 
+# Interval calculation [thetaCLL,thetaCLU] 
 thetaCLU<-0.455+2*sqrt(1/(8*(Nv/2)*(dchisq(0.455,1))^2))
 thetaCLL<-0.455-2*sqrt(1/(8*(Nv/2)*(dchisq(0.455,1))^2))
 
@@ -507,37 +510,47 @@ print(c(thetaCLL,thetaCLU))
 # on the decision above
 
 #ooX<-ooCH #non-log
-ooX<-ooMa  #log
+#ooX<-ooMa  #log
+ooX<-ooDo  #log, BLOD no zero.
 
 
-####################################################################
-# Writing output prior to kriging.
+# Writing output prior to kriging -----
 
 Models<-rbind(ooMa$par,ooCH$par,ooDo$par)
 colnames(Models)<-c("Co","C1","A")
 rownames(Models)<-c("Ma","CH","Do")
 
-fname<-paste(element,Crop.target,"fitted_variograms.dat",sep="_")
-
+# Fitted variograms
+fname<-paste0("data/OK/",paste(Sys.Date(),element,Crop.target,"fitted_variograms.dat", sep="_"))
 write.table(Models,fname,quote=F)
 
-fname<-paste(element,Crop.target,"variogram_estimates.dat")
+#renaming variables before saving 
+colnames(varlags)<-c("varlag")
+colnames(varlags)<-c("npair")
+colnames(semiv)<-c("semivar_Ma","semivar_CH","semivar_Do")
 
+# Variogram estimates
+fname<-paste0("data/OK/",paste(Sys.Date(), element,Crop.target,"variogram_estimates.dat", sep="_"))
 write.table(cbind(varlags,npair,semiv),fname,quote=F,row.names=F)
 
-fname<-paste(element,Crop.target,"XVal_Ma.dat",sep="_")
+# Cross-validation Matheron
+fname<-paste0("data/OK/",paste(Sys.Date(),element,Crop.target,"XVal_Ma.dat",sep="_"))
 write.table(kvopMa,fname,quote=F,row.names=F)
 
-fname<-paste(element,Crop.target,"XVal_CH.dat",sep="_")
+#Cross-validation Cressie & Hawkins
+fname<-paste0("data/OK/",paste(Sys.Date(), element,Crop.target,"XVal_CH.dat",sep="_"))
 write.table(kvopCH,fname,quote=F,row.names=F)
 
-fname<-paste(element,Crop.target,"XVal_Do.dat",sep="_")
+# Cross-validation Dowd
+fname<-paste("data/OK/",paste(Sys.Date(), element,Crop.target,"XVal_Do.dat",sep="_"))
 write.table(kvopDo,fname,quote=F,row.names=F)
 
-fname<-paste(element,Crop.target,"XVal_sample.dat",sep="_")
+# cross-valiation sub-sample
+fname<-paste0("data/OK/",paste(Sys.Date(),element,Crop.target,"XVal_sample.dat",sep="_"))
 write.table(sam,fname,quote=F,row.names=F)
 
-fname<-paste(element,Crop.target,"_summary.dat",sep="_")
+# Summary stat table
+fname<-paste0("data/OK/",paste(Sys.Date(),element,Crop.target,"_summary.dat",sep="_"))
 write.table(summary,fname,quote=F)
 
 #####################################################################
@@ -574,13 +587,18 @@ A<-cbind(A,rep(1,N))
 A<-rbind(A,c(rep(1,N),0))
 Ainv<-solve(A)
 
-
+# No of unsampled obs.
 Nt<-nrow(targets.df)
 
-krop<-matrix(nrow=Nt,ncol=4)
+# Matrix to store the data from the OK
+# Note we added one more column bc its lognormal OK (see docu)
+#krop<-matrix(nrow=Nt,ncol=4)
+krop<-matrix(nrow=Nt,ncol=5)
 
+# Binding all the sampled locations
 Allpoints<-cbind(Lat,Long)
 
+# OK prediction
 
 for (it in 1:Nt){
 print(c(it,Nt))
@@ -605,13 +623,22 @@ lam<-Ainv%*%Bd
 Zhat<-sum(z*lam[1:N])
 kv<-t(Bd)%*%lam
 lagr<-lam[N+1]
-krop[it,]<-c(Long_t,Lat_t,Zhat,kv)
+krop[it,]<-c(Long_t,Lat_t,Zhat,kv,lagr)
 }
 
+colnames(krop)<-c("Longitude","Latitude","Zhat","kv", "lagr")
 
-colnames(krop)<-c("Longitude","Latitude","Zhat","kv")
+fname<-paste("data/OK/",paste(Sys.Date(), element,"_OK_",Crop.target,".csv",sep=""))
 
-fname<-paste(element,"_OK_",Crop.target,".csv",sep="")
+write.csv(krop,fname,row.names=F)  
+
+krop <- data.frame(krop)
+
+# Back-transforoming lognormal OK
+krop$Zhat_exp <- exp(krop$Zhat + krop$kv/2 - krop$lagr)
+
+# Saving exponential OK
+fname<-paste("data/OK/",paste(Sys.Date(), element,"_OK_exp",Crop.target,".csv",sep=""))
 
 write.csv(krop,fname,row.names=F)  
 

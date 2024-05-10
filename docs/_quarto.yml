@@ -10,6 +10,7 @@ book:
     - "Claire Dooley"
     - "Edward Joy"
     - "Elaine Ferguson"
+    - "Murray Lark"
   date: "31/01/2024"
   repo-url: https://github.com/LuciaSegovia/geospatial_analysis/
   repo-actions: [edit, issue]
@@ -21,6 +22,7 @@ book:
     - data-description.qmd
     - data-exploration.qmd
     - data-processing.qmd
+    - predicted-maize.qmd
    # - modelling.qmd
     - references.qmd
 

@@ -1,6 +1,13 @@
 # Maize aggregation
 
 
+This file (`predmaize.df`) contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration for Malawi and their covariance (uncertainty associated to each prediction). The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
+
+
+**TODO: Write the full info of the model**
+
+
+Then, in order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used.
 
 
 ### Maize Se estimates
