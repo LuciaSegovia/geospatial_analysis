@@ -1,8 +1,17 @@
 
 library(dplyr)
 
-check <- read.csv(here::here("Se_raw_OK_maize.csv"))
+# Loading the data
+check <- read.csv(here::here("data", "predicted", "Se_raw_OK_maize.csv"))
 data.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) # cleaned geo-loc maize Se data (2 datasets)
+# Saving exponential OK
+fname<-paste("data/OK/",paste(Sys.Date(), element,"_OK_exp",Crop.target,".csv",sep=""))
+
+# Loading the resutls from the fitted variogram (CH)
+fname<-paste0("data/OK/2024-05-03",element,"_OK_exp",Crop.target,".csv",sep="")
+
+# Added here() to solve path issue
+ok.df <- read.csv(here::here(fname), header = TRUE, as.is = "numeric")
 
 # Housekeeping: Check NA and zeros
 sum(is.na(data.df$Se_raw))
@@ -15,10 +24,13 @@ data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
 # Exponential from log transformed
 check$predSe <- exp(check$Zhat)
 
-
 left_join(data.df, check)
 
+# Joinging the OK back transformation using the eq. and the normal expo
+test <- left_join(ok.df, check, by = c("Longitude", "Latitude"))
 
+# Plotting the "equivalent" values
+plot(Zhat_exp ~ predSe, test)
 
 hist(check$Zhat)
 hist(check$predSe)
