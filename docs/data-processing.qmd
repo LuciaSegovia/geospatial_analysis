@@ -282,7 +282,7 @@ The catchment areas represented by buffers around the cluster displaced centroid
 
 2) **25 and 30km buffer** that cover a sensible distance between EAs and district, and which is according to REF, the average distance between households and the closest market in Malawi (REF). 
 
-The genereation of the buffer is done using a loop, that save the shapefiles into the `inter-outuput` file, and it is design to be able to change the distances of the buffer if new evidence of bigger or smaller buffer are published. It also allowed us to do sensitivity analysis on buffer size, see section XX. 
+The genereation of the buffer is done using a loop, that save the shapefiles into the `inter-outuput` file, and it is design to be able to change the distances of the buffer if new evidence of bigger or smaller buffer are published. It also allowed us to do sensitivity analysis on buffer size, see @sec-sensi. 
 
 
 ```{r, eval=FALSE}
@@ -647,6 +647,70 @@ The predicted maize had values for all the surface in Malawi, hence, no issues o
 
 The process was the same as the observed, and it was done as described in previous sections. 
 
+### Buffer areas {sec-buffer-area}
+
+In order to improve the reporducibility, readability and transparency of the final model, we generated a function to obtain the buffers: `buffer_generator()`.
+
+The funtion takes as inputs the spatial dataset with the point location of the centroids and the ids of each centroid, in our case the cluster id, and the minimum and maximum buffer size and the increments in which should be generated. 
+
+The parameter were chosen as follow: 
+
+-*min*: 10km buffer to be in line with the maximum displacement possible. 
+-*max*: 60km based on the maximum district area
+-*increments*: 10km based on the lag-bin chosen in the OK estimations. 
+
+The shapefiles generated for each buffer are stored in the `r print(folder)`. Then the folder was manually moved into the boundaries folder. This was needed because the `st_write()` can't deal with long names. See [GitHub issue](https://github.com/r-spatial/sf/issues/1792).
+
+```{r, eval=FALSE}
+
+# 10km min. displacement, 60km max. district area, 10km bins OK
+
+buffer_generator(geogps, 10, 60, 10, folder)
+
+```
+
+Here we can see the smallest buffer at 10km, followed by the maximum buffer at 60km.
+
+```{r}
+
+# visual checks
+
+i = 1
+
+buffer_min  <- st_read(here::here("data", "inter-output",
+                              "boundaries", "buffer",
+                              paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
+  rename(survey_cluster1 = "srvy_c1")
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(buffer_min)+
+  tm_borders(col = "red") 
+
+```
+
+
+```{r}
+
+# visual checking the buffers
+
+i = 6
+
+buffer_max  <- st_read(here::here("data", "inter-output",
+                                  "boundaries", "buffer",
+                                  paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
+  rename(survey_cluster1 = "srvy_c1")
+
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(buffer_min)+
+  tm_borders(col = "red") +
+  tm_shape(buffer_max)+
+  tm_borders(col = "green")
+
+```
+
 ## Joining datasets
 
 The final step to get the dataset ready for modelling is to join the `plasma.df` dataset with the different values of maize Se for each of the aggregation level. That was perfomed in the script `` and it yielded 10 datasets: 5 aggregation levels (cluster, district, 15km, 25km and 30km buffer) x 2 maize Se values (observed, predicted).
@@ -665,7 +729,7 @@ Some test were performed to check the influence of some of the decission/assumpt
 
 ### Testing assumptions
 
-#### Sensitivity analysis
+#### Sensitivity analysis {#sec-sensi}
 
 We compared the predicted mean/ median with the observed values of the same EA only. To see if the results of our analysis are actually measuring methodological differences (i.e., between normal aggregated mean and predicted mean), or on the contrary, the difference in spatial variation in maize Se values (i.e., there is a difference between choosing the nearest EAs and peaking the "actual" EAs). 
 

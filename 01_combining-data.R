@@ -33,39 +33,51 @@ plasma.df  <- plasma.df %>% left_join(., cluster.df %>%
 
 # Maize Se conc. (from 01_maize-aggregation.R)
 
-file <- grep("maize", list.files(here::here("data", "inter-output", "aggregation")), 
-     value = TRUE)
+(file <- grep("pred-maize.*._v2", list.files(here::here("data", "inter-output", "aggregation")), 
+     value = TRUE))
 
 # Generating the file ----
 
 # Loop to generate a file with plasma data and maize with each aggregation unit
 
+
+# Run one for every file/aggegation
 for(i in 1:length(file)){
-
-maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
-                              file[i]))
-names(maize.df)
-
-data.df <- left_join(plasma.df, maize.df) 
-
-if(sum(is.na(data.df$selenium))>0){
-  stop(paste0("Missing values in plamsa Se in ", file[i]))
   
-}
-
-if(sum(is.na(data.df$Se_mean))>0){
-  stop(paste0("Missing values in maize Se in ", file[i]))
+  # Load the maize Se conc. aggregated dataset
+  maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
+                                 file[i]))
   
-}
-
-saveRDS(data.df, here::here("data", "inter-output",   "model",  
-                      paste0("plasma-", 
-                             file[i])))
-
+  # Join (left) plasma and maize datasets
+  #based on common variable (eg cluster id)
+  data.df <- left_join(plasma.df, maize.df) 
+  
+  # Check if there are missing values for plasma Se conc.
+  if(sum(is.na(data.df$selenium))>0){
+    stop(paste0("Missing values in plamsa Se in ", file[i]))
+    
+  }
+  
+  # Check if there are missing values for maize Se conc.
+  if(sum(is.na(data.df$Se_mean))>0){
+    stop(paste0("Missing values in maize Se in ", file[i]))
+    
+  }
+  
+  # Save the output into the model folder
+  saveRDS(data.df, here::here("data", "inter-output",   "model",  
+                              paste0("plasma-", 
+                                     file[i])))
+  
 }
 
 
 # END -----
+
+# Checking missing values
+
+data.df %>% filter(is.na(Se_mean))
+
 
 data_id <- readRDS(here::here("data", "inter-output", 
                               "mwi-plasma-se_maize-admin.RDS")) %>% 

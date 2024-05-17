@@ -310,11 +310,14 @@ data$Se_mean[data$survey_cluster1 == "497"]
 
 # Loading the data
 # Predicted Se conc. (predicted in 01_maize-model.R)
-predmaize.df  <- read.csv(here::here("data", "predicted","Se_raw_OK_maize.csv"))
+# predmaize.df  <- read.csv(here::here("data", "predicted","Se_raw_OK_maize.csv"))
+# names(predmaize.df)
+# predmaize.df$predSe <- exp(predmaize.df$Zhat)
 
+predmaize.df <- read.csv(here::here("data", "OK",
+                                    "2024-05-03Se_raw_OK_expmaize.csv")) %>% 
+  rename(predSe = "Zhat_exp")
 names(predmaize.df)
-
-predmaize.df$predSe <- exp(predmaize.df$Zhat)
 
 # Getting only cluster location (to avoid duplicates), 
 # renaming buffer as geometry for converting into spatial object
@@ -346,7 +349,7 @@ predmaize_cluster <- geopred_ea %>%
 
 # Saving observed maize grain Se concentration per cluster (smallest admin boundary).
 # saveRDS(predmaize_cluster, here::here("data", "inter-output", "aggregation", 
-#                                 "pred-maize-cluster.RDS"))
+ #                                "pred-maize-cluster_v2.0.0.RDS"))
 
 
 ### District -----
@@ -356,6 +359,7 @@ predmaize_cluster <- geopred_ea %>%
 dist_maize <- st_join(geopredmaize.df, dist_bnd) 
 
 Se <- "predSe"
+# Se <- "Zhat_exp"
 
 dist_maize <- dist_maize %>% 
   st_drop_geometry() %>% filter(!is.na(ADM2_EN)) %>% 
@@ -369,31 +373,41 @@ dist_maize <- dist_maize %>%
 
 # Saving observed maize grain Se concentration per district.
 # saveRDS(dist_maize, here::here("data", "inter-output", "aggregation", 
-# "pred-maize-district.RDS"))
+# "pred-maize-district_v2.0.0.RDS"))
 
 
 ### Buffers  -----
 
+# If different buffers what to be generated and tested, 
+# The function buffer_generator() can be used.
+# Note that for our case, we would like the buffer to be 
+# max around the biggest district
+# if buffer (circular) area = pi*r^2 
+# sqrt((max(st_area(dist_bnd))/10^6)/pi) # around 60km
 
-buff.dist <- na.omit(unique(str_extract(list.files(here::here("data", "inter-output", "boundaries")),
-                                        "[:digit:]{2}")))
+(buff.dist <- na.omit(unique(stringr::str_extract(list.files(here::here("data", 
+              "inter-output", "boundaries", "buffer")),
+                                        "[:digit:]{2}"))))
 
 geodata.df <- geopredmaize.df
 
 Se <- grep("Se", names(geodata.df), value = TRUE)
+#Se <- grep("exp", names(geodata.df), value = TRUE)
 
 for(i in 1:length(buff.dist)){
   
   buffer  <- st_read(here::here("data", "inter-output",
-                                "boundaries", 
-                                paste0("mwi_gps-buffer", buff.dist[i], ".shp"))) %>% 
+                                "boundaries", "buffer",
+                                paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
     rename(survey_cluster1 = "srvy_c1")
   
   maize_buff <- st_join(geodata.df, buffer) 
   
-  #test %>% filter(!is.na(srvy_c1)) %>% count(srvy_c1)
+if(sum(is.na(maize_buff[,Se]))>0){
+  print("Error in the data merging")
+}
   
-  maize_buff %>% st_drop_geometry() %>% 
+  maize_buff %>% st_drop_geometry() 
     group_by(survey_cluster1) %>% 
     summarise(Se_mean = mean(!!sym(Se)), 
               Se_sd = sd(!!sym(Se)), 
@@ -403,12 +417,48 @@ for(i in 1:length(buff.dist)){
     arrange(Se_n) %>% 
     saveRDS(., here::here("data", "inter-output",   "aggregation",  
                           paste0("pred-maize-buffer", 
-                                 buff.dist[i], ".RDS")))
+                                 buff.dist[i], "_v2.0.0.RDS")))
   
 }
 
 
 # visual checks
+
+i = 1
+
+buffer_min  <- st_read(here::here("data", "inter-output",
+                              "boundaries", "buffer",
+                              paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
+  rename(survey_cluster1 = "srvy_c1")
+
+i = 6
+
+buffer_max  <- st_read(here::here("data", "inter-output",
+                                  "boundaries", "buffer",
+                                  paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
+  rename(survey_cluster1 = "srvy_c1")
+
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(buffer_min)+
+  tm_borders(col = "red") +
+  tm_shape(buffer_max)+
+  tm_borders(col = "green")
+
+
+data.df <- readRDS(here::here("data", "inter-output",   "aggregation",  
+                              paste0("pred-maize-buffer", 
+                                     buff.dist[i], "_v2.0.0.RDS"))) %>% 
+  filter(!is.na(survey_cluster1))
+
+data.df  <- data.df %>% left_join(., buffer_min) %>% st_as_sf() 
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(data.df)+
+  tm_polygons(col = "Se_mean") 
+
 
 cluster.df  %>% 
   filter(survey_cluster1 %in% miss) %>% left_join(., missing) %>% 
@@ -444,3 +494,4 @@ tm_shape(ea_admin) +
 #  tm_polygons(col ="#138e61", border.col = "black", border.alpha = 0.3) +
   tm_shape(missing) +
   tm_symbols(col = "red", alpha = 0.01) 
+

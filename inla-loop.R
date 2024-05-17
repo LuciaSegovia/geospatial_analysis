@@ -10,6 +10,7 @@ library(spdep) # grid and neighbours
 library(dplyr) # data wrangling
 
 ## Loading the data
+## TO-DO: Solve the file name issues! ----
 
 file <- grep("plasma", list.files(here::here("data", "inter-output", "model")), 
              value = TRUE)

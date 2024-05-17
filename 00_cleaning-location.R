@@ -178,28 +178,41 @@ GPS <- plasma.df %>% distinct(survey_cluster1, Longitude, Latitude)
 geogps <- st_as_sf(GPS , coords =c("Longitude", "Latitude"),
                    crs = "EPSG:4326")
 
+# Then, we need the buffer radious (min, max, and increase in km)
+# max around the biggest district 60
+# if buffer (circular) area = pi*r^2 
+sqrt((max(st_area(dist_bnd))/10^6)/pi) # around 60km
+
+# Getting the folder path to save the output
+# Need to shorten the path due to issues with the st_write funtion
+#folder <- here::here("data", "inter-output", "boundaries", "buffer")
+folder <- here::here( "buffer")
+
+# Funtion to generate the buffers
+buffer_generator(geogps, 10, 60, 10, folder)
+
 # Choice of buffers
 # buffer <- c(10, 25, 30) # we also tested 12km
-buffer <- c(15, 25, 30)
+# buffer <- c(15, 25, 30)
 
 # Loop over the number of buffers:
-for(i in 1:length(buffer)){
-  
-  data.df <- GPS
- # distance <- as.numeric(paste0(buffer[i], "000"))
-  distance <- buffer[i]*10^3
-  #variable <- paste0("buffer", buffer[i]) 
-  
-  # Buffer in meters (10km & 25km)
-  data.df$buffer <- st_buffer(geogps$geometry, dist = distance)
-  
-  # Saving the shapefile with the buffers
-  st_write(data.df, here::here( "data", "inter-output", 
-                                "boundaries", 
-                                paste0("mwi_gps-buffer", buffer[i], ".shp")))
-  
-}
-
+# for(i in 1:length(buffer)){
+#   
+#   data.df <- GPS
+#  # distance <- as.numeric(paste0(buffer[i], "000"))
+#   distance <- buffer[i]*10^3
+#   #variable <- paste0("buffer", buffer[i]) 
+#   
+#   # Buffer in meters (10km & 25km)
+#   data.df$buffer <- st_buffer(geogps$geometry, dist = distance)
+#   
+#   # Saving the shapefile with the buffers
+#   st_write(data.df, here::here( "data", "inter-output", 
+#                                 "boundaries", 
+#                                 paste0("mwi_gps-buffer", buffer[i], ".shp")))
+#   
+# }
+# 
 
 test1  <- st_read(here::here("data", "inter-output",
                              "boundaries", "mwi_gps-buffer10.shp"))

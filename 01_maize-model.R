@@ -160,7 +160,7 @@ vclo[ico]<-(zi-zj)
 }
 
 # Setting for the variogram:
-# max. distance (e.g., end of spatial correlation) around 100km 
+# max. distance (e.g., end of spatial correlation) around 100km (around half of max. distance in Malawi)
 lagbins<-cut(lag,seq(0,100,10),labels=seq(5,100,10))   # 10-km bins for Malawi
 
 lag2<-lag[!is.na(lagbins)]
@@ -341,6 +341,7 @@ mtext("c). Dowd",3,adj=0,line=0.5)
 #  estimators of Matheron, Cressie & Hawkins and Dowd respectively.
 #  
 
+# Check CI 
 #Nv<-N # no need to subset for Ethiopia
 Nv<-500 # vs 1000 Malawi - check perc. ()
 

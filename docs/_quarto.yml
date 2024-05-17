@@ -21,8 +21,9 @@ book:
     - intro.qmd
     - data-description.qmd
     - data-exploration.qmd
-    - data-processing.qmd
     - predicted-maize.qmd
+    - data-processing.qmd
+    - maize-aggregation.qmd
    # - modelling.qmd
     - references.qmd
 
