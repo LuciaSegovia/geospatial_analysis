@@ -1,5 +1,5 @@
 
-# Methods: Modelling
+# Methods: Model testing and calibration
 
 ## Individual level variable inclusion
 
@@ -99,6 +99,15 @@ Question: Is the intercept indicating that the spatial is performing better (hig
 Also, although non-significant we could see a pattern for the wealth Q, with the low-est Q negative influencing plasma Se and high-est positively.
 
 Question: Check whether urbanity and cluster may have interaction effect. 
+
+
+# Testing 5
+
+When we used only the predicted values with buffers from 10-60km and cluster and district. The best performing model was the one using the cluster. Interenstingly, we can see a dicrease in the model fit as the buffer increases. Also, the distance to the lake, was only negatively correlated with some of the buffers aggregation (e.g, 2-4, and then 7and 8). 
+
+These results were obtained when establishing prior. 
+
+**TODO**: Check if holds w/o the priors. 
 
 
 # Results

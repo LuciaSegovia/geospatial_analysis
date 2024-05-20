@@ -9,6 +9,7 @@ Once the datasets are selected and cleaned. The next steps are the preparation o
 
 # Loading packages
 library(dplyr) # data wrangling 
+library(stringr) # string data manipulation 
 library(ggplot2) # data visualisation
 library(sf) # spatial data manipulation
 library(tmap) # spatial data visualisation
@@ -66,7 +67,7 @@ The datasets that we used are listed below:
 In order to calculate the mean/median value for each level of aggregation first, we need to generate the boundaries that will be used. 
 
 
-## Generating the boundaries
+## Generating the boundaries {#sec-boundaries}
 
 The first two aggregations (areal units) were based on administrative boundaries (i.e., EAs, districts) whereas the other two aggregation levels were based on the *food catchment area* or *food-sheds* (buffer area).  All of the aggregation units took into consideration the cluster displacement nature of the location. 
 
@@ -80,7 +81,7 @@ The location (GPS coordinates) provided in the DHS are for each cluster, not per
 
 We started with the EAs because are the smallest administrative units, and they are nested within the other (bigger) administrative units (Districts and Regions).
 
-Due to the nature of the displaced cluster location, the smallest administrative unit will not be one EA per women, but a number of EAs per cluster for all the women living in the same cluster. For more information on the GPS displacement see @sec-gps-location and the Guidelines on the Use of DHS GPS Data from @ref-perez2013guidelines. 
+Due to the nature of the displaced cluster location, the smallest administrative unit will not be one EA per women, but a number of EAs per cluster for all the women living in the same cluster. For more information on the GPS displacement see @sec-gps-location and the Guidelines on the Use of DHS GPS Data from @perez2013guidelines. 
 
 The EAs included in each cluster are based on the displacement range (2.5km for urban and 5km per rural) bounded by district, full details are disclosed below. While for the district information it was provided within the DHS dataset. 
 
@@ -641,47 +642,56 @@ One thing is striking is that there are more maize samples per district when usi
 
 All the aggregations for each buffer were performed using a loop, as we already identified that all buffers have at least one sampled value and the structure of the datasets were equal. 
 
-## Maize aggregation using predicted maize dataset
+## Maize aggregation using predicted maize dataset {#sec-boundaries-pred}
 
 The predicted maize had values for all the surface in Malawi, hence, no issues of missing values were found. 
 
 The process was the same as the observed, and it was done as described in previous sections. 
 
-### Buffer areas {sec-buffer-area}
+### Buffer areas {#sec-buffer-area}
 
-In order to improve the reporducibility, readability and transparency of the final model, we generated a function to obtain the buffers: `buffer_generator()`.
+In order to improve the reproducibility, code readability and transparency of the final model, we generated a function to obtain the buffers: `buffer_generator()`.
 
-The funtion takes as inputs the spatial dataset with the point location of the centroids and the ids of each centroid, in our case the cluster id, and the minimum and maximum buffer size and the increments in which should be generated. 
+The function takes as inputs the spatial dataset with the point location of the centroids and the ids of each centroid, in our case the cluster id, and the minimum and maximum buffer size and the increments in which should be generated. 
 
 The parameter were chosen as follow: 
 
--*min*: 10km buffer to be in line with the maximum displacement possible. 
--*max*: 60km based on the maximum district area
--*increments*: 10km based on the lag-bin chosen in the OK estimations. 
+-   **min**: 10km buffer to be in line with the maximum displacement possible. 
 
-The shapefiles generated for each buffer are stored in the `r print(folder)`. Then the folder was manually moved into the boundaries folder. This was needed because the `st_write()` can't deal with long names. See [GitHub issue](https://github.com/r-spatial/sf/issues/1792).
+-   **max**: 60km based on the maximum district area.
+
+-   **increments**: 10km based on the lag-bin chosen in the OK estimations. 
+
+The shapefiles generated for each buffer are stored in the `folder`. Then the folder was manually moved into the boundaries folder. This was needed because the `st_write()` can't deal with long names. See [GitHub issue](https://github.com/r-spatial/sf/issues/1792).
 
 ```{r, eval=FALSE}
 
-# 10km min. displacement, 60km max. district area, 10km bins OK
+# Path to store the buffer generated below
+folder <- here::here( "buffer")
 
+# Function to generate buffers
+# smallest = 10km, biggest = 60km, increments = 10
 buffer_generator(geogps, 10, 60, 10, folder)
 
 ```
 
-Here we can see the smallest buffer at 10km, followed by the maximum buffer at 60km.
+Here, in @fig-map4 we can see the smallest buffer at 10km, followed by the maximum buffer at 60km.
 
-```{r}
+```{r label = "fig-map4", fig.cap = "Map of Malawi with the red circles representing the smallest buffer (10km)."}
 
-# visual checks
+# Obtaining the distances for each buffer generated above
+buff.dist <- na.omit(unique(stringr::str_extract(list.files(here::here("data", 
+              "inter-output", "boundaries", "buffer")),
+                                        "[:digit:]{2}")))
 
+# Getting the smallest buffer from the buff.dist
 i = 1
-
+# Saving it for the map
 buffer_min  <- st_read(here::here("data", "inter-output",
                               "boundaries", "buffer",
-                              paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
-  rename(survey_cluster1 = "srvy_c1")
+                              paste0("mwi_buffer",buff.dist[i], ".shp")), quiet = TRUE) 
 
+# Plotting the map
 tm_shape(ea_admin) +
   tm_polygons() +
   tm_shape(buffer_min)+
@@ -690,18 +700,35 @@ tm_shape(ea_admin) +
 ```
 
 
-```{r}
+```{r label = "fig-map5", fig.cap = "Map of Malawi with the red circles representing the smallest buffer (10km) and the green circles representing the largest buffers (60km)."}
 
-# visual checking the buffers
-
+# Getting the largest buffer from the buff.dist
 i = 6
-
+# Saving it for the map
 buffer_max  <- st_read(here::here("data", "inter-output",
                                   "boundaries", "buffer",
-                                  paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
-  rename(survey_cluster1 = "srvy_c1")
+                                  paste0("mwi_buffer",buff.dist[i],".shp")), quiet = TRUE) 
+
+# Plotting the map with the smallest and the largest buffers
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(buffer_min) +
+  tm_borders(col = "red") + 
+  tm_shape(buffer_max)+
+  tm_borders(col = "green")
+
+```
 
 
+```{r fig.show='hold', label = "fig-map6", fig.cap = c("Map of Malawi with the red circles representing the smallest buffer (10km).","Map of Malawi with the red circles representing the smallest buffer (10km) and the green circles representing the largest buffers (60km).")}
+
+# Getting the smallest buffer from the buff.dist
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(buffer_min)+
+  tm_borders(col = "red") 
+
+# Plotting the map with the smallest and the largest buffers
 tm_shape(ea_admin) +
   tm_polygons() +
   tm_shape(buffer_min)+
@@ -710,6 +737,7 @@ tm_shape(ea_admin) +
   tm_borders(col = "green")
 
 ```
+
 
 ## Joining datasets
 
@@ -725,7 +753,7 @@ Additionally, it is important that we think about the displacement of the househ
 
 See sensitivity analysis. 
 
-Some test were performed to check the influence of some of the decission/assumptions made during the data preparation and processing. 
+Some test were performed to check the influence of some of the decision/assumptions made during the data preparation and processing. 
 
 ### Testing assumptions
 

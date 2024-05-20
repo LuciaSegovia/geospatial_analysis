@@ -2,11 +2,11 @@
 
 For the final modelling we are only using predicted maize Se concentration to calculate the different level of aggregation. For more information on the reasons, see the section Model testing & calibration.
 
-The file `predmaize.df` contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration both log-transformed (Zhat) and back transformed (Zhat_exp) and their covariance (uncertainty associated to each prediction) for Malawi.
+The file `predmaize.df` contains the coordinates of Malawi (lat/lon), the predicted maize Se concentration, both log-transformed (Zhat) and back transformed (Zhat_exp), and their covariance (uncertainty associated to each prediction) for each of the locations in Malawi.
 
-The data was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
+The dataset was derived from the `maize.df` dataset using ordinary kriging and the scripts can be found in `01_maize-model.R` and are based on the study of Gashu and colleagues (2022).
 
-Then, in order to calculate the mean/median value for each level of aggregation we will use the boundaries that were generated in the script () and described in @sec-XX.
+Then, in order to calculate the mean/median value for each level of aggregation we will use the boundaries that were generated in the script (`00_cleaning-location.R`) and described in @sec-boundaries.
 
 ```{r set-up, message=FALSE, warning=FALSE}
 
@@ -27,7 +27,7 @@ library(tmap)  #spatial data manipulation and visualisation
 
 # Reading the EA shapefile w/ updated districts (See 00_cleaning-boundaries.R)
 ea_admin <- st_read(here::here( "data", "inter-output", 
-                                "boundaries", "mwi_admbnda_adm4_nso.shp"))
+                                "boundaries", "mwi_admbnda_adm4_nso.shp"), quite = TRUE)
 # Changing variable region class to factor
 ea_admin$region <- as.factor(ea_admin$region)
                     
@@ -35,7 +35,7 @@ ea_admin$region <- as.factor(ea_admin$region)
 dist_bnd  <- st_read(here::here( "data",
                                 "mwi-boundaries",
                                 "mwi_adm_nso_hotosm_20230329_shp", 
-                                "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
+                                "mwi_admbnda_adm2_nso_hotosm_20230329.shp"), quite = TRUE)
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 
@@ -53,39 +53,25 @@ predmaize.df <- read.csv(here::here("data", "OK",
               "2024-05-03Se_raw_OK_expmaize.csv")) %>% 
   rename(predSe = "Zhat_exp")
 
-names(predmaize.df)
+# Buffer distances
+buff.dist <- na.omit(unique(stringr::str_extract(list.files(here::here("data", 
+              "inter-output", "boundaries", "buffer")),
+                                        "[:digit:]{2}")))
+
 
 ```
 
 
 ## Data aggregation
 
-Here we are proceading as descibred in @sec-generating-the-boundaries. With the only difference in the buffers generation, as we are using higher diversity of buffers as we are less contrainded by the data as when we were using observed values.
+Here we are proceeding as described in @sec-boundaries-pred. In summary, to generate the final aggregations we are:
 
-```{r}
-
-folder <- here::here("buffer")
-
-```
+1. Loading the boundaries for the administrative units (cluster-level and district-level) and the buffers which can be adapted using the function `buffer_generator()`, and are `r `paste(buff.dist, "km")`. More information on that function can be found in @sec-buffer-area.
 
 
-To generate the final aggregations we are:
-
-1. Loading the boundaries for the administrative units and the buffers which can be adapted using the function `buffer_generator()`. More information on @sec-buffer-area.
-
-```{r}
-
-(buff.dist <- na.omit(unique(stringr::str_extract(list.files(here::here("data", 
-              "inter-output", "boundaries", "buffer")),
-                                        "[:digit:]{2}"))))
-
-```
-
-
-2. Converting the maize dataset (Long/Lat) into a spatial object
+2. After selecting the aggregations, we need to get the information on the maize Se concentration for each aggregation area. To do so, we need to convert the predicted maize Se dataset (Long/Lat) into a spatial object (point locations).
 
 ```{r, eval=FALSE}
-
 
 # Converting into spatial object
 geopredmaize.df <-  st_as_sf( predmaize.df , coords =c("Longitude", "Latitude"),
@@ -95,7 +81,15 @@ geopredmaize.df <-  st_as_sf( predmaize.df , coords =c("Longitude", "Latitude"),
 ```
 
 
-3. Merging the data by location: Because the dataset of the predicted maize is very large, and we only need the maize aggregation for the clusters were data on plasma Se were colected, we used a shapefile with the cluster-level spatial data only for those EAs/clusters. 
+3. Merging the data by location. This spatial joint allowed us to obtain the maize Se concentration point data in each area. See @fig-XX. 
+
+
+::: {.callout-note}
+
+Because the dataset of the predicted maize is very large, and we only need the maize aggregation for the areas (e.g., clusters) were data on plasma Se were collected, we are using a shapefile with the cluster-level spatial data only for those EAs/clusters with plasma Se concentration collected. 
+
+:::
+
 
 ```{r, eval=FALSE}
 
@@ -127,9 +121,9 @@ predmaize_cluster <- geopred_ea %>%
 
 ```
 
-For the clusters it is performed equally but using a loop, that ingest the buffer generated and output the dataset with the maize Se mean for each buffer.
+For the buffers, it is performed equally but using a loop, that ingest the buffer generated and output the dataset with the maize Se mean for each buffer.
 
-```{r}
+```{r, eval=FALSE}
 
 # Getting the distances of the buffers
 
@@ -159,7 +153,6 @@ if(sum(is.na(maize_buff[,Se]))>0){
 }
 
 ```
-
 
 
 Here's an example of the output from the aggregated dataset. 
@@ -209,9 +202,11 @@ Each cluster has different size (different area), hence the number of maize Se d
 
 Here, we are assigning the maize Se concentration, at the different level, to each WRA in each cluster (or district).
 
-For all the datasets (n= `r length(file)`), except for the district level, the linkage between the women and its corresponding maize Se (i.e., the hypothetical concetration of Se that is likely to be supplied by maize) are based on the cluster id. This is because the buffer were generated based on the cluster centroids. 
+For all the datasets (n= `r length(file)`), except for the district level, the linkage between the women and its corresponding maize Se concentration (i.e., the hypothetical concentration of Se that is likely to be supplied by maize) are based on the cluster id. This is because the buffer were generated based on the cluster centroids. 
 
-For ease of use, the datasets linkages are done using a loop, which after the datasets are ready to be used in the R-INLA model.
+For ease of use, the datasets linkages are done using a loop (as outlined below), after which the datasets are ready to be used in the R-INLA model.
+
+The final dataset contains the plasma Se concentration for women and all the covariates for the model, except for the distance to main lakes, which is merged in the next step.
 
 ```{r, eval=FALSE}
 
@@ -249,49 +244,3 @@ saveRDS(data.df, here::here("data", "inter-output",   "model",
 
 
 ```
-
-
-
-
-There is a loop that links the plasma and the maize into one dataset. Then they are ready to be model using R-INLA. There is one of the covariates that it is not included in the data combination loop, and it is added in the INLA loop which is the distance to main lakes. 
-
-## R-INLA
-
-Here we are testing different level of aggregation of maize Se concentration to identify which aggregation explain the plasma Se of women in Malawi. As, Plasma Se has been reported previously to be highly dependent on dietary Se intake and, in the context of Malawi to maize Se concentration. 
-
-Therefore, the models tested here will all include the same explanatory covariates related to individual plasma Se variation (e.g., age), and related to food system variation (eg., distance to main lakes, or maize aggregation). 
-
-Therefore, we will use a loop where all the parameters are hold constant except for the different aggregation of maize Se concentration. Then we will compare the results. 
-
-First we load the data and libraries needed. 
-
-```{r}
-
-# Loading libraries
-library(INLA) # Modelling (RINLA)
-library(sf) # spatial data manipulation
-library(spdep) # grid and neighbours
-library(dplyr) # data wrangling
-
-```
-
-
-Then, we are selecting our covariates which are stored in a vector, and we are defining our model. 
-
-```{r}
-
-file <- grep("plasma", list.files(here::here("data", "inter-output", "model")), 
-             value = TRUE)
-
-dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-mwi-lakes.RDS"))
-
-```
-
-
-**ADD EQUATION**
-
-
-Then, we generate a list to store all the models that are tested. 
-
-
-

@@ -8,6 +8,7 @@ library(ggplot2) # visualisation
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 source(here::here("functions", "CEPHaStat_3.R")) #stat functions
+# Skewness[-1,+1], Octile skewness [−0.2,0.2]
 library(geoR)  # geospatial modelling
 library(geosphere) # spatial functions for variogram
 
@@ -127,3 +128,19 @@ points(60,locsv[3],pch=17, col = "red")
 text(65,locsv[1],"Matheron",pos=4)
 text(65,locsv[2],"Cressie-Hawkins",pos=4)
 text(65,locsv[3],"Dowd",pos=4)
+
+
+# Variogram
+
+coordinates(data.df) <- ~Longitude+Latitude
+proj4string(data.df) <- CRS("+init=epsg:4326")
+
+# Variogram and fit variogram
+vgm <- variogram(selenium ~1, data.df)
+fit.vgm <- fit.variogram(vgm, vgm("Sph"))
+
+
+m = 100 
+points = matrix(runif(m*2),m,2)
+
+head(points)

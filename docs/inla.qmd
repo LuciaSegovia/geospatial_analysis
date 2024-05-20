@@ -1,0 +1,189 @@
+
+
+# Methods: Modelling with R-INLA
+
+Here we are testing different level of aggregation of maize Se concentration to identify which aggregation explain the plasma Se of women in Malawi. As, Plasma Se has been reported previously to be highly dependent on dietary Se intake and, in the context of Malawi to maize Se concentration. 
+
+Therefore, the models tested here will all include the same explanatory covariates related to individual plasma Se variation (e.g., age), and related to food system variation (eg., distance to main lakes, or maize aggregation). 
+
+Therefore, we will use a loop where all the parameters are hold constant except for the different aggregation of maize Se concentration. Then we will compare the results. 
+
+First we load the data and libraries needed. 
+
+```{r}
+
+# Loading libraries
+library(INLA) # Modelling (RINLA)
+library(sf) # spatial data manipulation
+library(spdep) # grid and neighbours
+library(dplyr) # data wrangling
+
+```
+
+
+Then, we are selecting our covariates which are stored in a vector, and we are defining our model. 
+
+```{r}
+
+(file <- grep("plasma.*v2.0.0", list.files(here::here("data", "inter-output", "model")), 
+             value = TRUE))
+
+dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-mwi-lakes.RDS"))
+
+```
+
+
+
+```{r}
+
+# Covariates selection
+covar <- c("Se_mean", "wealth_quintile", "urbanity",
+           "AGE_IN_YEARS", "crp", "agp", "dist_to_lake")
+
+# Formula for the model
+form <- log(y) ~ -1 + Intercept +  log(Se_mean) + wealth_quintile + urbanity +
+  AGE_IN_YEARS + log(crp) + log(agp) + log(dist_to_lake) +
+  # Spatial random effect
+  f(spatial.field, model = spde)  +
+  # Cluster random effect
+   f(ID, model = 'iid')
+
+
+```
+
+
+**ADD EQUATION**
+
+
+Then, we generate a list to store all the output of the models tested. 
+
+```{r}
+
+# A list to store the models outputs
+models <- list()
+
+```
+
+
+Now, we are explaining each step of the R-INLA model. In the script `inla-loop.R`, the loop can be run. 
+
+First, we are loading the dataset, which contains all the variables, except the distance to main lakes, which is joined here. 
+
+```{r}
+
+# Loading the data 
+plasma_se <- readRDS(here::here("data", "inter-output", "model",
+                                file[i])) %>%
+  # Joining the variable distance to inland water body
+                     left_join(., dist) 
+
+head(plasma_se)
+
+```
+
+
+Then, we need to rename some variables, selecting the variables needed and ensuring that we do not have missing values for the variables used in the model.
+
+
+```{r, warning=FALSE}
+
+# Renaming variable and checking indv. data
+plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium") %>%
+  dplyr::select(Plasma_Se, covar, unique_id, region, 
+         survey_cluster1,  Latitude,  Longitude)
+
+plasma_se <- na.omit(plasma_se)
+
+```
+
+Once we have the data ready, the first step for the R-INLA modelling is to create the mesh. The mesh is generated based on the locations of our sample, i.g., the cluster centroids. Before selecting the final settings of the mesh, a number of mesh were tested. For more information on mesh selection, see section model selection and calibration, and the script `inla/mesh-testing.R`. 
+
+
+We defined the boundaries of Malawi using the coordinates, then we used the boundaries to define the mesh. We also defined the maximum edges of the triangles and the sparcity of the triangle outside the boundary. 
+
+```{r}
+
+# Locations
+coord <- cbind(plasma_se$Longitude, plasma_se$Latitude)
+
+#Creating the mesh
+# Generating the boundaries of Malawi based on the point locations
+mwidomain <- inla.nonconvex.hull(coord,  concave=0.03, resolution=c(200,350))
+# Then generating the mesh
+mesh <- inla.mesh.2d(boundary=mwidomain, max.edge = c(0.4, 1), cutoff = c(0.1))
+
+plot(mesh)
+
+```
+
+Once we have the mesh, we can create the projection layer (**A**) which will be used to map the predictions from the SPDE and the observed points. This is because we are predicting at the vertices of the mesh. 
+
+```{r}
+
+# Projection matrix (A) obs.
+A <- inla.spde.make.A(mesh = mesh , loc = coord)
+
+dim(A)
+
+table(rowSums(A>0))
+table(rowSums(A))
+summary(rowSums(A))
+
+```
+We can check here that all the weights for each triangle sum 1. Then, we are building the SPDE model using the function `inla.spde2.matern()`. Here, we set the spatial smoothness parameter $alpha$ to `$alpha$ = 2` as it is a two dimension model. 
+
+
+```{r}
+
+## Building the SPDE model (Matern estimator) 
+# (alpha is related to the smoothness parameter)
+# No priors are set
+spde <- inla.spde2.matern(mesh = mesh,
+                          alpha = 2 ,
+                          constr = TRUE) # this is optional
+```
+
+Generating index for the spatial random effect to be stored, and a list for the covariates. 
+
+
+```{r}
+
+## Setting the SPDE index (to store the random effect)
+spde.index <- inla.spde.make.index(name = "spatial.field",
+                                   n.spde = spde$n.spde)
+
+# Covariate list
+covs <- plasma_se %>%  dplyr::select(covar) %>% as.list()
+
+
+```
+
+After that we need to prepare the stack. This is a useful function where you can stack the data. Here, we combine the SPDE model that will be defined in the triangle nodes (*m*) and the covariates and the intercept at the point locations (*n*). 
+
+```{r}
+
+N <- nrow(plasma_se)
+
+# The data stack
+stack <- inla.stack(
+  # specify the response variable
+  data = list(y = plasma_se$Plasma_Se), 
+ # Projector list each effect random and fixed effects  
+  A = list(1, 1, 1, A),              
+  
+  effects = list(
+    
+    Intercept = rep(1, N), # specify the manual intercept!
+    
+    X = covs, # attach the model matrix
+    
+    ID = plasma_se$survey_cluster1, # insert vectors of any random effects
+    
+    w = spde.index)) # attach the w 
+
+```
+
+
+
+
+

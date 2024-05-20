@@ -12,13 +12,13 @@ library(dplyr) # data wrangling
 ## Loading the data
 ## TO-DO: Solve the file name issues! ----
 
-file <- grep("plasma", list.files(here::here("data", "inter-output", "model")), 
+file <- grep("plasma.*v2.0.0", list.files(here::here("data", "inter-output", "model")), 
              value = TRUE)
 
 dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-mwi-lakes.RDS"))
 #dist$dist_to_wb[dist$dist_to_wb == 0] <-  200
 
-# covariates selection
+# Covariates selection
 
 covar <- c("Se_mean", "wealth_quintile", "urbanity", 
           # "Malaria_test_result", "BMI",  
@@ -46,8 +46,8 @@ plasma_se <- readRDS(here::here("data", "inter-output", "model",
 
   # Renaming variable and checking indv. data
 plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
-sum(duplicated(plasma_se$unique_id))
-names(plasma_se)   
+# sum(duplicated(plasma_se$unique_id))
+# names(plasma_se)   
 
 # plasma_se <- plasma_se %>% dplyr::filter(urbanity == "2")
 
@@ -88,8 +88,15 @@ A <- inla.spde.make.A(mesh = mesh , loc = coord)
 ## Setting the SPDE model (Matern estimator) 
 # (alpha is related to the smoothness parameter)
 # No priors are set
-spde <- inla.spde2.matern(mesh = mesh,
+# spde <- inla.spde2.matern(mesh = mesh,
+#                             alpha = 2 ,
+#                             constr = TRUE) # this is optional
+
+# Priors are set
+spde <- inla.spde2.pcmatern(mesh = mesh,
                           alpha = 2 ,
+                          prior.range = c(1, 0.01), ## P(range < 1) = 0.01
+                          prior.sigma = c(1, 0.5), ## P(sigma > 1) = 0.5
                           constr = TRUE) # this is optional
 
 ## Setting the SPDE index (to store the random effect)
