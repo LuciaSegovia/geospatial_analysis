@@ -95,7 +95,7 @@ had_malaria= 'm420')
 
 # Selecting variables of interest:
 
-Malawi_WRA <- Malawi_WRA %>% select(region, sex , crp,  agp, urbanity, 
+Malawi_WRA <- Malawi_WRA %>% dplyr::select(region, sex , crp,  agp, urbanity, 
                                     survey_cluster1,
 household_id1, survey_weight, LINENUMBER, AGE_IN_YEARS, supple, # took any supplements
 Malaria_test_result, WEIGHT, HEIGHT, is_pregnant, selenium) 
@@ -368,7 +368,7 @@ DHSDATA <- dhs.df %>% dplyr::rename(
   # person_id=WomenID,
   is_lactating= "v404", # breastfeeding yes=1, no=0
   is_smoker= "v463a" # Only cover cigarettes (other smoking variables)
-) %>% select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
+) %>% dplyr::select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
              region, urbanity,  age_year, wealth_quintile, wealth_idx, Literacy,
              education_level, source_water, is_lactating, is_smoker, sdist)
 
@@ -487,7 +487,7 @@ DHSDATA %>% group_by (region) %>% dplyr::count(wealth_quintile)
 
 EligibleDHS <- Malawi_WRA %>% 
  left_join(., DHSDATA %>% 
-          select(survey_cluster1, household_id1, LINENUMBER, 
+             dplyr::select(survey_cluster1, household_id1, LINENUMBER, 
                  wealth_quintile, wealth_idx, Literacy, education_level, 
             source_water, is_lactating, is_smoker, sdist, 
             dist_name)) 
@@ -616,6 +616,8 @@ boxplot(selenium ~ is_smoker , data = EligibleDHS,
         main="Plasma Selenium by Smoking status",
         xlab="Smoking", ylab="plasma Se (ng/ml)", pch=19)
 
+## Inputting NA for WQ info ----
+
 #Identifying HH ID & cluster of missing socio-eco info
 subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
        select = c("household_id1","survey_cluster1")) %>% left_join(.,DHSDATA) %>% 
@@ -627,16 +629,20 @@ subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile),
 Wealth <- subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
        select = c("household_id1","survey_cluster1")) %>% 
    left_join(., DHSDATA %>% 
-             select(c("household_id1","survey_cluster1", "wealth_quintile", "wealth_idx"))) %>% 
+             dplyr::select(c("household_id1","survey_cluster1", "wealth_quintile", "wealth_idx"))) %>% 
   group_by(survey_cluster1, household_id1) %>%
   filter(!is.na(wealth_quintile)) %>% 
   distinct()
 
 #Checking rows with missing value for wealth Q
 n <- which(is.na(EligibleDHS$wealth_quintile))
+#Checking rows with missing value for wealth Indx
+m <- which(is.na(EligibleDHS$wealth_idx))
+# Checkin that are the same 
+table(n==m)
 
-#Checking line id (hh member id) with & w/o missing value for wealth Q w/ same 
-#H ID & cluster ID as in wealth df
+# Checking line id (hh member id) with & w/o missing value for wealth Q w/ same 
+# H ID & cluster ID as in wealth df
 EligibleDHS$LINENUMBER[#is.na(EligibleDHS$wealth_quintile) &
   EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[1] &
                               EligibleDHS$household_id1 %in% Wealth$household_id1[1]]
@@ -725,8 +731,10 @@ dim(GPS)
 
 for(i in 1:nrow(GPS)){
 
+# Assigning buffer size (in m) acc. to Urban (U) or Rural (R)
 offset.dist<-ifelse(GPS$URBAN_RURA[i]=="U", 2000, 5000)
 
+# Generating the buffers around the centroids
 GPS$buffer[i] <- st_buffer(GPS$geometry[i], dist = offset.dist)
 
 }
@@ -772,7 +780,7 @@ ggplot() +
 dim(EligibleDHS)
 
 # Saving DHS + GPS dataset into R object
-#saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
+# saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
 
 # Survey analysis: Applying survey weight ----
 EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))

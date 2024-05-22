@@ -20,7 +20,8 @@ book:
     - index.qmd
     - intro.qmd
     - data-description.qmd
-    - data-exploration.qmd
+    - data-dhs.qmd
+    - data-maize.qmd
     - predicted-maize.qmd
     - data-processing.qmd
     - maize-aggregation.qmd

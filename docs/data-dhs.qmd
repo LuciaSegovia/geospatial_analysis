@@ -1,7 +1,9 @@
 
-# Methods: Cleaning & Exploratory Analysis {#sec-explo}
+# Methods: Cleaning & Exploratory Analysis of the Malawi DHS (2015-2016) {#sec-explo}
 
-In this section we explore the datasets and variables that were included in our study. Frist we need to set up the environment and load the data described in the previous section. 
+In this and subsequent sections, we explore the datasets and variables that were included in our study. 
+
+First we need to set up the environment and load the data described in the previous section. 
 
 ```{r set-up, message=FALSE, warning=FALSE}
 
@@ -11,7 +13,6 @@ library(dplyr) # data wrangling
 library(sf) # spatial data manipulation
 library(ggplot2) # data visualisation
 library(spdep) # grid and neighbours
-# library(raster) # (spatial) raster data manipulation
 library(tmap) # (spatial) visualisation
 
 # Loading stat functions
@@ -31,12 +32,10 @@ bmi_lab <- expression(paste("BMI (kg /  ",  m^{2}, ")"))
 ```
 
 
-## Plasma Se concentration and other biological data {#sec-plasma}
-
-In this section, we are loading and exploring the Malawi MNS-DHS (205-2016) (@NSOMalwiDHS2015). 
+In this section, we are loading and exploring the Malawi MNS-DHS (205-2016) (@NSOMalawiDHS2017). 
 
 
-### Micronutrient survey data 
+## Micronutrient survey data {#sec-plasma}
 
 Firstly, we loaded the data (MW_WRA) which contains the plasma Se concentration and other biomarker data in women in Malawi.
 
@@ -102,7 +101,7 @@ had_malaria= 'm420')
 
 # Selecting variables of interest:
 
-Malawi_WRA <- Malawi_WRA %>% select(region, sex , crp,  agp, urbanity, survey_cluster1,
+Malawi_WRA <- Malawi_WRA %>% dplyr::select(region, sex , crp,  agp, urbanity, survey_cluster1,
 household_id1, survey_weight, LINENUMBER, AGE_IN_YEARS, supple, # took any supplements
 Malaria_test_result, WEIGHT, HEIGHT, is_pregnant, selenium) 
 
@@ -130,7 +129,7 @@ Summary of the main cleaning assumptions/ decisions:
 
 :::
 
-#### Age
+### Age
 
 There are some observations (n = `r sum(Malawi_WRA$AGE_IN_YEARS<15)`) that are below the age range for WRA, and none above the range.
 
@@ -160,7 +159,7 @@ Malawi_WRA %>%
 
 
 
-#### Gender & Pregnancy
+### Gender & Pregnancy
 
 There is one entry labelled as "male" while the data set should only contain women, and there were `r sum(Malawi_WRA$is_pregnant==1 | is.na(Malawi_WRA$is_pregnant))` women pregnant or with unknown status, which were excluded from the data set. 
 
@@ -171,7 +170,7 @@ Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant))
 
 ```
 
-#### Malaria test {#sec-malaria}
+### Malaria test {#sec-malaria}
 
 We needed to recode other values than positive/ negative into `NA`, also we did not follow the recode manual (we are not putting 0 for negative, but keeping 2).
 
@@ -224,11 +223,11 @@ Malawi_WRA %>%
 ```
 
 
-#### Supplementation
+### Supplementation
 
 Similarly, as with the Malaria test, we found high number of missing values which would reduce the sample size by `r sum(is.na(Malawi_WRA$supple) & !is.na(Malawi_WRA$selenium))`, and also only few reported consuming supplement (n=13), thus, we decided to exclude this variable.
 
-#### Height & Weight
+### Height & Weight
 
 Missing values were coded as "999" for height and weight, we recoded to `NA`, according to the DHS documentation and recode standards reported in (ICF. 2018. Demographic and Health Surveys Standard Recode Manual for DHS7. The Demographic and Health Surveys Program. Rockville, Maryland, U.S.A.: ICF).  
 
@@ -290,7 +289,7 @@ Malawi_WRA %>%
 
 ```
 
-#### Selenium
+### Selenium
 
 Plasma Se concentration is highly skewered, but when log-transformed it shows normality. 
 
@@ -384,7 +383,7 @@ data.df$urbanity <- as.factor(data.df$urbanity)
 
 
 
-#### Inflammation {#sec-inflam}
+### Inflammation {#sec-inflam}
 
 Both CRP () and AGP () were measured in women, of which we had `r sum(is.na(data.df$crp))` and `r sum(is.na(data.df$agp))` missing values respectively. We can also see that both variables were skewered and hence, we needed to log-transform them, which turned them into normality.
 
@@ -512,7 +511,7 @@ dhs.df <- dhs.df %>% dplyr::rename(
   is_smoker= "v463a" # Only cover cigarettes (other smoking variables)
 ) 
   
-DHSDATA <- dhs.df %>% select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
+DHSDATA <- dhs.df %>% dplyr::select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
              region, urbanity,  age_year, wealth_quintile, wealth_idx, Literacy,
              education_level, source_water, is_lactating, is_smoker, sdist) %>% 
   mutate_at(c("region", "urbanity", "wealth_quintile", "wealth_idx", "education_level"  ,"source_water"), as.factor)
@@ -525,7 +524,7 @@ DHSDATA$sdist  <- as.factor(DHSDATA$sdist)
 
 
 
-#### Wealth Quintiles {#sec-wq}
+### Wealth Quintiles {#sec-wq}
 
 ```{r, eval=FALSE}
 
@@ -555,7 +554,7 @@ DHSDATA$wealth_idx  <- as.factor(DHSDATA$wealth_idx)
 
 Then, there is another wealth variable (`wealth_idx`) that it is disaggregated by residency (rural/urban). This was developed recently in response of some criticism over the way the index is calculated, for more information see (REf=). 
 
-#### Education
+### Education
 
 ```{r, eval=FALSE}
 
@@ -589,11 +588,11 @@ plot(DHSDATA$wealth_quintile, DHSDATA$education_level,
 Similarly, when we plotted the Education by region, we could see the same trend as in the WQ. 
 
 
-#### Literacy
+### Literacy
 
 This variable was excluded as some of the results were misaligned. For instance, when comparing the literacy with the education level, all the women with secondary education reported literacy (n = `r sum(DHSDATA$education_level >1 & DHSDATA$Literacy == 0)`), however, there were women who reported no literacy (0), but secondary education (2).
 
-#### Source of water
+### Source of water
 
 The source of water could have an influence on the plasma Se concentration, specially if the water is coming from local underground water or ponds, as the concentration of drinking Se water may be different according to their location, while drinking water coming from water bottled may have no minerals on it. 
 
@@ -617,7 +616,7 @@ DHSDATA$source_water_ds <- haven::as_factor(DHSDATA$source_water)
 
 EligibleDHS <- Malawi_WRA %>% 
  left_join(., DHSDATA %>% 
-          select(survey_cluster1, household_id1, LINENUMBER, 
+          dplyr::select(survey_cluster1, household_id1, LINENUMBER, 
                  wealth_quintile, wealth_idx, Literacy, education_level, 
             source_water, is_lactating, is_smoker, sdist, 
             dist_name)) 
@@ -634,14 +633,70 @@ Here we are exploring the variability of Plasma Se according to those variables.
 
 
 
-#### Wealth & BMI
+### Wealth & BMI
 
 
 
-#### Wealth & Plasma Se
+### Wealth & Plasma Se
 
 
-After merging the datasets, some WQ were missing, hence following recommendations form F.S we used the household WQ for those available to impute it. They were available for 17 of the 39 observation with missing values. For Plasma Se, we only have values for `r sum(!is.na(EligibleDHS$selenium))`. 
+After merging the datasets, some WQ were missing, hence following recommendations form F.S we used the household WQ for those available to impute it. They were available for 17 of the 39 observation with missing values. For Plasma Se, we only have values for `r sum(!is.na(EligibleDHS$selenium))`.
+
+#### Data inputation: Wealth quintile and index
+
+First, we checked whether the missing information on wealth was the same for the two variables (Q and index). 
+
+```{r}
+
+#Checking rows with missing value for wealth Q
+n <- which(is.na(EligibleDHS$wealth_quintile))
+#Checking rows with missing value for wealth Indx
+m <- which(is.na(EligibleDHS$wealth_idx))
+# Checkin that are the same 
+table(n==m)
+
+```
+
+Then, we identifed for which cases we could inpute the informationf from the household level dataset. 
+
+```{r}
+
+# Identifying HH ID & cluster of missing socio-eco info
+subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
+       select = c("household_id1","survey_cluster1")) %>% left_join(.,DHSDATA) %>% 
+  group_by(survey_cluster1, household_id1) %>% dplyr::count(wealth_quintile, wealth_idx, urbanity) %>% 
+  filter(!is.na(wealth_quintile)) %>%
+  knitr::kable()
+
+```
+
+Then, we inputed the wealth Q and indx. from the cluster to the WRA dataset. By creating a dataframe with the information above, and looping over the missing values with information. 
+
+
+```{r}
+
+#Sorting Wealth Q for each HH ID & cluster of missing info
+Wealth <- subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
+       select = c("household_id1","survey_cluster1")) %>% 
+   left_join(., DHSDATA %>% 
+             dplyr::select(c("household_id1","survey_cluster1", "wealth_quintile", "wealth_idx"))) %>% 
+  group_by(survey_cluster1, household_id1) %>%
+  filter(!is.na(wealth_quintile)) %>% 
+  distinct()
+
+
+# Generate a loop to assign Wealth Q from other member of the HH to non-reported people in biomarker survey data
+for(i in seq_along(Wealth$household_id1)){
+  
+EligibleDHS$wealth_quintile[EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[i] &
+                              EligibleDHS$household_id1 %in% Wealth$household_id1[i]] <- Wealth$wealth_quintile[i]
+
+EligibleDHS$wealth_idx[EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[i] &
+                              EligibleDHS$household_id1 %in% Wealth$household_id1[i]] <- Wealth$wealth_idx[i]
+}
+
+```
+
 
 Then, we compared plasma Se concentration by the two wealth variables. We can see that there are no much differences (Fig.). However, when disaggregating the data by rural and urban, we could see differences in the trends (See Fig). Since we are modeling based on this urban/rural differences, we chosen to use the `wealth_idx` variable in our model. 
 
@@ -678,11 +733,11 @@ Finally, when we checked the overall distribution of the variable, seemed more s
 `r knitr::kable(cbind(table(EligibleDHS$wealth_quintile,EligibleDHS$urbanity),table(EligibleDHS$wealth_idx,EligibleDHS$urbanity)), row.names = TRUE, caption = "Wealth Quintile vs Wealth Index (urban/rural)")`
 
 
-#### Education level
+### Education level
 
 Plasma Se values were slightly higher in the highest education level, with lower variability, while the opposite was true for the primary education level. 
 
-#### Place of residency
+### Place of residency
 
 Plasma Se values were similar when aggregated by region, whereas we can start seeing some differences when we are plotting the results by district. Also notice, that the number of observations per district is 1) much smaller and 2) much diverse (from `r min(table(EligibleDHS$sdist))` to `r max(table(EligibleDHS$sdist))`). 
 
@@ -692,11 +747,11 @@ Because we are exploring how much Plasma Se variability is explained by Maize Se
 We checked wealth by region and it seemed that there is a slight unbalance for the lowest Q in the middle region and towards the highest Q in the Northern region. See above (@sec-wq). Maybe we need to check for confounding effect.  
 
 
-#### Smoking
+### Smoking
 
-Only 3 respondent reported smoking cigarettes, if we want to include this variable, we may need to combine with other smoking variables (including the other variables), although according with the systematic review published in 2015, the prevalence of women who smoke in this context was below 4% [@brathwaiteSystematicReviewTobacco2015], additionally a report published more recently (2021) by the Malawi Government using this survey found very low rates of smoking among women (@ref-kadzamiraSocioeconomicImpactDisease2021).
+Only 3 respondent reported smoking cigarettes, if we want to include this variable, we may need to combine with other smoking variables (including the other variables), although according with the systematic review published in 2015, the prevalence of women who smoke in this context was below 4% [@brathwaiteSystematicReviewTobacco2015], additionally a report published more recently by the Malawi Government using this survey found very low rates of smoking among women (@kadzamiraSocioeconomicImpactDisease2021).
 
-#### Source of water & Plasma Se
+### Source of water & Plasma Se
 
 We found `r sum(is.na(EligibleDHS$source_water))` missing values in the variable `source_water` in the final dataset.
 
@@ -723,31 +778,73 @@ EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds")
 
 ```
 
-
-#### Limitations of DHS data
-
-  - **Time influence**: DHS survey was performed in 2015 while GeoNut was in 2018 and Chilimba in 2009. However, we could assume that the Se concentration would have been remain fairly similar over time (REF, REF). 
   
-  - **Seasonal variation**: DHS survey was performed during Feb.- which are normally referred as the "hunger season" were food intake is at its lowest and food patterns and behaviours may be influenced by maize scarcity (at HH level). Including, other crop intakes and unrefined/ maize bran flour intake. However, according to previous studies, food patterns (related to maize intake) were fairly constant between IHS3-IHS5.
-  
-#TODO:
-Check seasonal pattern for maize intake, sub-grouped by: maize fraction, wealth and urbanity (focus on rural). 
+## GPS location {#sec-gps-location}
 
 
-### GPS location {#sec-gps-location}
+```{r}
+
+# Loading the dataset
+ # GPS location DHS
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) 
+
+# Renaming variables
+GPS <- dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM', 
+                    Longitude='LONGNUM',  altitude_in_metres='ALT_GPS')
+
+```
+
 
 Due to confidentiality and anonymity protection, household locations are not available. Instead, the displaced GPS location of each cluster (i.e., EA) is provided. This means that the population centroid of each cluster was register in the original survey, and then displaced within 2km for urban clusters and 5km for rural clusters, with 10% of the rural clusters displaced within 10km buffer. Therefore, it is often not advised to used and/or link this type of data to distance-based measurement and/or small areas where high risk of missclassification may exist. This is because the location of the households could be in any of the EAs within the displaced buffer area. 
 
-Hence, we decided to use the buffer areas instead of the point locations (GPS coordinates) to standardise/ minimise the measurement error from the off-setting of the coordinates, and in turn, use the buffer area to identify the probable EAs where the households may be located. Hence, here we are adding a buffer around each of the GPS locations that account for the 2km and 5km displacement in urban and rural respectively. In that sense, we are assuming that each HHs can be in any place with that buffered area. 
+Hence, we decided to use the buffer areas instead of the point locations (GPS coordinates) to standardise/ minimise the measurement error from the off-setting of the coordinates, and in turn, use the buffer area to identify the probable EAs where the households may be located. Here we added a buffer around each of the GPS locations that account for the 2km and 5km displacement in urban and rural respectively. In that sense, we are assuming that each HHs can be in any place with that buffered area. 
 
-**TO DO: Adding the script that added the buffer**
+```{r }
+
+#  Generating the offset buffer
+
+for(i in 1:nrow(GPS)){
+
+# Assigning buffer size (in m) acc. to Urban (U) or Rural (R)
+offset.dist<-ifelse(GPS$URBAN_RURA[i]=="U", 2000, 5000)
+
+# Generating the buffers around the centroids
+GPS$buffer[i] <- st_buffer(GPS$geometry[i], dist = offset.dist)
+
+}
+
+
+```
+
+Checking the resutls of the displacement buffers
+
+```{r  fig.show='hold', fig.height=7, fig.width=6}
+
+# Transforming the list into spatial class
+GPS$buffer <- st_as_sfc(GPS$buffer)
+
+# Checking that the output
+plot(GPS$buffer) # Plotting the buffer
+plot(GPS$buffer[GPS$URBAN_RURA == "U"],col='red',add=TRUE) # colouring red those that are urban (smaller radius)
+
+```
+
 
 Final cleaned dataset was stored in: `data/inter-output/dhs-gps.rds`
 
-Then, the next step will be to combine with the information on maize Se at different aggregation level. To do so, first we need to "clean the location" as due to the GPS displacement Plasma Se and maize Se values were not co-located. The steps to "co-locate" Plasma Se and Maize Se are performed in the script `00_cleaning-locations.R`. 
+Then, the next step will be to combine with the information on maize Se at different aggregation level. 
+
+This will be done  using the script `00_cleaning-locations.R`. 
 
 
-#### Limitation to DHS-MNS data
+## Limitations
+
+### Limitations of DHS data
+
+  - **Time influence**: DHS survey was performed in 2015 while GeoNut was in 2018 and Chilimba in 2009. However, we could assume that the Se concentration would have been remain fairly similar over time (REF, REF). 
+  - **Seasonal variation**: DHS survey was performed during Feb.- which are normally referred as the "hunger season" were food intake is at its lowest and food patterns and behaviours may be influenced by maize scarcity (at HH level). Including, other crop intakes and unrefined/ maize bran flour intake. However, according to previous studies, food patterns (related to maize intake) were fairly constant between IHS3-IHS5.
+  
+### Limitation to DHS-MNS data
 
 <br> 
 
@@ -756,247 +853,3 @@ Then, the next step will be to combine with the information on maize Se at diffe
   - **Displacement of the GPS coordinates at cluster level**. This led to high chances of missclassification and reducing the accuracy of the results for small area (e.g., EAs). It also led to the reduction of the no. of co-located (maize Se & plasma Se) samples. 
 
 - **Confounding effect for certain variables**: For instance, in the central and southern regions the women who were tested positive in malaria, where on average younger that those who were negative (see @sec-malaria). 
-
-## Maize grain Se concentration in Malawi {#sec-maize}
-
-### GeoNutrition (Kumssa et al., 2022)
-
-```{r}
-
-# Loading maize data (Kumssa - GeoNut, 00_cleaning-maize, line 16)
-# Grain & soil chem data
-data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", 
- "MWI_CropSoilData_Raw.csv"))
-
-```
-
-We extracted multiple variables of interest (including the LOD), which served to: 
-
-a)  check the `NA` values (n=427) for maize Se concentration in found in the dataset published in Gashu et al. study (2021).
-
-b)  to add those values as possible solution for accounting for the high number of missing maize Se conc. values.
-
-Due to the high number of BLOD we have generated four Se variables to test sensitivity of the model.
-
- - **Se_raw**: This variable contains the values as reported from the chemical analysis including the values BLOD. Cleaning steps: 
- 
-i)  No measured: Six Se values were coded as not measured ("NM") , which were transformed into `NA`. 
-
-```{r}
-
-subset(data.df, ID %in% c("MWI0574", "MWI1007","MWI1138","MWI1168","MWI1171","MWI1686"), 
-       select = c(ID, Crop, Se_grain)) %>% knitr::kable()
-
-```
-
-ii)  Negative (or zero) values: 21 values were negative and converted to the smallest limit of detention value (0.002..). We tested to convert it into: zero, which is a problem for a number of reasons, including that zero cannot be log transformed (-Inf.), and to the minimum value in the dataset (0.0009) which again generate problems with outliers, and skewerness.  
-
- - **Se_std**: This variable contains Se values as above, however BLOD values were substituted with their respective LOD value (as per each round of test, see `Crop_ICP_Run_Se` & `Se_LOD` variable).
-  
-- **Se_grain**: This contains the Se values reported above the LOD, where values BLOD were excluded (i.e., converted into `NA`), as was previously done by Gashu et al., 2021 and reported in the "MWI_CropSoilData_NA.csv" dataset in Kumssa et al, 2022. 
-
-
-Additionally, the MAT values were added to this dataset for each sample location (i.e., GPS coord.), as this study only reported analytical values carried as part of the GeoNutrition project. These values were completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
-
-
-#### Spatial preliminary analysis
-
-The missing (i.e., BLOD values) are spatially clustered, which probably will influence (unbalancing) our results (Kumssa et al, 2022). We hypothesised that this is due to high concentration of very low maize grain Se concenrtation values likely driven by soil and environmental factors in those affected regions (@ref). 
-
-Although, the samples collected provided a good coverage of Malawi, there were 2200 EAs without a maize Se conc. samples. In addition, low number of maize samples were found in the southern region of Malawi (Shire Valley), leading to a more scarce and, probably higher uncertainty in that region.  Moreorver, consumption of maize in that region is comparable with the other regions of Malawi, and probably the main reason for the lower maize values is that the harvest season is slightly earlier than in other regions of Malawi (probably due to difference in the climatic patterns), and hence maize was not found when the field team were there to collect the data. 
-
-In order to minimise the impact on our model, and after checking that maize consumption is the same as other regions in Malawi (even slightly higher), we decided to explore other datasets which led to the inclusion of maize samples from Chilimba et al. study (2011) (see data section & next section).
-
-
-### Mineral concentration in maize (Chilimba et al., 2011)
-
-
-```{r, message=FALSE}
-
-# Loading maize data (complementary) (Chilimba, 00_cleaning-maize, line 16)
-maize  <- readxl::read_excel(here::here("data", "maize",
- "AllanChilimbaFieldData_forLucia_20230615.xlsx"), sheet = 1)
-
-```
-
-This dataset provided Se concentration in maize grain and pH in soil (measured in water) in the same locations, however it did not contain information on the MAT (`BIO1`) for each location, which are used for the maize aggregation model (see _02modelling). 
-
-We extracted the variable of interest, removed `NA` and checked the coordinate projections to make sure both datasets (GeoNutrition & this dataset) were compatible (both datasets provided longitude and latitude data in decimal degrees, WGS84 datum, coordinate reference system EPSG:4326). 
-
-```{r, cleaning-steps}
-
-#Renaming variable & adding info on data source
-names(maize)[c(23, 28)]  <- c( "Se_mg", "pH_w")
-maize$survey  <- "Chilimba"
-
-# Getting variables of interest 1:12 (sample descript), grain_se and pH
-maize  <-  maize[,c(1:11, 23, 28, 56)]
-
-# Checking values 
-sum(is.na(maize$Se_mg)) # Only 2
-
-```
-
-
-When we checked the distribution of the sample (@fig-2a, @fig-2b), we can see that the log-distribution shape is a bit odd. This may be related to the majority of the samples were collected from high maize Se conc. areas (i.e., Shirey valley), which, paired with probably the omission of BLOD values, led to a large number of high concentration values. 
-
-```{r label = "fig-2a", fig.cap = "Distrubution of maize Se concentration from the study of Chilimba et al. (2011)."}
-
-summaplot(maize$Se_mg)
-
-```
-
-
-```{r label = "fig-2b", fig.cap = "Distrubution of log transformed maize Se concentration from the study of Chilimba et al. (2011)."}
-
-summaplot(log(maize$Se_mg))
-
-```
-
-
-### Excluded datasets {#sec-exclusion}
-
-Here, we provide information about the data exploration and main reasons for exclusion of the datasets. 
-
-#### GeoNutrition (Gashu et al., 2021)
-
-
-This dataset was excluded because high percentage of values were transformed to `NA` some of which were BLOD values for maize Se concentration. However the cleaning scripts are provided in this repository. 
-
-We extracted the variables of interest from the dataset: Se conc. (only in maize), pH, MAT, and the coordinates. Then we are doing some data operations, for instance, removing NAs (values >999) in Se conc. and checking missing values for the covariates. 
-
-Two pH values were missing, hence we may exclude those values for the modelling, also there were three locations with missing MAT. This could be have been completed when extracting the MAT for the Chilimba et al. (2011) sample locations. 
-
-
-#### Mineral concentration in crops (Joy et al., 2014)
-
-This study was excluded because it did not provided substantial information (i.e, only few new samples), while it would potentially add more uncertainity to the final results. The script for cleaning the dataset is provided in this repository.
-
-This study collected data for various crops, hence we needed to clean the dataset to obtain only the information for maize Grain. We also excluded maize flour to keep it consistent with our dataset. In addition, soil pH values were extracted to be used as model covariates. 
-
-One limitation of the dataset is that the GPS location were only provided for crops and not for soils, hence we were trying to use some information (STable10) to combine the sample number with the soil samples. These led to the correct allocation of a pH value for 57 of the 155 samples. 
-
-According to the documentation, soil samples were not taken when the samples were collected at the market. We are then assuming that samples without pH value were collected at the market and hence should be excluded from our analysis. Then, only one or two samples were collected in the Shire Valley, thus this sample dataset will not be contributing substantially to reduce the uncertainty, and it may add other sources of variability (i.e., temporal, analytical, etc). Hence, it was excluded from the final dataset.
-
-### Mean Annual Temperature
-
-Mean Annual Temperature (MAT) was used as environmental covariate for the aggregation of maize Se model. The data was extracted from the CHELSA dataset which was downloaded from [here](https://datadryad.org/stash/dataset/doi:10.5061/dryad.kd1d4) on 2023/07/17 and cropped for Malawi for easy usage. The geographic coordinate system are referenced to the WGS 84 horizontal datum, with the horizontal coordinates expressed in decimal degrees.  
-
-### The combined dataset: Crop Se dataset
-
-When we combined both GeoNutrition (Kumassa et al, 2022) and Chilimba datasets, as expected, the maize Se concentration is heavily skewed and it would need log transformation, while pH has a normal distribution. 
-
-For more information on that see the exploratory analysis and the variable selection for the model reported in Gashu et al., (2019) [@ref] and the analysis done by Lark et al. (2019), here are the [scripts](https://github.com/rmlark/GeoNutrition/blob/main/Soil_Crop_comparisons/Malawi/Malawi_model.R). 
-
-### Limitations of the maize data
-
-  
-- **High proportion of below limit of detection values**: The number of below detection limit values of selenium (Se) in Malawi were high (~25%) due to the very low Se concentration in maize found in the country which in turn would highly affect our final results. Therefore, some considerations were taken and were explained in the data exploration (@sec-explo) as well as in the modelling section (Section 3.x). See also notes in @kumssaCerealGrainMineral2022. Potential risk of bias:
-    - High uncertainty of the results leading to potential over-estimation (or under-) of maize Se concentration. 
-    - If data were excluded, a) the values would not be missing at-random as they have a spatial pattern (i.e, particular areas of the country were affected mostly), b) left-censoring data set which mean/median overestimation of maize concentration.
-
-- **Low maize data availability in Southern Malawi region**: We found mostly other crops (e.g., millet, sorghum, etc.) (~11%) were collected in Southern Malawi instead of maize. It could be because the harvest season is slightly earlier in that area and hence the fields were already harvested and other crops planted when the data collection happened (@ref). This led to the inclusion of another datas set to increase the maize samples in that region, which it has its own limitation (see next point).
-
-- **Different sampling time** For the Chilimba study, the samples were collected during 2009/10 while the GeoNutrion are much recent (2018). This may lead to differences in the composition of the maize due to environmental factors (e.g., rainfall) that may influence the results. Testing for sensitivity (e.g., excluding those data point). 
-
-
-
-## Boundaries of Malawi {#sec-explo-bound}
-
-```{r}
-
-# Admin Boundaries for Malawi 
-
-# Districts
-dist_bnd  <- sf::st_read(here::here("data", "mwi-boundaries",  "mwi_adm_nso_hotosm_20230329_shp", "mwi_admbnda_adm2_nso_hotosm_20230329.shp"), 
-                     quiet = TRUE)
-                              
-
-# EAs
-ea_bnd  <- sf::st_read(here::here("data", "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"), quiet = TRUE)
-
-# TAs
-ta_bnd  <- sf::st_read(here::here("data", "mwi-boundaries",
- "mwi_adm_nso_hotosm_20230329_shp","mwi_admbnda_adm3_nso_hotosm_20230329.shp"), 
-                   quiet = TRUE)
-
-```
-
-
-In this study, we are trying to identify the optimal level of aggregation of maize grain Se composition data, hence different set of spatial aggregation units (areal units) were generated based on the administrative units of the country (Admin level 4 - EAs, Admin level 2 - districts), and based on household locations. For instance, areas based on the clusters reported in the DHS dataset.
-
-```{r}
-
-# Checking the if the boundaries were fine
-table(sf::st_is_valid(dist_bnd))
-
-# Fixing some of the boundaries
-dist_bnd <- st_make_valid(dist_bnd) # Check this
-
-
-```
-
-
-In order to identify where the data collected, both maize samples and clusters shapefiles (i.e., spatial datasets) with the boundaries (polygons) of each administrative units must be used. Particuarly for EAs, as that information is not provided by any of the datasets used. 
-
-### Administrative boundaries
-
-```{r}
-
-# Removing lakes from boundaries dataset
-# Selecting only variables that are interesting 
-# fid, EA code, TA name, TA code, district, dist code, EA area & geometry)
-ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
-                                     ignore.case = TRUE)) %>% 
-  dplyr::select(c(1, 4, 9, 10, 11, 12, 17, 18))
-
-# Loop for adding the region Northern-Southern (1-3)
-
-ea_admin$region <- NA
-
-for(i in 1:3){
-  ea_admin$region[grepl(paste0("^", i), ea_admin$EACODE)] <- i
-}
-
-ea_admin %>% filter(is.na(region))
-
-```
-
-We have found several shape files with the boundaries for Malawi (See @sec-bound). After exploring the boundaries datasets (pre-exploration using QGIS version (3.28.3) Firenze), we selected two data files: one for the EAs, the boundaries 3 (@ref-NSO) (`ea_bnd`) as the source of the polygons of each of the n= `r length(unique(ea_bnd$EACODE))` EAs. As this was the only file with information at that administrative level. This file contains some variables that were not necessary, and it also contained the shape of the lakes in Malawi. This were removed, and the trimmed dataset was used for further steps. 
-
-
-```{r}
-
-## Combining EAs with "authentic" District
-
-test <-  st_join(ea_admin, dist_bnd)
-
-```
-
-Additionally, due to the sensitive nature of the EAs (i.e., used in census data), the file is old () hence the district are not up to date. Therefore, for the district to match the current country boundaries and those reported in the DHS dataset, we are using those reported in boundaries 2, also generated by the NSO, and more recent (2023) (ref). This is particularly problematic as the district "Mwanza" was splited into two District "Mwanza" and "Neno", which is not found in the file with the EAs. Therefore, the two files were combined together however, some discrepancies arose, for instance eight observations did not have a district. We visually checked the location of each "missing EA" within their districts, as it can be seen in the script (`00_cleaning-boundaries.R`). We added their corresponding districts to all of the EAs following in the "old" file but for the EAs in Mwanza as they lied in Neno, as it can be seen in the @fig-6. 
-
-```{r label = "fig-6", fig.cap = paste("Location of the EAs (", unique(test$EACODE[is.na(test$ADM2_PCODE) & test$DISTRICT == "Mwanza"]), ") in Mwanza/Neno district.") }
-
-tm_shape(test %>% filter(DISTRICT %in% "Mwanza")) +
-  tm_polygons(border.col = "black") +
-  tm_shape(dist_bnd %>% filter(ADM2_EN %in% "Mwanza")) +
-  tm_polygons("ADM2_EN", border.alpha = 0.01) +
-  tm_shape(test$geometry[test$EACODE %in% test$EACODE[is.na(test$ADM2_PCODE) & test$DISTRICT == "Mwanza"]]) +
-  tm_polygons( col = "red") 
-
-
-```
-
-
-Then, this file with the EAs and the correct district was save as a shapefile in the (`here::here( "data", "inter-output",  "boundaries", "mwi_admbnda_adm4_nso.shp")) , and it will be used in further steps. 
-
-
-#### Limitation of the admin boundaries data 
-
-The **first issue** that we encountered was that not many of the files have the boundaries at EA level. This is due to the confidentiality and sensitivity of the data, as those are the clusters used for most of the survey and are bases on the census data. 
-
-The **second issue** was that some boundaries are not accurate/ well-defined. For instance, in the dataset 1 (GADM), which is a good source of countries boundaries, lake Malawi was included into the admin boundaries. Hence, when using the boundaries to locate the HHs and/or maize it seemed that part of the household were falling inside Lake Malawi. If we try to remove the lake area it leads to the missing of some observations. 
-
-The **third issue** we found was inconsistency between datasets. Although boundaries 2 and 3 are apparently produced by the NSO the number of TA are different (n=`r length(unique(ea_bnd$TA_CODE))`) and (n=`r length(unique(ta_bnd$ADM3_PCODE))`). The disagreement may be due to the inclusion of sub-divided TA (i.e., TSA) in the dataset 3, or due differences on the date of the datasets. There are are small differences in the codes used between the datasets which may yielded further inconsistencies between the two. Hence, we decided to exclude this boundaries for further analysis and do not aggregate at this level. In addition, after discussing with GO and EJ, they agreed that TA may be inconsistent boundaries and that may have some political/ local sensibilities. 
-
-More info (on practical steps & tested thing on the notebook `Bondaries_notes.md`). 

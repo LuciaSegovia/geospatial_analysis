@@ -158,7 +158,7 @@ covs <- plasma_se %>%  dplyr::select(covar) %>% as.list()
 
 ```
 
-After that we need to prepare the stack. This is a useful function where you can stack the data. Here, we combine the SPDE model that will be defined in the triangle nodes (*m*) and the covariates and the intercept at the point locations (*n*). 
+After that we need to prepare the stack. This is a useful function where you can stack the data which help organise the data for the model. Here, we combine the SPDE model that will be defined in the triangle nodes (*m*) and the covariates and the intercept at the point locations (*n*). 
 
 ```{r}
 
@@ -182,6 +182,21 @@ stack <- inla.stack(
     w = spde.index)) # attach the w 
 
 ```
+
+Finally, we can model the data using the `inla()`, here we need to provide the formula which was strored in the object `form`, the data stack `inla.stack.data(stack)` the control predictors will extract a simplified predictor matrix. Finally, we can list some of the model performance index, such as CPO or DIC.
+
+
+```{r}
+
+m <- inla(form, 
+           data = inla.stack.data(stack),
+           family = "gaussian",
+           control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
+           control.compute = list(cpo = TRUE, dic = TRUE))
+
+```
+
+The model output is then stored in the list for evalution and comparisson.
 
 
 

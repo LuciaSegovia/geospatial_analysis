@@ -9,7 +9,7 @@ library(magrittr)
 #  geom_jitter(aes(colour = factor(survey_cluster1))) + coord_fixed() + 
 #  labs(colour = "survey_cluster1")
 
-gps <- plasma_se %>% select(survey_cluster1, Longitude, Latitude) %>% 
+gps <- plasma_se %>% dplyr::select(survey_cluster1, Longitude, Latitude) %>% 
   distinct() %>% arrange(survey_cluster1)
 
 
@@ -25,18 +25,76 @@ Efxplot(models)
 
 ## Getting fixed effect -----
 
-fix.effect <-  models[[6]]$summary.fixed
+fix.effect <-  round(models[[6]]$summary.fixed, 4)
+fix.effect <-  NA
 
-for(i in 7:10){
+for(i in 1:length(models)){
   
-  fix.effect <- cbind(fix.effect, models[[i]]$summary.fixed )
+  fix.effect <- cbind(fix.effect, round(models[[i]]$summary.fixed, 4))
   
 }
 
 # write.csv(round(fix.effect,2), here::here("output", "fixed.effect_v1.0.0.csv"))
 
+## Visualising model parameters for all models
+# (Krainski et al., p. 37)
+
+
+s2.marg <- lapply(models, function(m) inla.tmarginal(function(x) 1/x, m$marginals.hy[[1]]))
+
+#Extracting the SPDE results for all the models
+spde.est <- lapply(models, function(m) inla.spde2.result(m, name = "spatial.field",
+                              spde = spde, do.transf = TRUE))
+
+# looping over all model results
+
+rcols <- rainbow(10) ##c(rgb(4:1/4,0:3/5,0), c(rgb(0,0:3/5,4:1/4))) 
+par(mfrow=c(2,3), mar=c(2.5,2.5,1,.5), mgp=c(1.5,.5,0), las=1)
+xrange <- range(sapply(models, function(x) range(x$marginals.fix[[1]][,1]))) 
+yrange <- range(sapply(models, function(x) range(x$marginals.fix[[1]][,2]))) 
+plot(models[[1]]$marginals.fix[[1]], type='l', xlim=xrange, ylim=yrange, 
+     xlab=expression(beta[0]), ylab='Density')
+
+for (k in 1:length(models))
+  lines(models[[k]]$marginals.fix[[1]], col=rcols[k], lwd=2)
+xrange <- range(sapply(s2.marg, function(x) range(x[,1])))
+yrange <- range(sapply(s2.marg, function(x) range(x[,2])))
+  plot.default(s2.marg[[k]], type='l', xlim=xrange, 
+                ylim=yrange, xlab=expression(sigma[e]^2), ylab='Density')
+
+for (k in 1:length(models))
+  lines(s2.marg[[k]], col=rcols[k], lwd=2)
+  xrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,1])))
+  yrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,2]))) 
+plot(spde.est[[1]]$marginals.variance.nominal[[1]], type='l', xlim=xrange, ylim=yrange, xlab=expression(sigma[x]^2), ylab='Density')
+
+for (k in 1:length(models))
+  lines(spde.est[[k]]$marginals.variance.nominal[[1]], col=rcols[k], lwd=2)
+xrange <- range(sapply(spde.est, function(r) range(r$marginals.kappa[[1]][,1]))) 
+yrange <- range(sapply(spde.est, function(r) range(r$marginals.kappa[[1]][,2])))
+plot(spde.est[[1]]$marginals.kappa[[1]], type='l', xlim=xrange, ylim=yrange, xlab=expression(kappa), ylab='Density') 
+
+for (k in 1:length(models))
+  lines(spde.est[[k]]$marginals.kappa[[1]], col=rcols[k], lwd=2)
+xrange <- range(sapply(spde.est, function(r) range(r$marginals.range.nominal[[1]][,1])))
+yrange <- range(sapply(spde.est, function(r) range(r$marginals.range.nominal[[1]][,2])))
+plot(spde.est[[1]]$marginals.range.nominal[[1]], type='l', xlim=xrange, ylim=yrange, xlab='nominal range', ylab='Density') 
+
+for (k in 1:length(models))
+  lines(spde.est[[k]]$marginals.range.nominal[[1]], col=rcols[k], lwd=2)
+xrange <- range(sapply(spde.est, function(r) range(r$marginals.tau[[1]][,1])))
+yrange <- range(sapply(spde.est, function(r) range(r$marginals.tau[[1]][,2])))
+plot(spde.est[[1]]$marginals.tau[[1]], type='l', xlim=xrange, ylim=yrange, xlab=expression(tau), ylab='Density') 
+
+for (k in 1:length(models)) 
+  lines(spde.est[[k]]$marginals.tau[[1]], col=rcols[k], lwd=2)
+legend('topright', c(paste('buffer',1:8, sep=''), 'cluster', 'district'), 
+       lty=c(rep(1,10), 2, 3), lwd=rep(2, 10), col=c(rcols), bty='n')
+
+
+
 # Plotting alpha (https://becarioprecario.bitbucket.io/spde-gitbook/ch-INLA.html)
-plot(m0$marginals.fixed[[1]], type = "l", 
+plot(models[[9]]$marginals.fixed[[1]], type = "l", 
      xlab = expression(alpha), ylab = "density")
 
 # Compute posterior marginal of variance
@@ -108,9 +166,10 @@ plot(x = d.vec,
 # There is no need to run it again, but we
 # do.
 
+N <- nrow(plasma_se)
 
 # Get fitted values and residuals
-Fit9 <- models[[9]]$summary.fitted.values[1:732,"mean"]
+Fit9 <- models[[9]]$summary.fitted.values[1:N,"mean"]
 E9     <- plasma_se$Plasma_Se - exp(Fit9)
 
 
@@ -123,7 +182,7 @@ abline(h = 0, v = 0)
 par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
 hist(E9, breaks = 25)
 
-#Independence due to model misfit
+# Independence due to model misfit
 par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
 plot(x = plasma_se$dist_to_lake, 
      y = E9)
@@ -137,15 +196,15 @@ abline(h = 0)
 
 ##########################################
 # Spatial patterns in the residuals?
-# Option 1: Plot the residuals vs spatial
-#           locations. Look for patterns.
+# Option 1: Plot the residuals vs spatial locations.
+#            Look for patterns.
 # Option 1:
 MyCex <- 3 * abs(E9) / max(E9) + 0.5
 Sign <- as.numeric(E9 >=0) + 1
 MyPch <- c(1, 16)[Sign]
 lattice::xyplot(Latitude ~ Longitude,
        data = plasma_se,
-       cex = MyCex,
+     #  cex = MyCex,
        pch = MyPch,
        col = 1,
        aspect = "iso",
