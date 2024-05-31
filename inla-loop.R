@@ -27,7 +27,7 @@ covar <- c("Se_mean",
           "dist_to_lake")
 
 # Formula for the model
-form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
+form <- log(y) ~ 0 + Intercept +  log(Se_mean) +
   # wealth_quintile +
   wealth_idx +
   AGE_IN_YEARS +
@@ -77,14 +77,11 @@ if(sum(plasma_se$Se_mean ==0)>0){
 # Locations
 coord <- cbind(plasma_se$Longitude, plasma_se$Latitude)
 
-#Creating the mesh
-# mesh <- inla.mesh.2d(loc = coord, 
-#                      max.edge = c(.5, 3),
-#                      cutoff = c(0.1))
+# Creating the mesh
+mesh <- inla.mesh.2d(loc = coord, max.edge = c(.3, .7), cutoff = c(0.0001)) 
+# mesh <- inla.mesh.2d(loc = coord, max.edge = c(.3, .7), cutoff = c(0.001)) 
+#mesh <- inla.mesh.2d(loc = coord, max.edge = c(.5, 3), cutoff = c(0.001)) 
 
-mwidomain <- inla.nonconvex.hull(coord,  concave=0.03, resolution=c(200,350))
-mesh <- inla.mesh.2d(boundary=mwidomain, max.edge = c(.4, 1), cutoff = c(0.1))
-#mesh <- inla.mesh.2d(loc = coord, max.edge = c(.4, 1), cutoff = c(0.1)) 
 
 # Projection matrix (A) obs.
 A <- inla.spde.make.A(mesh = mesh , loc = coord)
