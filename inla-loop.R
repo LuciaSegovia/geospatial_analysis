@@ -27,7 +27,7 @@ covar <- c("Se_mean",
           "dist_to_lake")
 
 # Formula for the model
-form <- log(y) ~ 0 + Intercept +  log(Se_mean) +
+form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
   # wealth_quintile +
   wealth_idx +
   AGE_IN_YEARS +
@@ -39,7 +39,7 @@ form <- log(y) ~ 0 + Intercept +  log(Se_mean) +
 # Model output
 models <- list()
 # Spatial output
-spde.est <- list()
+# spde.est <- list()
 
 
 for(i in 1:length(file)){
@@ -53,6 +53,9 @@ plasma_se <- readRDS(here::here("data", "inter-output", "model",
 plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium")
 # sum(duplicated(plasma_se$unique_id))
 # names(plasma_se)   
+
+# class(plasma_se$survey_cluster1)
+plasma_se$survey_cluster1 <- as.character(plasma_se$survey_cluster1)
 
 # plasma_se <- plasma_se %>% dplyr::filter(urbanity == "2")
 

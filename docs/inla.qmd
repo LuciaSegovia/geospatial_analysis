@@ -138,7 +138,7 @@ summary(rowSums(A))
 ```
 We can check here that all the weights for each triangle sum 1. 
 
-Then, we are building the SPDE model using the function `inla.spde2.matern()`. Here, we set the spatial smoothness parameter $alpha$ to `$alpha$ = 2` as it is a two dimension model. 
+Then, we are building the SPDE model using the function `inla.spde2.matern()`. Here, we set the spatial smoothness parameter $alpha$ to `$alpha$ = 2` as it is a two dimension model. Following the recommendations in Moraga, 2019. In addition, we did not set any priors as the intend of the model were not prediction (i.e, predicting plasma Se concentration in unsampled location) but to test the performance of different maize Se aggregation level (i.e., which would better explain the plasma Se concentration data). 
 
 
 ```{r}

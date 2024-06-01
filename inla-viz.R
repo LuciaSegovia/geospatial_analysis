@@ -66,7 +66,8 @@ for (k in 1:length(models))
   lines(s2.marg[[k]], col=rcols[k], lwd=2)
   xrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,1])))
   yrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,2]))) 
-plot(spde.est[[1]]$marginals.variance.nominal[[1]], type='l', xlim=xrange, ylim=yrange, xlab=expression(sigma[x]^2), ylab='Density')
+plot(spde.est[[1]]$marginals.variance.nominal[[1]], type='l', xlim=xrange, ylim=yrange, 
+     xlab=expression(sigma[x]^2), ylab='Density')
 
 for (k in 1:length(models))
   lines(spde.est[[k]]$marginals.variance.nominal[[1]], col=rcols[k], lwd=2)
@@ -115,12 +116,13 @@ w.sd <- models[[9]]$summary.random$spatial.field$s
 
 # Checking underlying spatial process 
 #Compute statistics in terms or range and variance
-spde.est <- inla.spde2.result(inla = models[[9]], name = "spatial.field",
-                              spde = spde, do.transf = TRUE)
+#spde.est <- inla.spde2.result(inla = models[[9]], name = "spatial.field",
+ #                             spde = spde, do.transf = TRUE)
 
 
 #Kappa
-inla.zmarginal(spde.est$marginals.kappa[[1]])
+inla.zmarginal(spde.est[[9]]$marginals.kappa[[1]])
+inla.zmarginal(spde.est[[10]]$marginals.kappa[[1]])
 
 Kappa <- inla.emarginal(function(x) x, 
                         spde.est$marginals.kappa[[1]] )
@@ -129,6 +131,11 @@ inla.zmarginal(spde.est$marginals.variance.nominal[[1]])
 
 Sigma_u <- inla.emarginal(function(x) x, 
                           spde.est$marginals.variance.nominal[[1]])
+
+inla.zmarginal(sapply(spde.est, function(x)
+  inla.zmarginal(x$marginals.variance.nominal[[1]])))
+
+
 
 #Range
 r <- inla.zmarginal(spde.est$marginals.range.nominal[[1]])
