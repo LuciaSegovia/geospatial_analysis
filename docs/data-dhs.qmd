@@ -29,6 +29,13 @@ lab_malaria <- c(`1` = "Positive", `2` = "Negative")
 plasma_lab <- expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))
 bmi_lab <- expression(paste("BMI (kg /  ",  m^{2}, ")"))
 
+# Colour definition 
+
+# 2) Rural and urban
+col_break <- c("2" = "#00BFC4", "1" = "#F8766D")
+# 3) Positive & negative
+col_binary <- c("1" = "#204e4c", "2" = "#c29431")
+
 ```
 
 
@@ -146,7 +153,7 @@ Malawi_WRA %>%
   ggplot(aes(x = !!sym(var_x), weight=wt, region, colour=urbanity)) +
   geom_vline(xintercept = median(Malawi_WRA$AGE_IN_YEARS), col = "lightgrey", size = 1) +
   geom_boxplot() + 
-  scale_colour_discrete(name = "", label = lab_reside) +
+    scale_colour_manual("", values = col_break, labels = lab_reside)+
   #  geom_violin() + 
     coord_flip() +
   scale_y_discrete(label = lab_region) +
@@ -206,10 +213,10 @@ value_median <- median(Malawi_WRA$AGE_IN_YEARS)
 
 Malawi_WRA %>% 
   ggplot(aes(x = !!sym(var_x), weight=wt, # w/ survey weights
-             region, colour=!!sym(var_col))) +
+             region, fill=!!sym(var_col))) +
   geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
   geom_boxplot() + 
-  scale_colour_discrete(name = "", label = col_lab) +
+   scale_fill_manual("", values = col_binary, labels = col_lab)+
     coord_flip() +
   scale_y_discrete(label = lab_region) +
   theme_classic() +
@@ -247,7 +254,11 @@ Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >999] <- NA
 
 ### Body Mass Index
 
-We calculated the Body Mass Index (BMI) as it would be added to the model as a proxy for total food intakes. We assumed that women with higher food intake may have higher plasma Se due to higher dietary Se intake. For instance, a normal BMI (18.5-24.9 kg/m^2), would likely mean that the food intake was providing enough food (i.e, energy) to maintain a normal body weight. In Malawi, that food intake is normally represented by maize consumption, as it is the main staple crop which supplies more than 60% of the total energy supply (REF-Joy et al, , REF). Hence, we added this variable to account for potential differences in the Plasma Se due to (lower) food intake. 
+We calculated the Body Mass Index (BMI) as it would be added to the model as a proxy for total food consumption.
+
+We hypothesised that women with higher food intake may have higher plasma Se due to higher overall dietary Se intake. For instance, a normal BMI range (i.e., 18.5-24.9 kg/$m^2$) would likely mean that the food intake was providing enough food (i.e, energy) to maintain a normal body weight. 
+
+In Malawi, main source of energy (and some micronutrient) is maize, as it is the main staple crop which supplies more than 60% of the total energy supply (REF-Joy et al, , REF). Hence, we are exploring the BMI as a potential proxy of difference in plasma Se concentration due to differences in maize total consumption. 
 
 ```{r}
 
@@ -264,28 +275,16 @@ summaplot(Malawi_WRA$BMI)
 
 ```
 
-We can see also in the @fig-2_3 that there is a difference in the BMI between rural and urban women. Similar trend was found when we evaluated the wealth quintiles (@sec-wq), where the Northern region in Malawi has higher BMI & wealth quintile than the other two regions. This is unsurprising, as we can assume that BMI and wealth may be related, and it has been reported previously higher body weight in wealthier women in Malawi and in the region (REF, REF, REF). 
+We could see that the northern region has overall higher BMI. This differences were only moderately significant when comparing the northern and the central region. Similar trend was found when we evaluated the wealth quintiles (@sec-wq), where the Northern region in Malawi has higher BMI & wealth quintile than the other two regions. This is unsurprising, as we can assume that BMI and wealth may be related, and it has been reported previously higher body weight in wealthier women in Malawi and in the region (REF, REF, REF). 
 
-```{r label = "fig-2_3", fig.cap = "BMI (kg/m^2) of women by residency and region in Malawi. The light grey lines represent the healthy BMI range"}
+There was a significant difference in the BMI between rural and urban women however, the number of urban were very low. Moreover, when we checked the results by region, the differences were only seeing for the southern region. These resutls should be interpret with care due to the difference in sample size between rural and urban. 
 
-# Boxplot: Age per region and residency----
-var_x <- "BMI"
-x_label <-  expression(paste("BMI (kg /  ",  m^{2}, ")"))
+Moreover, as it can see in the scatter plot (@fig-2_3) and in the histogram, most of the population included in the study were within normal BMI range, and plasma Se concentration was not particularly influenced by BMI. 
 
-Malawi_WRA %>% 
-  mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
-  ggplot(aes(x = !!sym(var_x), weight=wt, region, colour=urbanity)) +
-  geom_vline(xintercept = 18.5, col = "lightgrey", size = 1) +
-  geom_vline(xintercept = 24.5, col = "lightgrey", size = 1) +
-  geom_boxplot() + 
-  scale_colour_discrete(name = "", label = lab_reside) +
-  #  geom_violin() + 
-    coord_flip() +
-  scale_y_discrete(label = lab_region) +
-  theme_classic() +
-  labs(y = "",
-       x = x_label) +
-  theme(legend.position = "top")
+```{r label = "fig-2_3", fig.cap= "Scatter plot showing relationship between plasma Se concentration and BMI in women of reproductive age in Malawi."}
+
+# Scatter plot 
+plot(selenium ~ BMI, Malawi_WRA)
 
 ```
 
@@ -312,11 +311,11 @@ Moreover, when we see the distribution by region and residency, we can see that 
 var_x <- "selenium"
 x_label <- plasma_lab
   
-Malawi_WRA %>% 
+Malawi_WRA %>% filter(!is.na(!!sym(var_x))) %>% 
   mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
   ggplot(aes(x = !!sym(var_x), weight=wt,  region, fill=urbanity, colour = urbanity)) +
   ggridges::geom_density_ridges(alpha = 0.5)  +
-  scale_fill_discrete(name = "", label = lab_reside) +
+    scale_fill_manual("", values = col_break, labels = lab_reside)+
   scale_colour_discrete( guide = "none") +
   scale_y_discrete(label = lab_region) +
   theme_classic() +
@@ -327,7 +326,26 @@ Malawi_WRA %>%
 ```
 
 
-Plasma Se median (and mean) values were higher in urban settings than in rural, and the highest in the Southern region. Then, the median dissagregated by region and residency showed that Northern and Southern urban population had the highest plasma Se median concentration, while the Central region were the lowest, particularly for women living in rural settings as shown in @fig-2_5. 
+Plasma Se median values were higher in urban settings than in rural, and the highest in the Southern region. 
+
+```{r}
+
+# Se Weighted mean/median by region
+ddply(Malawi_WRA,~region, summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+```
+
+
+Then, the median disaggregated by region and residency showed that Northern and Southern urban population had the highest plasma Se median concentration, while the Central region were the lowest, particularly for women living in rural settings as shown in @fig-2_5. 
+
+```{r}
+
+# Se Weighted median by region & urbanity
+ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+
+```
+
 
 Interestingly, while the women in the Northern-urban areas had higher plasma Se than their southern counterpart, the women in the Southern-rural areas had higher plasma Se those in Northern-rural areas.
 
@@ -382,7 +400,6 @@ data.df$urbanity <- as.factor(data.df$urbanity)
 ```
 
 
-
 ### Inflammation {#sec-inflam}
 
 Both CRP () and AGP () were measured in women, of which we had `r sum(is.na(data.df$crp))` and `r sum(is.na(data.df$agp))` missing values respectively. We can also see that both variables were skewered and hence, we needed to log-transform them, which turned them into normality.
@@ -409,12 +426,12 @@ It could be that this variable is correlated with Malaria, hence by including th
 
  However, malaria prevalence was higher in rural areas and for the different wealth quintiles (WQ), with lowest WQ being 6-times higher than the highest WQ. Since, these two variables may influence Plasma Se status we are including it in the model.
 
-```{r label = "fig-2_6a", fig.cap = "Variation in c-reactive protein (CRP) (mg/L) of women in Malawi by region and malaria test resutls."}
+```{r label = "fig-2_6a", fig.cap = "Variation in c-reactive protein (CRP) (mg/L) (log-transformed) of women in Malawi by region and malaria test resutls. Grey line is the median CRP (log-transformed). Red line is the log-tranformed CRP cut-off value for infammation (5mg/L)."}
 
 ## CRP per malaria test and residency ----
 var_x <- "crp"
 x_label <- "log-transformed CRP (mg/l)"
-cut_off <- 5 #crp
+cut_off <- log(5) #crp
 var_col <- "Malaria_test_result"
 col_lab <- lab_malaria
 
@@ -422,11 +439,13 @@ value_median <- log(median(pull(Malawi_WRA[,var_x]), na.rm = TRUE))
 
 Malawi_WRA %>% 
   ggplot(aes(x = log(!!sym(var_x)), weight=wt, # w/ survey weights
-             region, colour=!!sym(var_col))) +
+             region, fill=!!sym(var_col))) +
+  # CRP median (log-transformed) values
   geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
+  # CRP cut off values for inflammation
   geom_vline(xintercept = log(cut_off), col = "red", size = 1) +
   geom_boxplot() + 
-  scale_colour_discrete(name = "", label = col_lab) +
+     scale_fill_manual("", values = col_binary, labels = col_lab)+
     coord_flip() +
   scale_y_discrete(label = lab_region) +
   theme_classic() +
@@ -441,13 +460,13 @@ Malawi_WRA %>%
 ```
 
 
-```{r label = "fig-2_6v", fig.cap = "Variation in  (AGP) (g/L) of women in Malawi by region and malaria test resutls."}
+```{r label = "fig-2_6v", fig.cap = "Variation in  (AGP) (g/L) (log-transformed) of women in Malawi by region and malaria test resutls. Grey line is the median AGP (log-transformed). Red line is the log-tranformed AGP cut-off value for infammation (1mg/L)."}
 
 ## AGP per malaria test and residency ----
 var_x <- "agp"
 x_label <- "log-transformed AGP (g/l)"
 x_label <- "log c-reactive protein (g/l)"
-cut_off <- 1 #AGP
+cut_off <- log(1) #AGP
 var_col <- "Malaria_test_result"
 col_lab <- lab_malaria
 
@@ -455,11 +474,11 @@ value_median <- log(median(pull(Malawi_WRA[,var_x]), na.rm = TRUE))
 
 Malawi_WRA %>% 
   ggplot(aes(x = log(!!sym(var_x)), weight=wt, # w/ survey weights
-             region, colour=!!sym(var_col))) +
+             region, fill=!!sym(var_col))) +
   geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
   geom_vline(xintercept = log(5), col = "red", size = 1) +
   geom_boxplot() + 
-  scale_colour_discrete(name = "", label = col_lab) +
+     scale_fill_manual("", values = col_binary, labels = col_lab)+
     coord_flip() +
   scale_y_discrete(label = lab_region) +
   theme_classic() +
@@ -475,7 +494,7 @@ Malawi_WRA %>%
 
 ## Socio-economic data (DHSDATA)
 
-
+There were some variables that may be related to differences in individual plasma Se variations that were recorded in the household questionnaire, for instance whelath quintile and wealth index. 
 
 ```{r}
 
@@ -632,11 +651,6 @@ Here we are exploring the variability of Plasma Se according to those variables.
 
 
 
-
-### Wealth & BMI
-
-
-
 ### Wealth & Plasma Se
 
 
@@ -786,7 +800,7 @@ EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds")
 
 # Loading the dataset
  # GPS location DHS
-GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) 
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp"), quite = TRUE) 
 
 # Renaming variables
 GPS <- dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM', 
@@ -839,14 +853,15 @@ This will be done  using the script `00_cleaning-locations.R`.
 
 ## Limitations
 
+
 ### Limitations of DHS data
+
 
   - **Time influence**: DHS survey was performed in 2015 while GeoNut was in 2018 and Chilimba in 2009. However, we could assume that the Se concentration would have been remain fairly similar over time (REF, REF). 
   - **Seasonal variation**: DHS survey was performed during Feb.- which are normally referred as the "hunger season" were food intake is at its lowest and food patterns and behaviours may be influenced by maize scarcity (at HH level). Including, other crop intakes and unrefined/ maize bran flour intake. However, according to previous studies, food patterns (related to maize intake) were fairly constant between IHS3-IHS5.
   
 ### Limitation to DHS-MNS data
 
-<br> 
 
 -  **Cluster level data**: Most our analysis are based on location, however, we only have location information at cluster level. This would mean that when comparing with the maize values, those values will be the same for all the women within one cluster. We may need to account for it in our model design: for instance by adding the cluster as random effect. Additionally, we need to check the variation within cluster as this will affect our model selection and results. 
 

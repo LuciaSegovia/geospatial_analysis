@@ -270,7 +270,25 @@ Malawi_WRA$BMI[which(Malawi_WRA$BMI>40)]
 sum(Malawi_WRA$BMI[Malawi_WRA$BMI>40])
 Malawi_WRA[298, "WEIGHT" ] #Weight & BMI outlier
 
-ddply(Malawi_WRA,.(region, urbanity), summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+# Generating BMI categories for visualisation & analysis 
+
+Malawi_WRA <- Malawi_WRA%>% 
+  mutate(BMI_cat = as.factor(case_when(
+    BMI<18.5 ~ "low",
+    BMI>18.5 & BMI <24.5 ~ "normal",
+    BMI>24.5 ~ "high")),
+    BMI_cat = forcats::fct_relevel(BMI_cat, "low", "normal", "high"))
+
+ddply(Malawi_WRA, ~ BMI_cat, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+ddply(Malawi_WRA, ~ region, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+
+#Which BMI
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(BMI ~ region, p.adjust.method = "bonferroni")
+
+Malawi_WRA%>%
+group_by(region) %>% 
+    rstatix::pairwise_t_test(BMI ~ urbanity, p.adjust.method = "bonferroni")
 
 ## Selenium -----
 sum(is.na(Malawi_WRA$selenium)) # Checking NA
@@ -296,20 +314,52 @@ summaplot(x)
 
 # Se Weighted mean/median by region/urbanity
 ddply(Malawi_WRA,~region, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
-ddply(Malawi_WRA,~Malaria_test_result, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
-ddply(Malawi_WRA,~Malaria_test_result, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,~region, summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, Malaria_test_result), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
 
-Malawi_WRA%>% rstatix::anova_test(selenium ~ region)
-Malawi_WRA%>%
-  rstatix::pairwise_t_test(selenium ~ region, p.adjust.method = "bonferroni")
+# Se & BMI
+ddply(Malawi_WRA, ~ BMI_cat, summarise, median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, BMI_cat), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
 
+Malawi_WRA$log_se <- log(Malawi_WRA$selenium)
 
+# Normality test
 Malawi_WRA %>%
- # group_by(urbanity, region) %>%
-  group_by(Malaria_test_result, region) %>%
+  group_by(urbanity, region) %>%
+  # group_by(Malaria_test_result, region) %>%
   rstatix::shapiro_test(selenium)
+
+# Differences between residency
+# Region
+Malawi_WRA %>% 
+  rstatix::anova_test(log_se ~ region)
+
+#Which regions
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(log_se ~ region, p.adjust.method = "bonferroni")
+
+# Region + Residency
+Malawi_WRA %>% 
+  group_by(region) %>% 
+  rstatix::anova_test(log_se ~ urbanity)
+
+Malawi_WRA%>%
+  group_by(region) %>%
+  rstatix::pairwise_t_test(log_se ~ urbanity, p.adjust.method = "bonferroni")
+
+# Differences between BMI category
+Malawi_WRA %>% 
+  rstatix::anova_test(log_se ~ BMI_cat)
+
+#Which BMI
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(log_se ~ BMI_cat, p.adjust.method = "bonferroni")
+# By region, urbanity
+Malawi_WRA%>%
+  group_by(urbanity) %>%
+  rstatix::pairwise_t_test(log_se ~ BMI_cat, p.adjust.method = "bonferroni")
+
 
 # Boxplot Se ~ U/R and Region
 boxplot(selenium ~ urbanity*region, data = Malawi_WRA,

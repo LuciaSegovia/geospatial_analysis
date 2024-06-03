@@ -503,12 +503,7 @@ value_median <- log(median(pull(plasma.df[,var_x]), na.rm = TRUE))
 #value_median <- median(plasma.df$AGE_IN_YEARS)
 #value_median <- median(plasma.df$selenium, na.rm = TRUE)
 
-plasma.df %>% 
-  mutate(BMI_cat = as.factor(case_when(
-    BMI<18.5 ~ "low",
-    BMI>18.5 & BMI <24.5 ~ "healthy",
-    BMI>24.5 ~ "high")),
-    BMI_cat = forcats::fct_relevel(BMI_cat, "low", "healthy", "high")) %>% 
+plasma.df  %>% 
   filter(!is.na(BMI_cat)) %>% 
  # mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
  # ggplot(aes(x = log(!!sym(var_x)), weight=wt, # w/ survey weights
@@ -530,6 +525,26 @@ plasma.df %>%
   theme(strip.text = element_text(size = 12),
         axis.text.y = element_text(size = 12), 
         axis.text.x = element_text(size = 10))
+
+# Boxplot: Age per region and residency----
+#  fig.cap = "BMI (kg/m^2) of women by residency and region in Malawi. The light grey lines represent the healthy BMI range"
+var_x <- "BMI"
+x_label <-  expression(paste("BMI (kg /  ",  m^{2}, ")"))
+
+Malawi_WRA %>% 
+  mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
+  ggplot(aes(x = !!sym(var_x), weight=wt, region, colour=urbanity)) +
+  geom_vline(xintercept = 18.5, col = "lightgrey", size = 1) +
+  geom_vline(xintercept = 24.5, col = "lightgrey", size = 1) +
+  geom_boxplot() + 
+  scale_colour_discrete(name = "", label = lab_reside) +
+  #  geom_violin() + 
+  coord_flip() +
+  scale_y_discrete(label = lab_region) +
+  theme_classic() +
+  labs(y = "",
+       x = x_label) +
+  theme(legend.position = "top")
 
 ## Plasma Se per EA for each district ----
 
