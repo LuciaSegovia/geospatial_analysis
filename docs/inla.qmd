@@ -2,7 +2,7 @@
 
 # Methods: Modelling with R-INLA
 
-Here we are testing different level of aggregation of maize Se concentration to identify which aggregation explain the plasma Se of women in Malawi. As, Plasma Se has been reported previously to be highly dependent on dietary Se intake and, in the context of Malawi to maize Se concentration. 
+Here we are testing different level of aggregation of maize Se concentration to identify which aggregation explain the plasma Se of women in Malawi best. As, plasma Se has been reported previously to be highly dependent on dietary Se intake and, in the context of Malawi to maize Se concentration. 
 
 Therefore, the models tested here will all include the same explanatory covariates related to individual plasma Se variation (e.g., age), and related to food system variation (eg., distance to main lakes, or maize aggregation). 
 
@@ -18,13 +18,7 @@ library(sf) # spatial data manipulation
 library(spdep) # grid and neighbours
 library(dplyr) # data wrangling
 
-```
-
-
-Then, we are selecting our covariates which are stored in a vector, and we are defining our model. 
-
-```{r}
-
+# Loading the data
 (file <- grep("plasma.*v2.0.0", list.files(here::here("data", "inter-output", "model")), 
              value = TRUE))
 
@@ -33,29 +27,47 @@ dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-mwi-lake
 ```
 
 
+Then, we are selecting our covariates which are stored in a vector. In our final iteration, we included the following covariates: maize Se aggregated (`Se_mean`), wealth index (`wealth_indx`), rural/urban residency (`urbanity`), age (`AGE_IN_YEARS`), CRP (`crp`), AGP (`agp`), and distance to the main lakes (`dist_to_lake`).
+
+Note that of the covariates: only wealth index, age, CRP, and AGP are unique for each individual, the other are the same for each cluster.  
+
 
 ```{r}
 
 # Covariates selection
-covar <- c("Se_mean", "wealth_quintile", "urbanity",
-           "AGE_IN_YEARS", "crp", "agp", "dist_to_lake")
+covar <- c("Se_mean", "wealth_idx", "urbanity", "AGE_IN_YEARS", "crp", "agp",
+           "dist_to_lake")
 
-# Formula for the model
-form <- log(y) ~ -1 + Intercept +  log(Se_mean) + wealth_quintile + urbanity +
+```
+
+
+And, then we are defining our model: Variables that were skewerd are log-transformed: plasma Se, maize Se concentration, CRP, AGP and distance to the lake. 
+
+Then, we are adding a spatial random effect to account for the remaining spatial variation (i.e., spatial variation not accounted by any of the explanatory variables (covariates) in the model), using the SPDE equation. Additionally, we are accounting for pseudo-replication due to shared location (same GPS coordinates) of the individuals in the same cluster using a independent identical random effect. 
+
+(Eq.1) $y_i$ = $α_c$+$βX_i$+ $ω_i$ + $ε_i$ 
+
+$ε_i$ = measurement error which follows a Gaussian distribution:
+
+$ε_i$ ~ $N(0, σ_e^2)$
+
+The error variance ($σ_e^2)$) is called "nugget effect" in geostatistics, which refers to the unknown not spatially or short-range variation. 
+
+
+```{r}
+
+# Formula for the model (-1 removes the internal intercept)
+form <- log(y) ~ -1 + Intercept +  log(Se_mean) + wealth_idx + urbanity +
   AGE_IN_YEARS + log(crp) + log(agp) + log(dist_to_lake) +
   # Spatial random effect
   f(spatial.field, model = spde)  +
   # Cluster random effect
    f(ID, model = 'iid')
 
-
 ```
-
-
-**ADD EQUATION**
-
-
-Then, we generate a list to store all the output of the models tested. 
+ 
+Note, that we need to add `-1` or `0` to remove the internal intercept, and to fit it separately. 
+The next steps is generating the list to store all the output of the models tested. 
 
 ```{r}
 
@@ -69,6 +81,7 @@ Now, we are explaining each step of the R-INLA model. In the script `inla-loop.R
 
 First, we are loading the dataset, which contains all the variables, except the distance to main lakes, which is joined here. 
 
+
 ```{r}
 i =1
 # Loading the data 
@@ -76,6 +89,9 @@ plasma_se <- readRDS(here::here("data", "inter-output", "model",
                                 file[i])) %>%
   # Joining the variable distance to inland water body
                      left_join(., dist) 
+
+# Ensuring cluster is not considered numeric
+plasma_se$survey_cluster1 <- as.character(plasma_se$survey_cluster1)
 
 ```
 
@@ -87,17 +103,19 @@ Then, we need to rename some variables, selecting the variables needed and ensur
 
 # Renaming variable and checking indv. data
 plasma_se <- dplyr::rename(plasma_se, Plasma_Se = "selenium") %>%
+  # Selecting the variables needed
   dplyr::select(Plasma_Se, covar, unique_id, region, 
          survey_cluster1,  Latitude,  Longitude)
 
+# Excluding NAs
 plasma_se <- na.omit(plasma_se)
 
 ```
 
-Once we have the data ready, the first step for the R-INLA modelling is to create the mesh. The mesh is generated based on the locations of our sample, i.g., the cluster centroids. Before selecting the final settings of the mesh, a number of mesh were tested. For more information on mesh selection, see section model selection and calibration, and the script `inla/mesh-testing.R`. 
+Once we have the data ready, the first step for the R-INLA modelling is to create the mesh. The mesh is generated based on the locations of our sample, i.e., the cluster centroids. Before selecting the final settings of the mesh, a number of mesh were tested. For more information on mesh selection, see section model selection and calibration, and the script `inla/mesh-testing.R`. 
 
 
-We defined the boundaries of Malawi using the coordinates, then we used the boundaries to define the mesh. We also defined the maximum edges of the triangles and the sparcity of the triangle outside the boundary. 
+We defined the boundaries of Malawi using the coordinates, then we used the boundaries to define the mesh. We also defined the maximum edges of the triangles and the sparsity of the triangle outside the boundary. 
 
 ```{r}
 
@@ -121,7 +139,6 @@ points(coord, col = "red", pch = 1)
 
 ```
 
-
 Once we have the mesh, we can create the projection layer (**A**) which will be used to map the predictions from the SPDE and the observed points. This is because we are predicting at the vertices of the mesh. 
 
 ```{r}
@@ -138,7 +155,7 @@ summary(rowSums(A))
 ```
 We can check here that all the weights for each triangle sum 1. 
 
-Then, we are building the SPDE model using the function `inla.spde2.matern()`. Here, we set the spatial smoothness parameter $alpha$ to `$alpha$ = 2` as it is a two dimension model. Following the recommendations in Moraga, 2019. In addition, we did not set any priors as the intend of the model were not prediction (i.e, predicting plasma Se concentration in unsampled location) but to test the performance of different maize Se aggregation level (i.e., which would better explain the plasma Se concentration data). 
+Then, we are building the SPDE model using the function `inla.spde2.matern()`. Here, we set the spatial smoothness parameter $alpha$ to `alpha=2` as it is a two dimension model. Following the recommendations in Moraga, 2019. In addition, we did not set any priors as the intend of the model were not prediction (i.e, predicting plasma Se concentration in unsampled location) but to test the performance of different maize Se aggregation level (i.e., which would better explain the plasma Se concentration data). 
 
 
 ```{r}
@@ -166,7 +183,12 @@ covs <- plasma_se %>%  dplyr::select(covar) %>% as.list()
 
 ```
 
-After that we need to prepare the stack. This is a useful function where you can stack the data which help organise the data for the model. Here, we combine the SPDE model that will be defined in the triangle nodes (*m*) and the covariates and the intercept at the point locations (*n*). 
+After that we need to prepare the stack. This is a useful function where you can stack the data which help organise the data for the model. Here, we combine: 
+  1) the response variable (y), which, for our model is the plasma Se concentration
+  2) the vector of multiplication factors, which is normally a `1` for each separated one: such as the intercept (1), the fixed effects (1), the cluster random effect (the iid, in our case) (1), and the spatial matrix (A). This is because the SPDE model that will be defined in the triangle nodes (*m*) while the covariates, cluster random effect and the intercept will be at the point locations (*n*).
+  3) the effects: intercept, fixed effect matrix, (cluster) random effect and the spde. 
+  
+The projector list (A) and the effects are related and hence they need to be even and in the respective order. 
 
 ```{r}
 
@@ -183,7 +205,7 @@ stack <- inla.stack(
     
     Intercept = rep(1, N), # specify the manual intercept!
     
-    X = covs, # attach the model matrix
+    X = covs, # attach the model matrix (list of covariates)
     
     ID = plasma_se$survey_cluster1, # insert vectors of any random effects
     
@@ -191,20 +213,34 @@ stack <- inla.stack(
 
 ```
 
-Finally, we can model the data using the `inla()`, here we need to provide the formula which was strored in the object `form`, the data stack `inla.stack.data(stack)` the control predictors will extract a simplified predictor matrix. Finally, we can list some of the model performance index, such as CPO or DIC.
+Finally, we can model the data using the `inla()`, here we need to provide the formula which was stored in the object `form`, the data stack `inla.stack.data(stack)` the control predictors will extract a simplified predictor matrix. Finally, we can list some of the model performance index, such as CPO or DIC.
 
 
 ```{r}
 
+# INLA calculations
 m <- inla(form, 
            data = inla.stack.data(stack),
            family = "gaussian",
            control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
            control.compute = list(cpo = TRUE, dic = TRUE))
 
+# Storing results
+models[i] <- list(m)
+
 ```
 
 The model output is then stored in the list for evaluation and comparison.
+
+
+## References for INLA 
+
+https://www.flutterbys.com.au/stats/tut/tut12.10.html
+https://www.flutterbys.com.au/stats/tut/tut12.9.html#h2_4
+https://www.r-bloggers.com/2020/06/spatial-regression-in-r-part-2-inla/
+https://datascienceplus.com/spatial-regression-in-r-part-2-inla/
+https://github.com/gfalbery/ggregplot/blob/master/R/INLA%20DIC%20Plot.R
+https://ourcodingclub.github.io/tutorials/inla/
 
 
 

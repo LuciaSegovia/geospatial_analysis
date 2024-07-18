@@ -28,6 +28,17 @@ library(tmap)  #spatial data manipulation and visualisation
 ea_bnd  <- st_read(here::here("data",
  "mwi-boundaries", "EN_NSO" , "eas_bnd.shp"))
 
+# Loading data on Malawi lake boundaries
+lakes <-  st_read(here::here("data",
+                             "mwi-boundaries", "EN_NSO" , "eas_bnd.shp")) %>% 
+  dplyr::filter(grepl("Lake", DISTRICT))
+
+# Combining the three geom for lake Chilwa into one
+lakes[2, "geometry"] <- st_union(lakes[2:4,]) %>% st_as_sf()
+
+# Saving the new file
+mwi_lakes <- lakes[c(1:2,5),]
+
 # National parks
 parks  <-  st_read(here::here( "data",
  "mwi-boundaries", "protected_areas_geo", "protected_areas_geo.shp"))
@@ -42,8 +53,21 @@ table(sf::st_is_valid(parks))
 ea_admin <- st_read(here::here( "data", "inter-output", 
                         "boundaries", "mwi_admbnda_adm4_nso.shp"))
 
+table(sf::st_is_valid(ea_admin))
+
 class(ea_admin$region)
 ea_admin$region <- as.factor(ea_admin$region)
+
+# tm_shape(ea_admin) +
+#   tm_fill() +
+#   tm_shape(parks) +
+#   tm_fill(col = "TYPE_TXT") +
+#   tm_legend(outside = TRUE) +
+#   tm_shape(mwi_lakes) +
+#   tm_polygons(col = "lightblue") +
+#   tm_shape(lakes[5,]) +
+#   tm_text(text = "TA")
+
 
 # Plasma Se conc. ----
 

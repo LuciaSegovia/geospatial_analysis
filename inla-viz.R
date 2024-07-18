@@ -4,7 +4,12 @@ library(ggregplot)
 #install.packages("MCMCglmm")
 library(stringr)
 library(magrittr)
-
+library(raster)  #raster data
+library(gridExtra)
+library(RColorBrewer)
+#library(fields)
+library(lattice) # Mapping residual + Malawi map
+options(scipen=999)
 #ggplot(plasma_se, aes(Longitude, Latitude )) + 
 #  geom_jitter(aes(colour = factor(survey_cluster1))) + coord_fixed() + 
 #  labs(colour = "survey_cluster1")
@@ -12,20 +17,53 @@ library(magrittr)
 gps <- plasma_se %>% dplyr::select(survey_cluster1, Longitude, Latitude) %>% 
   distinct() %>% arrange(survey_cluster1)
 
+# Districts
+dist_bnd  <- st_read(here::here( "data",
+                                 "mwi-boundaries",
+                                 "mwi_adm_nso_hotosm_20230329_shp", 
+                                 "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
+dist_bnd <- st_make_valid(dist_bnd) # Check this
+
 
 # Visualisation ------
 
-INLADICFig(models)
+INLADICFig(models) + theme_bw() + 
+  theme(legend.position = "none", 
+  strip.text = element_text(size = 12),
+  axis.text.y = element_text(size = 12), 
+  axis.text.x = element_text(size = 10))
 
-Efxplot(models)
+Efxplot(models) + theme_bw() +
+  labs(y = "") +
+  scale_colour_discrete(labels = c("buffer10",
+                               "buffer15",
+                               "buffer20",
+                               "buffer25",
+                               "buffer30",
+                               "buffer40",
+                               "buffer50",
+                               "buffer60",
+                               "cluster",
+                               "district"))+
+  theme(
+        strip.text = element_text(size = 12),
+        axis.text.y = element_text(size = 12), 
+        axis.text.x = element_text(size = 10))
 
 
+Maxrange = 1000
+
+INLARange(list(models[[1]]), maxrange = Maxrange)
+
+INLARange(ModelList = models, MaxRange= 1, MeshList = list(mesh))
 
 # Results ----
 
 ## Getting fixed effect -----
 
 fix.effect <-  round(models[[6]]$summary.fixed, 4)
+write.csv(round(models[[9]]$summary.fixed, 4), here::here("output", "fixed.effect-cluster_v1.0.0.csv"))
+
 fix.effect <-  NA
 
 for(i in 1:length(models)){
@@ -34,7 +72,7 @@ for(i in 1:length(models)){
   
 }
 
-# write.csv(round(fix.effect,2), here::here("output", "fixed.effect_v1.0.0.csv"))
+#write.csv(fix.effect, here::here("output", "fixed.effect_v2.0.0.csv"))
 
 ## Visualising model parameters for all models
 # (Krainski et al., p. 37)
@@ -53,7 +91,8 @@ par(mfrow=c(2,3), mar=c(2.5,2.5,1,.5), mgp=c(1.5,.5,0), las=1)
 xrange <- range(sapply(models, function(x) range(x$marginals.fix[[1]][,1]))) 
 yrange <- range(sapply(models, function(x) range(x$marginals.fix[[1]][,2]))) 
 plot(models[[1]]$marginals.fix[[1]], type='l', xlim=xrange, ylim=yrange, 
-     xlab=expression(beta[0]), ylab='Density')
+    # xlab=expression(beta[0]), ylab='Density')
+     xlab=expression(alpha[c]), ylab='Density')
 
 for (k in 1:length(models))
   lines(models[[k]]$marginals.fix[[1]], col=rcols[k], lwd=2)
@@ -67,19 +106,22 @@ for (k in 1:length(models))
   xrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,1])))
   yrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,2]))) 
 plot(spde.est[[1]]$marginals.variance.nominal[[1]], type='l', xlim=xrange, ylim=yrange, 
-     xlab=expression(sigma[x]^2), ylab='Density')
+    # xlab=expression(sigma[x]^2), ylab='Density')
+     xlab=expression(sigma[omega]^2), ylab='Density')
 
 for (k in 1:length(models))
   lines(spde.est[[k]]$marginals.variance.nominal[[1]], col=rcols[k], lwd=2)
 xrange <- range(sapply(spde.est, function(r) range(r$marginals.kappa[[1]][,1]))) 
 yrange <- range(sapply(spde.est, function(r) range(r$marginals.kappa[[1]][,2])))
-plot(spde.est[[1]]$marginals.kappa[[1]], type='l', xlim=xrange, ylim=yrange, xlab=expression(kappa), ylab='Density') 
+plot(spde.est[[1]]$marginals.kappa[[1]], type='l', xlim=xrange, ylim=yrange, 
+     xlab=expression(kappa), ylab='Density') 
 
 for (k in 1:length(models))
   lines(spde.est[[k]]$marginals.kappa[[1]], col=rcols[k], lwd=2)
 xrange <- range(sapply(spde.est, function(r) range(r$marginals.range.nominal[[1]][,1])))
 yrange <- range(sapply(spde.est, function(r) range(r$marginals.range.nominal[[1]][,2])))
-plot(spde.est[[1]]$marginals.range.nominal[[1]], type='l', xlim=xrange, ylim=yrange, xlab='nominal range', ylab='Density') 
+plot(spde.est[[1]]$marginals.range.nominal[[1]], type='l', xlim=xrange,
+     ylim=yrange, xlab='nominal range', ylab='Density') 
 
 for (k in 1:length(models))
   lines(spde.est[[k]]$marginals.range.nominal[[1]], col=rcols[k], lwd=2)
@@ -106,7 +148,7 @@ inla.zmarginal(post.var)
 
 
 
-## Spatial Results ----
+# Spatial Results ----
 
 round(models[[9]]$summary.fix, 4)
 
@@ -125,7 +167,120 @@ inla.zmarginal(spde.est[[9]]$marginals.kappa[[1]])
 inla.zmarginal(spde.est[[10]]$marginals.kappa[[1]])
 
 Kappa <- inla.emarginal(function(x) x, 
-                        spde.est$marginals.kappa[[1]] )
+                        spde.est[[9]]$marginals.kappa[[1]] )
+
+inla.zmarginal(sapply(spde.est, function(x)
+  inla.zmarginal(x$marginals.kappa[[1]])))
+
+
+
+## Residual spatial variation ----
+
+## Map: viz -----
+
+# Building the projection matrix (mesh) of the spatial field 
+
+rang <-  apply(mesh$loc[, c(1,2)], 2 , range)
+proj <- inla.mesh.projector(mesh, xlim = rang[ , 1],
+                            ylim = rang[ , 2],
+                            dims = c(200, 200)) 
+
+# Storing mean maps 
+mean <- list()
+
+# Storing sd maps
+sd <- list()
+
+# Looping over all model resutls
+for(i in 1:length(models)){
+  
+# Extracting the spatial field values (mean and sd of residual spatial field)
+  
+mean_s <- inla.mesh.project(proj, 
+                            models[[i]]$summary.random$spatial.field$mean)
+sd_s <- inla.mesh.project(proj, 
+                          models[[i]]$summary.random$spatial.field$sd)
+
+# Storing the data together as dataframe
+df <- expand.grid(x = proj$x, y = proj$y)
+df$mean_s <- as.vector(mean_s)
+df$sd_s <- as.vector(sd_s)
+
+# Mapping the spatial results
+mean[[i]] <-  ggplot(df, aes(x = x, y = y, fill = mean_s)) +
+  geom_raster() +
+  scale_fill_viridis_b(na.value = "transparent") +
+  coord_fixed(ratio = 1) + 
+  labs(title = gsub("_v2.0.0.RDS", "", file[i])) +
+   theme_bw()
+
+
+sd[[i]] <-  ggplot(df, aes(x = x, y = y, fill = sd_s)) +
+  geom_raster() +
+  scale_fill_viridis_b(na.value = "transparent") +
+  coord_fixed(ratio = 1) + theme_bw()
+
+}
+
+# Saving into one pdf
+
+pdf("visuals/spatial.pdf", onefile = TRUE)
+
+for(i in 1:length(mean)){
+  grid.arrange(mean[[i]], sd[[i]])
+}
+
+dev.off()
+
+## Adding Malawi map into the residual map ----
+
+# Converting from sf to spatial polygon
+mwi <-  as(dist_bnd, 'Spatial')
+
+# Storing mean maps 
+mean <- list()
+
+# Storing sd maps
+sd <- list()
+
+# For storing into pdf
+
+pdf("visuals/spatial-field_and_map.pdf", onefile = TRUE)
+
+# Looping over all model resutls
+for(i in 1:length(models)){
+  
+  # Extracting the spatial field values (mean and sd of residual spatial field)
+  
+  mean_s <- inla.mesh.project(proj, 
+                              models[[i]]$summary.random$spatial.field$mean)
+  sd_s <- inla.mesh.project(proj, 
+                            models[[i]]$summary.random$spatial.field$sd)
+  
+  # Storing the data together as dataframe
+  df <- expand.grid(x = proj$x, y = proj$y)
+  df$mean_s <- as.vector(mean_s)
+  df$sd_s <- as.vector(sd_s)
+  
+### for grey colour scale: col.regions=gray.colors(16,start=1,end=0)
+  #https://github.com/GodinA/cjfas-bycatch-INLA-SPDE/blob/master/Rcodes/Suppl_Material.R
+  mean[[i]] <- levelplot(mean_s ~ x*y, data=df,xlab='', ylab='',
+          col.regions=tim.colors(100), scale=list(draw=FALSE),
+          par.strip.text=list(cex=2),strip = strip.custom(bg="white")) + 
+  latticeExtra::layer(sp::sp.polygons(mwi, col = 1, alpha =0.4, fill="transparent"))
+
+
+  sd[[i]] <- levelplot(sd_s ~ x*y, data=df,xlab='', ylab='',
+                       col.regions=tim.colors(100), scale=list(draw=FALSE),
+                       par.strip.text=list(cex=2),strip = strip.custom(bg="white")) + 
+    latticeExtra::layer(sp::sp.polygons(mwi, col = 1, alpha =0.4, fill="transparent"))
+  
+grid.arrange(mean[[i]], sd[[i]])
+
+}
+
+dev.off()
+
 # Variance --------
 inla.zmarginal(spde.est$marginals.variance.nominal[[1]])
 
@@ -165,6 +320,8 @@ plot(x = d.vec,
      xlab = "Distance (km)", 
      ylab = "Correlation",
      xlim = c(0, 20))
+
+
 
 
 ############################
@@ -236,5 +393,12 @@ st_as_sf(., coords = c('Longitude', 'Latitude'))  %>%
   ggplot() + 
   geom_sf(aes(color = cluster.sd), size =2) +
   theme_bw()
+
+cluster %>% 
+  st_as_sf(., coords = c('Longitude', 'Latitude'))  %>% 
+  ggplot() + 
+  geom_sf(aes(color = cluster.mean), size =2) +
+  theme_bw()
+
 
 

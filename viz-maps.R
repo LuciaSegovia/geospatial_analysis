@@ -672,7 +672,7 @@ st_sf(., crs = "EPSG:4326")  # Boundaries for the admin
 
 maize.df$log_Se <- log(maize.df$Se_mean)
 
-# For the log-trasformed to keep the scale consistent we need to reverse it
+# For the log-transformed to keep the scale consistent we need to reverse it
 # using "-palette.name". (e.g., palette = "-YlOBr")
 base_map +
   tm_shape(maize.df) +
@@ -798,6 +798,7 @@ Malawi_WRA %>%
 #  ggridges::theme_ridges(center = TRUE)
 
 # Distribution: Maize Se distribution  ----
+
 
 
 

@@ -134,7 +134,7 @@ stack <- inla.stack(
     
     Intercept = rep(1, N), # specify the manual intercept!
     
-    X = covs, # attach the model matrix
+    X = covs, # attach the model matrix (list of covariates)
     
     ID = plasma_se$survey_cluster1, # insert vectors of any random effects
     

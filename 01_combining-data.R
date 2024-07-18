@@ -17,7 +17,7 @@ library(geoR)  # geospatial modelling
 
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
 plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
-  filter(!is.na(selenium)) # %>% select(1:48) # removing buffer and other spatial vars
+  filter(!is.na(selenium))  %>% select(1:48) # removing buffer and other spatial vars
 names(plasma.df)
 
 plasma.df$wealth_idx <- as.factor(plasma.df$wealth_idx)
@@ -31,7 +31,7 @@ cluster.df <- readRDS(here::here("data", "inter-output",
 
 plasma.df  <- plasma.df %>% left_join(., cluster.df %>% 
                             dplyr::select(survey_cluster1, ADM2_PCODE, ADM2_EN) %>% 
-                          distinct())
+                          distinct()) 
 
 # Maize Se conc. (from 01_maize-aggregation.R)
 

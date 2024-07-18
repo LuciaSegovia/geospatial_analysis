@@ -1,11 +1,11 @@
----
-title: "Untitled"
-format: html
----
 
-## Quarto
+# Variation in plasma & maize grain Se concentration
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+See (SM: Maize aggreg by cluster in paper-fig.R)
+
+Soil characteristics is likely to be one of the underlying drivers of Se concentration spatial variation, for these three districts: Karonga, Salima and Ndanje where particularly high Se values were found . Following the FAO soils classification, these areas are mainly composed by Eutric Vertisol and Fluvisols: for instance, in Karonga, Anthrosols were found, also known as Eutric Fluvisols, while in Salima, and Ndanje, mainly Eutric Vertisols were identified with some Fluvisols pockets (Dijkshoorn et al., 2016). These types of soils are classified as calcareous soils which are characterise by low pH. 
+Higher Se concentration in plasma and foods in calcareous soils, including Eutric Vertisols, have been previously reported in Malawi, and elsewhere (Hurst et al., 2013; Joy et al., 2015; Mutonhodza et al., 2022)
+
 
 ## Running Code
 

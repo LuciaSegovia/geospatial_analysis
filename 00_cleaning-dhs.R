@@ -835,7 +835,17 @@ dim(EligibleDHS)
 # Survey analysis: Applying survey weight ----
 EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
 sum(is.na(EligibleDHS$selenium))
-EligibleDHS  <- subset(EligibleDHS, !is.na(selenium))
+sum(is.na(EligibleDHS$AGE_IN_YEARS))
+sum(is.na(EligibleDHS$wealth_idx))
+sum(is.na(EligibleDHS$agp))
+sum(is.na(EligibleDHS$crp))
+sum(is.na(EligibleDHS$urbanity))
+sum(is.na(EligibleDHS$Longitude))
+sum(is.na(EligibleDHS$Latitude))
+sum(is.na(EligibleDHS$survey_cluster1))
+#EligibleDHS  <- subset(EligibleDHS, !is.na(selenium))
+EligibleDHS  <- subset(EligibleDHS, !is.na(selenium) & 
+                         !is.na(wealth_idx) & !is.na(agp))
 
 class(EligibleDHS$urbanity)
 
@@ -875,5 +885,6 @@ svyboxplot(selenium~wealth_quintile,   DHSdesign)
 svyboxplot(selenium~sdist,   DHSdesign)
 svyboxplot(selenium~region,   DHSdesign)
 
-
-
+# selenium, AGE_IN_YEARS,agp, crp
+round(svymean(~crp, DHSdesign), 2)
+svyquantile(~crp, DHSdesign, c(.25,.5,.75))

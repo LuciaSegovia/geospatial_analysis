@@ -40,8 +40,6 @@ sf_use_s2(FALSE)  # the input geometries are bad, and wrong spherically
 data <- st_make_valid(data) # Check this
 table(sf::st_is_valid(data))
 
-
-
 # Malawi bnd
 malawi  <- st_read(here::here( "data",
                                "mwi-boundaries",

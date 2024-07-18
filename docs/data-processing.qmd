@@ -762,7 +762,7 @@ Some test were performed to check the influence of some of the decision/assumpti
 We compared the predicted mean/ median with the observed values of the same EA only. To see if the results of our analysis are actually measuring methodological differences (i.e., between normal aggregated mean and predicted mean), or on the contrary, the difference in spatial variation in maize Se values (i.e., there is a difference between choosing the nearest EAs and peaking the "actual" EAs). 
 
 
-### Household location
+#### Household location
 
 The coordinates for the HHs are only provided at cluster level (EAs). Hence, we need to check first the variability within cluster. 
 
@@ -772,7 +772,15 @@ When we checked the variability of Plasma Se by clusters (See @fig-4), we have r
 
 2) There is high variability within regions, driven mainly by three clusters. As we can see by the scale of the plots in @fig-4, in northern region the scale ranged from 50-150ng/mL, in central region from 0-300ng/mL, with the highest values for clusters within Salima district (as expected), and the southern region ranged from 50-250ng/mL.
 
-**TODO:check the variability of maize Se values by clusters**
+#### The variability of maize Se values by clusters
+
+Similar trends were found for the individual clusters (Fig.1a-c), maize Se concentration values were comparable for all the aggregation levels with higher variability for specific clusters, particularly, where maize Se concentration was greater, as it can be seen for most of the clusters in the Northern district of Karonga (830, 507, 459, 388, 361, 309, 178), and in Salima (825, 209, 192, 170), or Ndanje (58, 200, 16) in the Central and Southern region, respectively. In the latter two regions, the largest values of maize Se concentration were found, as shown in Fig. 2, which corresponded to largest values in plasma Se concentration showing a comparable spatial pattern.  
+
+```{r}
+## SM: Maize aggreg by cluster in paper-fig.R ----------------
+
+```
+
 
 
 ##### Co-location: combining datasets by location
@@ -789,7 +797,7 @@ We studied the distance between EA (based on the displaced GPS location) with pl
 
 ##### Most probable EA
 
-Following the guidelines on the use of DHS GPS data, (@perez2013guidelines), we assumed the missclassification potential, then we:
+Following the guidelines on the use of DHS GPS data, (@perez2013guidelines), we assumed the missclassification potential, then we tested:
 
 - identify the most probable EA
 - compared that with the results above, i.e.,  with EAs were the same and which one were different

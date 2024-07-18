@@ -93,7 +93,7 @@ points  <-  matrix(runif(m * 2), m, 2)
 
 mesh  <-  inla.mesh.2d( loc = points, 
 cutoff = 0.05,    # (optional) to avoid many small triangles in clustered locations
-offset = c(0.1, 0.4),  # (optionl) inner and outer extensions around the data locations
+offset = c(0.1, 0.4),  # (optional) inner and outer extensions around the data locations
 max.edge = c(0.05, 0.5))  # maximum allowed triangle edge lengths in the inner domain and in the outer extension
 
 

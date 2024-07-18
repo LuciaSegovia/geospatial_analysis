@@ -256,7 +256,8 @@ summary.table %>% na.omit() %>%
 
 ## Error bars and maize Se conc. ---------
 
-summary.table %>% select(survey_cluster1, ends_with("mean"),ends_with("sd"), region) %>% 
+summary.table %>% 
+  select(survey_cluster1, ends_with("mean"),ends_with("sd"), region) %>% 
   pivot_longer(cols = c(ends_with("mean"), ends_with("sd")), 
                                names_to = "maize_aggr",
                                values_to = "Se") %>%   distinct() %>% 
