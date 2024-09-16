@@ -490,21 +490,30 @@ ggplot(data = data.df,
 #x_label <- "AGP(mg/l)"
 #var_x <- "crp"
 #x_label <- "log c-reactive protein (mg/l)"
-#var_x <- "AGE_IN_YEARS"
-#x_label <- "Age (years)"
-var_x <- "selenium"
-x_label <- plasma_lab
+var_x <- "AGE_IN_YEARS"
+x_label <- "Age (years)"
+#var_x <- "selenium"
+#x_label <- plasma_lab
 #var_col <- "Malaria_test_result"
 #col_lab <- lab_malaria
 var_col <- "BMI_cat"
 
 value_median <- median(pull(plasma.df[,var_x]), na.rm = TRUE)
-value_median <- log(median(pull(plasma.df[,var_x]), na.rm = TRUE))
+#value_median <- log(median(pull(plasma.df[,var_x]), na.rm = TRUE))
 #value_median <- median(plasma.df$AGE_IN_YEARS)
 #value_median <- median(plasma.df$selenium, na.rm = TRUE)
 
 plasma.df  %>% 
-  filter(!is.na(BMI_cat)) %>% 
+  mutate(BMI_cat = as.factor(case_when(
+    BMI<18.5 ~ "low",
+    BMI>18.5 & BMI <24.5 ~ "normal",
+    BMI>24.5 ~ "high")),
+    BMI_cat = forcats::fct_relevel(BMI_cat, "low", "normal", "high")) %>% 
+ # mutate(BMI_cat = as.factor(case_when(
+ #   BMI<30 ~ "non-obese",
+ #   BMI>=30 ~ "obese")),
+ #   BMI_cat = forcats::fct_relevel(BMI_cat, "non-obese", "obese")) %>% 
+  filter(!is.na(BMI_cat)) %>%  # count(BMI_cat)
  # mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
  # ggplot(aes(x = log(!!sym(var_x)), weight=wt, # w/ survey weights
   ggplot(aes(x = !!sym(var_x), weight=wt, # w/ survey weights
@@ -513,8 +522,8 @@ plasma.df  %>%
              colour=!!sym(var_col))) +
   geom_vline(xintercept = value_median, col = "lightgrey", size = 1) +
  # geom_vline(xintercept = log(5), col = "linewidth", size = 1) +
-  #geom_boxplot() + 
-  geom_violin() + 
+  geom_boxplot() + 
+#  geom_violin() + 
  # scale_colour_discrete(name = "", label = col_lab) +
     coord_flip() +
   scale_y_discrete(label = lab_region) +
@@ -531,7 +540,7 @@ plasma.df  %>%
 var_x <- "BMI"
 x_label <-  expression(paste("BMI (kg /  ",  m^{2}, ")"))
 
-Malawi_WRA %>% 
+plasma.df %>% 
   mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
   ggplot(aes(x = !!sym(var_x), weight=wt, region, colour=urbanity)) +
   geom_vline(xintercept = 18.5, col = "lightgrey", size = 1) +
@@ -630,9 +639,10 @@ plasma.df %>%
           BMI>18.5 & BMI <24.5 ~ "healthy",
           BMI>24.5 ~ "high")) %>% 
   #ggplot(aes(AGE_IN_YEARS, selenium, colour =Malaria_test_result)) + 
-  ggplot(aes(!!sym(var_x), log(selenium), colour = BMI_cat)) + 
+ # ggplot(aes(!!sym(var_x), log(selenium), colour = BMI_cat)) + 
+  ggplot(aes(AGE_IN_YEARS, !!sym(var_x), colour = BMI_cat)) + 
   geom_point() +
-  geom_smooth(method = "auto") +
+ # geom_smooth(method = "auto") +
  # geom_hline(yintercept = 84.9, colour = "red") +
   theme_minimal() +
    theme(legend.position = "bottom") # +

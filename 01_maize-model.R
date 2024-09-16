@@ -113,6 +113,18 @@ plot(data.df[,"Longitude"],data.df[,"Latitude"], # Lon & Lat variables
 pch=16,col=quantiles,asp=1,
 xlab="Longitude",ylab="Latitude",cex=0.5)
 
+locsv<-c(-16.2,-16.5,-16.8, -17.1)
+cols <- c("blue","green","yellow","red")
+points(30,locsv[1],pch=16, col=cols[1])
+points(30,locsv[2],pch=16, col=cols[2])
+points(30,locsv[3],pch=16, col=cols[3])
+points(30,locsv[4],pch=16, col=cols[4])
+
+text(30.2,locsv[1],"Lowest Quantile (0-25%)",pos=4)
+text(30.2,locsv[2],"Mid-lower Quantile (25-50%)",pos=4)
+text(30.2,locsv[3],"Mid-higher Quantile (50-75%)",pos=4)
+text(30.2,locsv[4],"Highest Quantile (75-100%)",pos=4)
+
 # Exploratory plots to show E-W or N-S trends
 
 par(mfrow=c(1,2))
@@ -635,7 +647,7 @@ write.csv(krop,fname,row.names=F)
 
 krop <- data.frame(krop)
 
-# Back-transforoming lognormal OK
+# Back-transforming lognormal OK
 krop$Zhat_exp <- exp(krop$Zhat + krop$kv/2 - krop$lagr)
 
 # Saving exponential OK

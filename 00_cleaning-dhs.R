@@ -42,7 +42,7 @@ head(dhs.df)
 # MNS data ----
 
 # Renaming variables 
-Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
+Malawi_WRA <- Malawi_WRA %>% dplyr::rename(
   ferritin='fer',
   region='mregion',
   sex = "m04", 
@@ -137,6 +137,7 @@ class(Malawi_WRA$Malaria_test_result)
 sum(is.na(Malawi_WRA$Malaria_test_result)) # 28 NA
 hist(Malawi_WRA$Malaria_test_result)
 table(Malawi_WRA$Malaria_test_result)
+
 # Recoding Malaria ----
 # others values into NA 
 Malawi_WRA$Malaria_test_result <- ifelse(Malawi_WRA$Malaria_test_result==4| 
@@ -539,8 +540,31 @@ EligibleDHS <- Malawi_WRA %>%
  left_join(., DHSDATA %>% 
              dplyr::select(survey_cluster1, household_id1, LINENUMBER, 
                  wealth_quintile, wealth_idx, Literacy, education_level, 
-            source_water, is_lactating, is_smoker, sdist, 
+            source_water, is_lactating, is_smoker, sdist, survey_strata,
             dist_name)) 
+
+# Strata -----
+EligibleDHS$survey_strata <-ifelse(
+                  EligibleDHS$survey_cluster1==114,8,
+           ifelse(EligibleDHS$survey_cluster1==140,1,
+           ifelse(EligibleDHS$survey_cluster1==190,40, 
+           ifelse(EligibleDHS$survey_cluster1==23,31, 
+           ifelse(EligibleDHS$survey_cluster1==294,23, 
+           ifelse(EligibleDHS$survey_cluster1==303,53,   
+           ifelse(EligibleDHS$survey_cluster1==309,4,                                                                                
+           ifelse(EligibleDHS$survey_cluster1==342,5,
+           ifelse(EligibleDHS$survey_cluster1==37,10, 
+           ifelse(EligibleDHS$survey_cluster1==377,29, 
+           ifelse(EligibleDHS$survey_cluster1==410,33,
+           ifelse(EligibleDHS$survey_cluster1==468,47,
+           ifelse(EligibleDHS$survey_cluster1==5,25,  
+           ifelse(EligibleDHS$survey_cluster1==511,27,
+           ifelse(EligibleDHS$survey_cluster1==566,33, 
+           ifelse(EligibleDHS$survey_cluster1==571,5,
+           ifelse(EligibleDHS$survey_cluster1==601,29,
+           ifelse(EligibleDHS$survey_cluster1==676,10, 
+           ifelse(EligibleDHS$survey_cluster1==720,41,
+                 EligibleDHS$survey_strata)))))))))))))))))))
 
 # dhs_varibles  <- c("household_id1", "LINENUMBER",
 # "region","wealth_quintile","Literacy","education_level", "is_lactating",
@@ -752,7 +776,7 @@ boxplot(selenium ~ Malaria_test_result*wealth_quintile, data = EligibleDHS,
 ddply(EligibleDHS, ~source_water, summarise, 
       medianBMI=matrixStats::weightedMedian(selenium, wt,na.rm = T))
 
-EligibleDHS$survey_cluster1[EligibleDHS$source_water == "96"]
+# EligibleDHS$survey_cluster1[EligibleDHS$source_water == "96"]
 
 # Defining Se deficiency ----
 EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
@@ -834,6 +858,7 @@ dim(EligibleDHS)
 
 # Survey analysis: Applying survey weight ----
 EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
+names(EligibleDHS)
 sum(is.na(EligibleDHS$selenium))
 sum(is.na(EligibleDHS$AGE_IN_YEARS))
 sum(is.na(EligibleDHS$wealth_idx))
@@ -843,6 +868,8 @@ sum(is.na(EligibleDHS$urbanity))
 sum(is.na(EligibleDHS$Longitude))
 sum(is.na(EligibleDHS$Latitude))
 sum(is.na(EligibleDHS$survey_cluster1))
+class(EligibleDHS$wealth_idx)
+EligibleDHS$wealth_idx <- as.factor(EligibleDHS$wealth_idx)
 #EligibleDHS  <- subset(EligibleDHS, !is.na(selenium))
 EligibleDHS  <- subset(EligibleDHS, !is.na(selenium) & 
                          !is.na(wealth_idx) & !is.na(agp))
@@ -867,24 +894,67 @@ table(EligibleDHS$Malaria_test_result)
 # table(EligibleDHS$ANY_INFLAMMATION)
 
 # Complex sample design parameters
+# PSU = cluster
+DHSdesign<-svydesign(id=~survey_cluster1,  weights=~survey_weight,
+                     strata=~urbanity+region, #This strata
+                     data=subset(EligibleDHS, !is.na(selenium)))
 
-DHSdesign<-svydesign(id=EligibleDHS$survey_cluster1, 
-strata=EligibleDHS$survey_strata, #This strata
- weights=EligibleDHS$survey_weight, data=EligibleDHS)
-
-
+# Complex sample design parameters
+# PSU = cluster
+# DHSdesign2<-svydesign(id=~survey_cluster1+household_id1,  weights=~survey_weight,
+# strata=~urbanity+region, #This strata
+#  data=subset(EligibleDHS, !is.na(selenium)))
+# 
+# We are not going to use this strata bc is from the dhs which is different 
+# eg district level representatives 
+#options(survey.lonely.psu="adjust", survey.ultimate.cluster = TRUE)
+#DHSdesign2<-svydesign(id=~survey_cluster1,  weights=~survey_weight,
+ #                    strata=~survey_strata, #This strata
+  #                   data=EligibleDHS)
+## Se deficiency estimates ----
+svymean(~LOW_SEL_GPx3,DHSdesign)
 # tabulate indicator by region
-svyby(~selenium, ~wealth_quintile,  DHSdesign, svymean, vartype=c("se","ci"))
-svyby(~selenium, ~urbanity,  DHSdesign, svymean, vartype=c("se","ci"))
+svyby(~selenium, ~wealth_idx,  DHSdesign, svymean, vartype=c("se","ci"), na.rm = TRUE)
+svyby(~selenium, ~urbanity,  DHSdesign, svymean, vartype=c("se","ci"), na.rm = TRUE)
+svyby(~LOW_SEL_GPx3, ~urbanity,  DHSdesign, svymean, vartype=c("se","ci"), na.rm = TRUE)
+svyby(~LOW_SEL_GPx3, ~region,  DHSdesign, svymean, vartype=c("se","ci"), na.rm = TRUE)
+#svyby(~LOW_SEL_GPx3, ~sdist,  DHSdesign, svymean, vartype=c("se","ci"), na.rm = TRUE)
 svyby(~selenium, ~urbanity*wealth_quintile,  DHSdesign, svymean, vartype=c("se","ci"))
 
-svyhist(~selenium,   DHSdesign)
+svyhist(~log(BMI),   DHSdesign)
+svyhist(~BMI,   DHSdesign)
 
 svyboxplot(selenium~urbanity,   DHSdesign)
 svyboxplot(selenium~wealth_quintile,   DHSdesign)
 svyboxplot(selenium~sdist,   DHSdesign)
 svyboxplot(selenium~region,   DHSdesign)
+svyboxplot(AGE_IN_YEARS~region,   DHSdesign)
 
 # selenium, AGE_IN_YEARS,agp, crp
-round(svymean(~crp, DHSdesign), 2)
-svyquantile(~crp, DHSdesign, c(.25,.5,.75))
+round(svymean(~crp, DHSdesign, na.rm = TRUE), 2)
+svyquantile(~crp, DHSdesign, c(.25,.5,.75), na.rm = TRUE)
+
+
+
+# anova
+
+test <- svyby(~AGE_IN_YEARS,~BMI_cat, DHSdesign, svymean, covmat=TRUE, na.rm = T) 
+
+svychisq(~AGE_IN_YEARS+urbanity, DHSdesign)
+
+prop.table(svytable(~urbanity, DHSdesign))*100
+prop.table(svytable(~wealth_idx, DHSdesign))*100
+
+svyciprop(~factor(wealth_idx), DHSdesign)
+
+# Testing models
+m0 <- svyglm(selenium~wealth_idx,design=DHSdesign, family=gaussian())
+m1 <- svyglm(selenium~wealth_idx+urbanity,design=DHSdesign, family=gaussian())
+m2 <- svyglm(selenium~wealth_idx+urbanity+AGE_IN_YEARS,design=DHSdesign, family=gaussian())
+m3 <- svyglm(selenium~AGE_IN_YEARS,design=DHSdesign)
+m4 <- svyglm(selenium~wealth_quintile,design=DHSdesign, family=gaussian())
+m5 <- svyglm(log(selenium)~wealth_idx+urbanity+AGE_IN_YEARS+log(crp)+log(agp)+BMI_cat,design=DHSdesign, family=gaussian())
+
+anova(m0,m1)
+
+coef(summary(m5))

@@ -6,7 +6,7 @@ In this section we describe the data sets and variables that were evaluated for 
 
 ## Plasma Se concentration and other biological data
 
-Geo-referenced biomarker and other information for Women of Reproductive Age (WRA) was obtained from the Malawi DHS - MNS 2015-2016 (@NSOMalawiDHS2017). Access need to be requested to DHS data [here](https://dhsprogram.com/methodology/survey/survey-display-483.cfm).
+Geo-referenced biomarker and other information for women (15-50yo) was obtained from the Malawi DHS - MNS 2015-2016 (@NSOMalawiDHS2017). Access need to be requested to DHS data [here](https://dhsprogram.com/methodology/survey/survey-display-483.cfm).
 
 
 #### Micronutrient survey data 
@@ -42,7 +42,7 @@ This data set (MW_WRA) provided information on biomarkers and other biological d
 
 #### Women questionnaire data 
 
-This data set (MWIR7) provided individual-level information for WRA on socioeconomic factors for the main DHS survey. We downloaded both the .dat and .dta file because the file with .dat extension was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode documentation. 
+This data set (MWIR7) provided individual-level information for women (15-49yo) on socioeconomic factors for the main DHS survey. We downloaded both the .dat and .dta file because the file with .dat extension was not opening in R. It was not corrupted as we could open the .MAP with Notepad+, and we could see all recode documentation. 
 
 These variables provide information at individual level and, below are the variables of interest:
 
@@ -87,14 +87,15 @@ The data repository contains a number of data files for [Malawi](https://figshar
 
 -  **Limit of detection dataset** (MWI_Crop_LOD_ByICPRun), provides information about the limit of detection per each round of ICP.
 
-Se_grain,Selenium,mg kg-1 DM,
+The main variable extracted from the main dataset ("MWI_CropSoilData_Raw.csv") was: `Se_grain` which contain the information on Selenium (mg kg-1 DM) for all grain types.
 
 File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_CropSoilData_Raw.csv`
+
 File name: `data/maize/MWI_CropSoilChemData_CSV/MWI_Crop_LOD_ByICPRun.csv`
 
 #### Complementary dataset: Chilimba 
 
-Malawi maize grain and soil Se concentration data collected between 2009-2010 in the study of @chilimbaMaizeGrainSoil2011. The data used was obtained from the co-authors of the manuscript (E.L.A.) which included the values of pH (in water) of the soil where samples were collected. However, the analyses outlined here can be performed using the publicly available version in [here](https://static-content.springer.com/esm/art%3A10.1038%2Fsrep00072/MediaObjects/41598_2011_BFsrep00072_MOESM1_ESM.xls.
+Malawi maize grain and soil Se concentration data collected between 2009-2010 in the study of @chilimbaMaizeGrainSoil2011. The data used was obtained from the co-authors of the manuscript (E.L.A.) which included the values of pH (in water) of the soil where samples were collected. However, the analyses outlined here can be performed using the publicly available version in [here](https://static-content.springer.com/esm/art%3A10.1038%2Fsrep00072/MediaObjects/41598_2011_BFsrep00072_MOESM1_ESM.xls).
 
 This data set was mainly included to supplement the data on maize grain Se concentration in Southern Malawi. Note that no information regarding limit of detection were provided, and that data collection and data analysis were done at different time and by a different team. 
 

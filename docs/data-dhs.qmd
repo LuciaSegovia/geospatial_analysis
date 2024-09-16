@@ -199,7 +199,9 @@ Can we identify if malaria is influencing Se status? - In @fig-XX, we can see th
 
 We could run the model with and without the variable and see if there is any difference in the final results. 
 
-Interestingly, younger women tented to test positive to malaria in central and southern regions, as shown in @fig-2_1b, which may be producing a confounding factor between age/malaria test and Se status. 
+Interestingly, younger women tented to test positive to malaria in central and southern regions, as shown in @fig-2_1b, which may be producing a confounding effect between age/malaria test and Se status. 
+
+Differences in the prevalence of malaria by age in WRA in Malawi were reported in the Micronutrient DHS report (REF).
 
 ```{r label = "fig-2_1b", fig.cap = "Age (in years) of women by malaria test and region in Malawi. The light grey line is the median age (years) for Malawi"}
 
@@ -273,11 +275,18 @@ As expected, BMI also has some outliers due to the high weight of some women (@f
 
 summaplot(Malawi_WRA$BMI)
 
+# Changing implausible to NA
+
+Malawi_WRA$BMI[Malawi_WRA$BMI>300] <- NA
+
+
 ```
 
 We could see that the northern region has overall higher BMI. This differences were only moderately significant when comparing the northern and the central region. Similar trend was found when we evaluated the wealth quintiles (@sec-wq), where the Northern region in Malawi has higher BMI & wealth quintile than the other two regions. This is unsurprising, as we can assume that BMI and wealth may be related, and it has been reported previously higher body weight in wealthier women in Malawi and in the region (REF, REF, REF). 
 
-There was a significant difference in the BMI between rural and urban women however, the number of urban were very low. Moreover, when we checked the results by region, the differences were only seeing for the southern region. These resutls should be interpret with care due to the difference in sample size between rural and urban. 
+There was a significant difference in the BMI between rural and urban women however, the number of urban were very low. Moreover, when we checked the results by region, the differences were only seeing for the southern region. These results should be interpret with care due to the difference in sample size between rural and urban.
+
+
 
 Moreover, as it can see in the scatter plot (@fig-2_3) and in the histogram, most of the population included in the study were within normal BMI range, and plasma Se concentration was not particularly influenced by BMI. 
 
@@ -593,7 +602,7 @@ All education and wealth level have representation in all three regions. Again, 
 
 Hence, we excluded this variable as it could possibly be confounding effect. 
 
-```{r}
+```{r,eval=FALSE}
 
 # Wealth quintile 1-5 (lowest to highest)
 # Education 0-3 (low to high)
@@ -830,7 +839,7 @@ GPS$buffer[i] <- st_buffer(GPS$geometry[i], dist = offset.dist)
 
 ```
 
-Checking the resutls of the displacement buffers
+Checking the results of the displacement buffers
 
 ```{r  fig.show='hold', fig.height=7, fig.width=6}
 

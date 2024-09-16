@@ -1,5 +1,6 @@
 
 library(ggplot2)
+# From https://rdrr.io/github/gfalbery/ggregplot/
 library(ggregplot)
 #install.packages("MCMCglmm")
 library(stringr)
@@ -26,6 +27,9 @@ dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 
 # Visualisation ------
+
+# Quick summary plots
+plot(models[[9]])
 
 INLADICFig(models) + theme_bw() + 
   theme(legend.position = "none", 
