@@ -17,7 +17,7 @@ library(geoR)  # geospatial modelling
 
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
 plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
-  filter(!is.na(selenium))  %>% select(1:48) # removing buffer and other spatial vars
+  filter(!is.na(selenium))  %>% dplyr::select(1:51) # removing buffer and other spatial vars
 names(plasma.df)
 
 plasma.df$wealth_idx <- as.factor(plasma.df$wealth_idx)
@@ -30,7 +30,7 @@ cluster.df <- readRDS(here::here("data", "inter-output",
 
 
 plasma.df  <- plasma.df %>% left_join(., cluster.df %>% 
-                            dplyr::select(survey_cluster1, ADM2_PCODE, ADM2_EN) %>% 
+                            dplyr::select(survey_cluster1, ADM2_PCODE, ADM2_EN, ADM1_EN) %>% 
                           distinct()) 
 
 # Maize Se conc. (from 01_maize-aggregation.R)
@@ -83,7 +83,7 @@ data.df %>% filter(is.na(Se_mean))
 
 data_id <- readRDS(here::here("data", "inter-output", 
                               "mwi-plasma-se_maize-admin.RDS")) %>% 
-  select(unique_id, survey_cluster1, EACODE, DISTRICT, meter)
+  dplyr::select(unique_id, survey_cluster1, EACODE, DISTRICT, meter)
 
 
 
@@ -151,5 +151,5 @@ boxplot(selenium ~ region, ea.df)
 names(ea.df)
 
 # Saving final EA dataset
-saveRDS(ea.df, here::here("data", "inter-output", "raw-maizeSe_plasma-se_ea.RDS"))
+#saveRDS(ea.df, here::here("data", "inter-output", "raw-maizeSe_plasma-se_ea.RDS"))
 

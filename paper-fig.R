@@ -10,6 +10,7 @@
 
 
 library(ggplot2)
+library(ggridges)
 library(dplyr)
 library(tidyr)
 library(hrbrthemes)
@@ -214,7 +215,88 @@ cols_vary = "slowest",
 names_to = c("variable", ".value"),
 names_pattern = "([[:alnum:]]+).([[:alnum:]]+)") %>% 
   write.csv(., here::here("output", "dummy-summary-table.csv"), row.names = FALSE)
+  
 
+  # Plots for visualising maize Se aggregation -----
+  
+## Plot (1): Boxplot Maize aggregation -----
+  
+  data.df %>% 
+    dplyr::select(survey_cluster1, selenium, AGE_IN_YEARS, crp, agp, urbanity,  
+                  wealth_idx, Se_mean, region,
+                  aggregation) %>% 
+    rename(Age = "AGE_IN_YEARS", PlasmaSe = "selenium") %>% 
+    mutate(aggregation = gsub("plasma-pred-maize-", "", aggregation), 
+           aggregation = gsub("_v2.0.0.RDS", "", aggregation),
+           survey_cluster1 = as.character(survey_cluster1)) %>% 
+    filter(aggregation != "region") %>% 
+    ggplot(aes(reorder(aggregation, log(Se_mean)), log(Se_mean))) + 
+    geom_boxplot() +
+    theme_classic() +
+    labs(y = "", x = "", title = "Distribution of maize Se concentration by aggregation (log-transformed)")
+    
+## Plot (2): Ridges Maize aggregation  -----
+  
+  data.df %>% 
+    dplyr::select(survey_cluster1, selenium, AGE_IN_YEARS, crp, agp, urbanity,  
+                  wealth_idx, Se_mean, region,
+                  aggregation) %>% 
+    rename(Age = "AGE_IN_YEARS", PlasmaSe = "selenium") %>% 
+    mutate(aggregation = gsub("plasma-pred-maize-", "", aggregation), 
+           aggregation = gsub("_v2.0.0.RDS", "", aggregation),
+           survey_cluster1 = as.character(survey_cluster1)) %>% 
+    filter(aggregation != "region") %>% 
+    #ggplot(aes(reorder(aggregation, log(Se_mean)), log(Se_mean))) + geom_boxplot()
+    
+    ggplot(aes(Se_mean, aggregation, fill = factor(stat(quantile)))) + 
+    stat_density_ridges(
+      geom = "density_ridges_gradient", calc_ecdf = TRUE,
+      quantiles = 4, quantile_lines = TRUE
+    ) +
+    scale_fill_viridis_d(name = "Quartiles") +
+    theme_classic() +
+    labs(y = "",  title = "Distribution of maize Se concentration by aggregation")
+  
+  
+  ## Plot (3): Ridges per region Maize aggregation  -----
+  
+  data.df %>% 
+    dplyr::select(survey_cluster1, selenium, AGE_IN_YEARS, crp, agp, urbanity,  
+                  wealth_idx, Se_mean, region,
+                  aggregation) %>% 
+    rename(Age = "AGE_IN_YEARS", PlasmaSe = "selenium") %>% 
+    mutate(aggregation = gsub("plasma-pred-maize-", "", aggregation), 
+           aggregation = gsub("_v2.0.0.RDS", "", aggregation),
+           survey_cluster1 = as.character(survey_cluster1)) %>% 
+    filter(aggregation != "region") %>% 
+    #ggplot(aes(reorder(aggregation, log(Se_mean)), log(Se_mean))) + geom_boxplot()
+    ggplot(aes(Se_mean, aggregation, fill = region)) + 
+    geom_density_ridges(aes(point_colour = region, point_shape = region, point_shape = region),  alpha = .2, 
+                        jittered_points = TRUE) +
+    scale_discrete_manual(aesthetics = "point_shape", values = c(21, 22, 23))
+  
+  
+  ## Checking the values for large EAs (the EAs were identified in "01_maize-aggregation.R")
+  
+  largeEA <- c("86" , "101" ,"136", "185" ,"205",
+               "389" ,"410", "468", "571" ,"720" ,"743")
+  
+  data.df %>% 
+    dplyr::select(survey_cluster1, selenium, AGE_IN_YEARS, crp, agp, urbanity,  
+                  wealth_idx, Se_mean, region,
+                  aggregation) %>% 
+    rename(Age = "AGE_IN_YEARS", PlasmaSe = "selenium") %>% 
+    mutate(aggregation = gsub("plasma-pred-maize-", "", aggregation), 
+           aggregation = gsub("_v2.0.0.RDS", "", aggregation),
+           survey_cluster1 = as.character(survey_cluster1)) %>% 
+    filter(aggregation != "region", survey_cluster1 %in% largeEA) %>% 
+    group_by(survey_cluster1, aggregation) %>% 
+    summarise(N = n(),
+      mean = mean(Se_mean)) %>% 
+    pivot_wider(names_from = aggregation, 
+                values_from = mean) %>% View()
+  
+  
 ## SM: Maize aggreg by cluster ----------------
 
 "#DF0D5B"

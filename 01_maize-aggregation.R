@@ -39,6 +39,12 @@ dist_bnd  <- st_read(here::here( "data",
                                  "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
+# National parks
+
+parks  <-  st_read(here::here("..", "PhD_geospatial-modelling", "data",
+                              "mwi-boundaries", "protected_areas_geo",
+                              "protected_areas_geo.shp"))
+
 
 # Cluster's EA info
 
@@ -77,6 +83,21 @@ summary(area.clust)
 geo.clust$area_cal <- st_area(geo.clust) #m^2
 
 summary(geo.clust$area_cal)
+
+geo.clust$survey_cluster1 <- as.character(geo.clust$survey_cluster1)
+
+# Checking the large EAs
+
+largeEA <- geo.clust %>% st_drop_geometry() %>% 
+  mutate(area=as.numeric(area_cal/1000000)) %>% filter(area>314) %>% 
+  pull(survey_cluster1)
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(geo.clust %>% filter(survey_cluster1 %in% largeEA))+
+  tm_polygons(col = "survey_cluster1") +
+  tm_shape(parks)+
+  tm_borders(col = "darkgreen",lwd = 2)
 
 
 ## Distritc area
@@ -153,6 +174,35 @@ dist_maize <- dist_maize %>%
 # saveRDS(dist_maize, here::here("data", "inter-output", "aggregation", 
 # "pred-maize-district_v2.0.0.RDS"))
 
+### Region -----
+
+# Aggregate boundaries the three country 
+
+region_bnd <- dist_bnd %>% group_by(ADM1_EN) %>% summarise()
+
+tm_shape(region_bnd) +
+  tm_polygons(col = "ADM1_EN")
+
+# Spatially join both dataset
+
+region_maize <- st_join(geopredmaize.df, region_bnd) 
+
+Se <- "predSe"
+# Se <- "Zhat_exp"
+
+region_maize <- region_maize %>% 
+  st_drop_geometry() %>% filter(!is.na(ADM1_EN)) %>% 
+  group_by(ADM1_EN) %>% 
+  summarise(Se_mean = mean(!!sym(Se)), 
+            Se_sd = sd(!!sym(Se)), 
+            Se_median = median(!!sym(Se)), 
+            Se_iqr = IQR(!!sym(Se)), 
+            Se_n = n()) %>% 
+  arrange(ADM1_EN) 
+
+# Saving observed maize grain Se concentration per district.
+# saveRDS(region_maize, here::here("data", "inter-output", "aggregation", 
+# "pred-maize-region_v2.0.0.RDS"))
 
 ### Buffers  -----
 

@@ -260,6 +260,33 @@ plasma.df %>% distinct(survey_cluster1, EACODE,
 ```
 
 
+#### Districts in Malawi
+
+Here we are showing a map of the districts of Malawi. 
+
+```{r}
+
+
+# Aggregate boundaries the whole country (with lakes)
+malawi_bnd_lakes <- st_union(ea_bnd)
+
+# Aggregate boundaries the whole country
+malawi_bnd <- st_union(ea_admin)
+
+# Generating the map
+tm_shape(dist_bnd) +
+  tm_polygons(col = "white", 
+              border.col = "#666666", border.alpha = 0.3, lwd = 0.2) +
+tm_shape(malawi_bnd) +
+  tm_borders(col = "#666666", alpha = 0.6, lwd = 0.5) +
+  tm_shape(malawi_bnd_lakes) +
+  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) +
+    tm_shape(ea_admin$geometry[ea_admin$EACODE %in% unique(geodata_ea$EACODE)]) +
+  tm_polygons(col ="firebrick4", border.col = "black", border.alpha = 0.3) 
+
+```
+
+
 ### Household catchment areas (buffer) 
 
 

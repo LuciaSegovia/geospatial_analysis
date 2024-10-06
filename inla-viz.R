@@ -15,6 +15,18 @@ options(scipen=999)
 #  geom_jitter(aes(colour = factor(survey_cluster1))) + coord_fixed() + 
 #  labs(colour = "survey_cluster1")
 
+modelNames <-  c("buffer10",
+           "buffer15",
+           "buffer20",
+           "buffer25",
+           "buffer30",
+           "buffer40",
+           "buffer50",
+           "buffer60",
+           "EA group",
+           "district", 
+           "region")
+
 gps <- plasma_se %>% dplyr::select(survey_cluster1, Longitude, Latitude) %>% 
   distinct() %>% arrange(survey_cluster1)
 
@@ -26,29 +38,45 @@ dist_bnd  <- st_read(here::here( "data",
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 
+# Checks
+# https://julianfaraway.github.io/brinla/examples/chicago.html
+# Checking CPO observed response based on model fit (small no. = unexpected?)
+n = nrow(plasma_se)
+plot(1:n,models[[11]]$cpo$cpo, ylab="CPO",type="n")
+text(1:n,models[[11]]$cpo$cpo, 1:n)
+
+# PIT new responses less observed (uniformedly distributed)
+pit <- models[[11]]$cpo$pit
+uniquant <- (1:n)/(n+1)
+plot(uniquant, sort(pit), xlab="uniform quantiles", ylab="Sorted PIT values")
+abline(0,1)
+
+# Issues with low values
+plot(logit(uniquant), logit(sort(pit)), xlab="uniform quantiles", ylab="Sorted PIT values", main="Logit scale")
+abline(0,1)
+which(logit(pit) <(-4))
+
+View(plasma_se[which(logit(pit) <(-4)),])
+
+plot(log(plasma_se$crp), pit, xlab="CRP", ylab="PIT")
+plot(log(plasma_se$Se_mean), pit, xlab="Mazie Se", ylab="PIT")
+#text(log(plasma_se$crp), pit, 1:n)
+
+
 # Visualisation ------
 
 # Quick summary plots
-plot(models[[9]])
+plot(models[[11]])
 
-INLADICFig(models) + theme_bw() + 
+INLADICFig(models[c(1:10)]) + theme_bw() + 
   theme(legend.position = "none", 
   strip.text = element_text(size = 12),
   axis.text.y = element_text(size = 12), 
   axis.text.x = element_text(size = 10))
 
-Efxplot(models) + theme_bw() +
+Efxplot(models[c(1:10)]) + theme_bw() +
   labs(y = "") +
-  scale_colour_discrete(labels = c("buffer10",
-                               "buffer15",
-                               "buffer20",
-                               "buffer25",
-                               "buffer30",
-                               "buffer40",
-                               "buffer50",
-                               "buffer60",
-                               "cluster",
-                               "district"))+
+  scale_colour_discrete(labels = modelNames)+
   theme(
         strip.text = element_text(size = 12),
         axis.text.y = element_text(size = 12), 
@@ -57,7 +85,7 @@ Efxplot(models) + theme_bw() +
 
 Maxrange = 1000
 
-INLARange(list(models[[1]]), maxrange = Maxrange)
+INLARange(list(models[[1]]), MaxRange = Maxrange)
 
 INLARange(ModelList = models, MaxRange= 1, MeshList = list(mesh))
 
@@ -78,9 +106,42 @@ for(i in 1:length(models)){
 
 #write.csv(fix.effect, here::here("output", "fixed.effect_v2.0.0.csv"))
 
+
+
+# Visualising the mean and CI of  the 11 models
+
+#Storing
+M <- NA
+L <- NA
+U <- NA
+
+for(i in 1:length(models)){
+
+# Mean
+m <- round(models[[i]]$summary.fixed[2,1], 4)
+# .25
+lo <- round(models[[i]]$summary.fixed[2,3], 4)
+#.097
+up <- round(models[[i]]$summary.fixed[2,5], 4)
+
+#Storing
+M[i] <- m
+L[i] <- lo
+U[i] <- up
+
+}
+
+dat <- cbind(modelNames,M,L, U)
+
+ggplot(dat, aes( modelNames, as.numeric(M))) +
+  geom_point() +
+  geom_linerange(ymin = L, ymax = U) +
+  scale_y_continuous(limits = c(-0.40, 0.6)) +
+  theme_bw() +
+  labs(y = "", x = "")
+
 ## Visualising model parameters for all models
 # (Krainski et al., p. 37)
-
 
 s2.marg <- lapply(models, function(m) inla.tmarginal(function(x) 1/x, m$marginals.hy[[1]]))
 

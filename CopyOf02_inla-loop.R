@@ -79,8 +79,15 @@ if(sum(plasma_se$Se_mean ==0)>0){
 plasma_se$a0 <- 1
 
 # Hyperparameters
-# The probability of having a SD> 0.1 is 50% (that's the meaning of 0.1, 0.5)
+# Docu https://www.r-inla.org/documentation
+# The probability of having a SD> 0.1 is 50% 
+#(that's the meaning of (u) 0.1, (alpha) 0.5)
+# https://inla.r-inla-download.org/r-inla.org/doc/prior/pc.prec.pdf
 hyper.idd = list(theta1 = list(prior = "pc.prec", param = c(0.1, 0.5))) 
+# Here, we are testing the Gaussian priors where we define the mean (mu) (0), 
+# and, the precision (tau) (95%)
+# https://inla.r-inla-download.org/r-inla.org/doc/prior/gaussian.pdf
+hyper.idd = list(theta1 = list(prior = "gaussian", param = c(0, 0.95))) 
 hyper.fix = list(theta1 = list(initial = log(100), fixed = TRUE))
 
 # inla calculations

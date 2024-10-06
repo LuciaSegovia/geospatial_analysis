@@ -66,7 +66,7 @@ buff.dist <- na.omit(unique(stringr::str_extract(list.files(here::here("data",
 
 Here we are proceeding as described in @sec-boundaries-pred. In summary, to generate the final aggregations we are:
 
-1. Loading the boundaries for the administrative units (cluster-level and district-level) and the buffers which can be adapted using the function `buffer_generator()`, and are `r `paste(buff.dist, "km")`. More information on that function can be found in @sec-buffer-area.
+1. Loading the boundaries for the administrative units (cluster-level and district-level) and the buffers which can be adapted using the function `buffer_generator()`, and are `r paste(buff.dist, "km")`. More information on that function can be found in @sec-buffer-area.
 
 
 2. After selecting the aggregations, we need to get the information on the maize Se concentration for each aggregation area. To do so, we need to convert the predicted maize Se dataset (Long/Lat) into a spatial object (point locations).

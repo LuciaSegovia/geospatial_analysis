@@ -32,9 +32,13 @@ form <- log(y) ~ -1 + Intercept +  log(Se_mean) +
   wealth_idx +
   AGE_IN_YEARS +
   # BMI + Malaria_test_result +
-  log(crp) + log(agp) + urbanity + log(dist_to_lake) +
+  log(crp) +
+  log(agp) + urbanity + log(dist_to_lake) +
   f(spatial.field, model = spde)  +
-   f(ID, model = 'iid')
+   f(ID, model = 'iid', hyper = hyper.idd, constr = TRUE)
+
+# Defining hyper parameter of the idd
+ hyper.idd = list(theta1 = list(prior = "pc.prec", param = c(0.1, 0.5))) 
 
 # Model output
 models <- list()
@@ -98,11 +102,11 @@ A <- inla.spde.make.A(mesh = mesh , loc = coord)
                              constr = TRUE) # this is optional
 
 # Priors are set
-# spde <- inla.spde2.pcmatern(mesh = mesh,
-#                          alpha = 2 ,
-#                          prior.range = c(1, 0.01), ## P(range < 1) = 0.01
-#                          prior.sigma = c(1, 0.5), ## P(sigma > 1) = 0.5
-#                          constr = TRUE) # this is optional
+ spde <- inla.spde2.pcmatern(mesh = mesh,
+                          alpha = 2 ,
+                          prior.range = c(1, 0.01), ## P(range < 1) = 0.01
+                          prior.sigma = c(1, 0.5), ## P(sigma > 1) = 0.5
+                          constr = TRUE) # this is optional
 
 ## Setting the SPDE index (to store the random effect)
 spde.index <- inla.spde.make.index(name = "spatial.field",
@@ -149,7 +153,7 @@ m <- inla(form,
            data = inla.stack.data(stack),
            family = "gaussian",
            control.predictor = list(A = inla.stack.A(stack), compute = TRUE),
-           control.compute = list(cpo = TRUE, dic = TRUE))
+           control.compute = list(cpo = TRUE, waic = TRUE, dic = TRUE))
 
 
 # Storing results
