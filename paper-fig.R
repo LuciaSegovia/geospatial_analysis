@@ -220,7 +220,7 @@ names_pattern = "([[:alnum:]]+).([[:alnum:]]+)") %>%
   # Plots for visualising maize Se aggregation -----
   
 ## Plot (1): Boxplot Maize aggregation -----
-  
+# By uncommenting we can see suppl.3 by rural/urban  
   data.df %>% 
     dplyr::select(survey_cluster1, selenium, AGE_IN_YEARS, crp, agp, urbanity,  
                   wealth_idx, Se_mean, region,
@@ -230,9 +230,11 @@ names_pattern = "([[:alnum:]]+).([[:alnum:]]+)") %>%
            aggregation = gsub("_v2.0.0.RDS", "", aggregation),
            survey_cluster1 = as.character(survey_cluster1)) %>% 
     filter(aggregation != "region") %>% 
-    ggplot(aes(reorder(aggregation, log(Se_mean)), log(Se_mean))) + 
+    ggplot(aes(reorder(aggregation, log(Se_mean)), log(Se_mean) , fill = urbanity
+               )) + 
     geom_boxplot() +
     theme_classic() +
+    scale_fill_manual("", values = col_break, labels = lab_reside)+
     labs(y = "", x = "", title = "Distribution of maize Se concentration by aggregation (log-transformed)")
     
 ## Plot (2): Ridges Maize aggregation  -----
@@ -295,6 +297,11 @@ names_pattern = "([[:alnum:]]+).([[:alnum:]]+)") %>%
       mean = mean(Se_mean)) %>% 
     pivot_wider(names_from = aggregation, 
                 values_from = mean) %>% View()
+  
+  
+  # Checking values of different models by urban/rural
+  
+
   
   
 ## SM: Maize aggreg by cluster ----------------

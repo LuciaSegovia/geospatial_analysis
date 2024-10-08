@@ -62,6 +62,9 @@ plot(log(plasma_se$crp), pit, xlab="CRP", ylab="PIT")
 plot(log(plasma_se$Se_mean), pit, xlab="Mazie Se", ylab="PIT")
 #text(log(plasma_se$crp), pit, 1:n)
 
+#DIC
+models[[1]]$dic$dic
+
 
 # Visualisation ------
 
@@ -133,9 +136,9 @@ U[i] <- up
 
 dat <- cbind(modelNames,M,L, U)
 
-ggplot(dat, aes( modelNames, as.numeric(M))) +
+ggplot(dat[c(1:10),], aes( modelNames, as.numeric(M))) +
   geom_point() +
-  geom_linerange(ymin = L, ymax = U) +
+  geom_linerange(ymin = L[1:10], ymax = U[1:10]) +
   scale_y_continuous(limits = c(-0.40, 0.6)) +
   theme_bw() +
   labs(y = "", x = "")

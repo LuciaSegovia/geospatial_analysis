@@ -934,7 +934,13 @@ svyboxplot(AGE_IN_YEARS~region,   DHSdesign)
 round(svymean(~crp, DHSdesign, na.rm = TRUE), 2)
 svyquantile(~crp, DHSdesign, c(.25,.5,.75), na.rm = TRUE)
 
+# T test
+survey::svyttest(log(selenium)~urbanity, DHSdesign)
+survey::svyttest(LOW_SEL_GPx3~urbanity, DHSdesign)
 
+# X^2 
+svychisq(~wealth_idx+urbanity, DHSdesign) # No diff. bc it's rural/urban adjusted
+svychisq(~wealth_quintile+urbanity, DHSdesign) # Diff. because it's at national-level
 
 # anova
 
@@ -947,6 +953,18 @@ prop.table(svytable(~wealth_idx, DHSdesign))*100
 
 svyciprop(~factor(wealth_idx), DHSdesign)
 
+# Checking the model
+m0 <- svyglm(log(selenium)~region,design=DHSdesign, family=gaussian())
+m0 <- svyglm(log(selenium)~wealth_idx,design=DHSdesign, family=gaussian())
+#m1 <- svyglm(log(selenium)~wealth_quintile,design=DHSdesign, family=gaussian())
+m1 <- svyglm(log(selenium)~urbanity,design=DHSdesign, family=gaussian())
+m2 <- svyglm(log(selenium)~urbanity+region,design=DHSdesign, family=gaussian())
+
+summary(m1)
+
+AIC(m0, m1, m2)
+
+
 # Testing models
 m0 <- svyglm(selenium~wealth_idx,design=DHSdesign, family=gaussian())
 m1 <- svyglm(selenium~wealth_idx+urbanity,design=DHSdesign, family=gaussian())
@@ -957,4 +975,4 @@ m5 <- svyglm(log(selenium)~wealth_idx+urbanity+AGE_IN_YEARS+log(crp)+log(agp)+BM
 
 anova(m0,m1)
 
-coef(summary(m5))
+coef(summary(m1))
