@@ -36,6 +36,11 @@ dist_bnd  <- st_read(here::here( "data",
 
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
+# Aggregate boundaries the three country 
+
+region_bnd <- dist_bnd %>% group_by(ADM1_EN) %>% summarise()
+
+
 # Reading the EA shapefile w/ updated districts (See 00_cleaning-boundaries.R)
 ea_admin <- st_read(here::here( "data", "inter-output", 
                                 "boundaries", "mwi_admbnda_adm4_nso.shp"))
@@ -95,29 +100,30 @@ malawi_bnd <- st_union(ea_admin) # Aggregate boundaries the whole country
 # The Map:
 # Base map (EAs)
 base_map <- tm_shape(ea_admin) +    
-  tm_polygons(col = "white" , border.alpha = 0 # , 
+  tm_polygons(col = "white" , col_alpha = 0 # , 
            #   border.col = "#666666", border.alpha = 0.3, lwd = 0.2
              ) +
   # Land boundaries
  # tm_shape(malawi_bnd) +   
-  tm_shape(dist_bnd) +
-    tm_borders(col = "#666666", alpha = 0.8, lwd = 0.5) +
+  tm_shape(region_bnd) +
+    tm_borders(col = "#666666", fill_alpha = 0.8, lwd = 0.5) +
   # Colouring lakes
   tm_shape(mwi_lakes) +
-  tm_polygons(col = "#253DA1", border.alpha = 0) +
+  tm_borders("#253DA1") +
+  tm_text("DISTRICT", col = "#253DA1", xmod = 0.8) +
   # Land/ Lake boundaries
   tm_shape(malawi_bnd_lakes) +
-  tm_borders(col = "black", alpha = 0.6, lwd = 0.5) 
+  tm_borders(col = "black", fill_alpha = 0.6, lwd = 0.5) 
 
 
 # Fig. 2: Spatial aggregation of maize Se conc. 
 
 # Aggregated maize Se conc. files (from 01_maize-aggregation.R)
-file <- grep("pred-maize", list.files(here::here("data", "inter-output", "aggregation")), 
-             value = TRUE)
+(file <- grep("pred-maize.*._v2", list.files(here::here("data", "inter-output", "aggregation")), 
+              value = TRUE))
 
 #Buffer aggregations file
-buff.dist <- na.omit(unique(str_extract(list.files(here::here("data", "inter-output", "boundaries")),
+buff.dist <- na.omit(unique(stringr::str_extract(list.files(here::here("data", "inter-output", "boundaries")),
                                         "[:digit:]{2}")))
 
 # Loading aggregated maize data
@@ -195,7 +201,13 @@ map[[i]] <- base_map +
 }
 
 
+map[[1]]
 
+ggsave(
+  filename = "visuals/maize-concentration.pdf", 
+  plot = marrangeGrob(map, nrow = 1, ncol=1), 
+  width = 15, height = 9
+)
 
 base_map +
   tm_shape(geodata.df) +

@@ -78,7 +78,7 @@ bmi_lab <- expression(paste("BMI (kg /  ",  m^{2}, ")"))
 # Colour choices ----
 
 # 1) Plasma
-"firebrick4"
+#"firebrick4"
 
 # Urban and rural
 col_break <- c("1" = "#00BFC4", "2" = "#F8766D")

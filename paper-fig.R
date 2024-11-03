@@ -14,6 +14,7 @@ library(ggridges)
 library(dplyr)
 library(tidyr)
 library(hrbrthemes)
+library(tmap)
 #library(summarytools) # didn't work
 
 
@@ -80,7 +81,7 @@ bmi_lab <- expression(paste("BMI (kg /  ",  m^{2}, ")"))
 # Colour choices ----
 
 # 1) Plasma
-"firebrick4"
+#"firebrick4"
 
 # 2) Urban and rural
 col_break <- c("2" = "#00BFC4", "1" = "#F8766D")
@@ -345,3 +346,31 @@ plot[[i]] <- data.df %>%
         axis.text.y = element_text(size = 12), 
         axis.text.x = element_text(size = 10)) 
 }
+
+
+
+
+## Plot (2): Maps for Maize aggregation  -----
+## See - figures.R
+
+## Plot (3): Histograms for Maize aggregation  -----
+## See - figures.R
+
+# Aggregated maize Se conc. files (from 01_maize-aggregation.R)
+(file <- grep("pred-maize.*._v2", list.files(here::here("data", "inter-output", "aggregation")), 
+              value = TRUE))
+
+# Loading aggregated maize data
+i =3
+plot <- list()
+for(i in 1:length(file)){
+  
+  maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
+                                 file[i])) 
+  
+ plot[[i]] <- ggplot(maize.df) + geom_hist(aes(Se_median))
+  
+}
+
+
+plot[[1]]

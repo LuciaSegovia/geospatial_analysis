@@ -870,7 +870,9 @@ sum(is.na(EligibleDHS$Latitude))
 sum(is.na(EligibleDHS$survey_cluster1))
 class(EligibleDHS$wealth_idx)
 EligibleDHS$wealth_idx <- as.factor(EligibleDHS$wealth_idx)
-#EligibleDHS  <- subset(EligibleDHS, !is.na(selenium))
+#EligibleDHS1  <- subset(EligibleDHS, !is.na(selenium))
+#EligibleDHS2  <- subset(EligibleDHS1, !is.na(wealth_idx))
+#EligibleDHS3  <- subset(EligibleDHS2, !is.na(agp))
 EligibleDHS  <- subset(EligibleDHS, !is.na(selenium) & 
                          !is.na(wealth_idx) & !is.na(agp))
 

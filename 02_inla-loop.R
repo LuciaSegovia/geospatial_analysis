@@ -97,9 +97,9 @@ A <- inla.spde.make.A(mesh = mesh , loc = coord)
 ## Setting the SPDE model (Matern estimator) 
 # (alpha is related to the smoothness parameter)
 # No priors are set
- spde <- inla.spde2.matern(mesh = mesh,
-                             alpha = 2 ,
-                             constr = TRUE) # this is optional
+# spde <- inla.spde2.matern(mesh = mesh,
+#                             alpha = 2 ,
+#                             constr = TRUE) # this is optional
 
 # Priors are set
  spde <- inla.spde2.pcmatern(mesh = mesh,
