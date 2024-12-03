@@ -8,13 +8,17 @@
 #   
 ###########
 
-
+# Loading libraries
 library(ggplot2)
 library(ggridges)
 library(dplyr)
 library(tidyr)
 library(hrbrthemes)
-library(tmap)
+library(sf) # spatial data manipulation
+library(tmap)  #spatial data manipulation and visualisation
+library(survey) # survey design
+library(srvyr) # survey design 2
+
 #library(summarytools) # didn't work
 
 
@@ -191,7 +195,96 @@ coeff <- 1000
    arrange(desc(PlasmaSe_sd)) %>% filter(region == 1) %>% View()
   
 
-# Table 1 -----
+# Table 2:preps -----
+
+# DHS data
+EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
+EligibleDHS$wealth_idx <- as.factor(EligibleDHS$wealth_idx)
+EligibleDHS  <- subset(EligibleDHS, !is.na(selenium) & 
+                           !is.na(wealth_idx) & !is.na(agp))
+
+dist <- readRDS(here::here("data", "inter-output",
+                           "cluster-distance-to-mwi-lakes.RDS"))
+
+area.clust <- readRDS(here::here("data", "inter-ouptut", "EA-group-area.RDS")) 
+
+area.clust$urbanity <- ifelse(area.clust$urbanity == "1", "urban", "rural")
+
+# Boxplot area ~ U/R and Region
+boxplot(area ~ urbanity, data = area.clust)
+
+EligibleDHS  <- subset(EligibleDHS, !is.na(selenium) & 
+                         !is.na(wealth_idx) & !is.na(agp)) %>% 
+  left_join(., dist) %>% left_join(., area.clust)
+
+DHSdesign2 <- EligibleDHS %>%
+  as_survey_design(
+    weights = survey_weight,
+    strata = c(urbanity, region),
+    ids = survey_cluster1,
+    nest = TRUE)
+
+## Table 2 -----
+
+DHSdesign2 %>% 
+  group_by(urbanity) %>% 
+  summarise(Plasma_se = survey_quantile(selenium,
+                                 quantiles = c(0.25, .5, 0.75)),
+            crp = survey_quantile(crp,
+                                  quantiles = c(0.25, .5, 0.75)), 
+            agp = survey_quantile(agp,
+                                  quantiles = c(0.25, .5, 0.75)),                                 
+            Age = survey_quantile(AGE_IN_YEARS,
+                                  quantiles = c(0.25, .5, 0.75)), 
+            dist_lake = survey_quantile(dist_to_lake,
+                                       quantiles = c(0.25, .5, 0.75)), 
+            area = survey_quantile(area,
+                                  quantiles = c(0.25, .5, 0.75))) %>% 
+  select(-ends_with("se")) %>% View()
+
+DHSdesign2 %>%
+  #group_by(urbanity) %>% 
+  group_by(wealth_idx) %>% 
+summarize(Tot = survey_total(), 
+          p = survey_prop() * 100)
+
+## Table 2b -----
+
+file <- grep("plasma.*v2.0.0", list.files(here::here("data", "inter-output", "model")), 
+             value = TRUE)
+
+dist <- readRDS(here::here("data", "inter-output", "cluster-distance-to-mwi-lakes.RDS"))
+
+table2b <- as.data.frame(matrix(data = NA, nrow = 1, ncol = 4))
+
+for(i in 1:length(file)){
+  
+  plasma_se <- readRDS(here::here("data", "inter-output", "model",
+                                  file[i])) %>%
+    # Joining the variable distance to inland water body
+    left_join(., dist) 
+  
+  EligibleDHS  <- subset(plasma_se, !is.na(selenium) & 
+                           !is.na(wealth_idx) & !is.na(agp))
+  
+  DHSdesign2 <- EligibleDHS %>%
+    as_survey_design(
+      weights = survey_weight,
+      strata = c(urbanity, region),
+      ids = survey_cluster1,
+      nest = TRUE)
+  
+
+table2b[i,] <- DHSdesign2 %>% 
+  summarise(Maize_se = survey_quantile(Se_median,
+                           quantiles = c(0.25, .5, 0.75))) %>% 
+  select(-ends_with("se")) %>% 
+  mutate(aggreg = file[i])
+  
+}  
+  
+table2b$IQR <- table2b$V3-table2b$V1
+
 ## To-Do:
 ### Adding survey weight
   ## Adding areas of the aggregations
@@ -229,14 +322,22 @@ names_pattern = "([[:alnum:]]+).([[:alnum:]]+)") %>%
     rename(Age = "AGE_IN_YEARS", PlasmaSe = "selenium") %>% 
     mutate(aggregation = gsub("plasma-pred-maize-", "", aggregation), 
            aggregation = gsub("_v2.0.0.RDS", "", aggregation),
+           aggregation = gsub("cluster", "EA group", aggregation),
            survey_cluster1 = as.character(survey_cluster1)) %>% 
     filter(aggregation != "region") %>% 
-    ggplot(aes(reorder(aggregation, log(Se_mean)), log(Se_mean) , fill = urbanity
+    ggplot(aes(reorder(aggregation, log(Se_mean)), log(Se_mean)
+               #, fill = urbanity
                )) + 
     geom_boxplot() +
     theme_classic() +
     scale_fill_manual("", values = col_break, labels = lab_reside)+
-    labs(y = "", x = "", title = "Distribution of maize Se concentration by aggregation (log-transformed)")
+    labs(y = "", x = "", 
+    #title = "Distribution of maize Se concentration by aggregation (log-transformed)"
+    ) +
+  theme(
+    strip.text = element_text(size = 20),
+    axis.text.y = element_text(size = 22), 
+    axis.text.x = element_text(size = 20))
     
 ## Plot (2): Ridges Maize aggregation  -----
   
@@ -352,6 +453,123 @@ plot[[i]] <- data.df %>%
 
 ## Plot (2): Maps for Maize aggregation  -----
 ## See - figures.R
+
+# Reading the EA shapefile w/ updated districts (See 00_cleaning-boundaries.R)
+# Cluster's EA info
+cluster.df <- readRDS(here::here("data", "inter-output", 
+                                 "dhs_se_gps_admin.RDS"))  %>% 
+  distinct(survey_cluster1, EACODE)
+
+ea_admin <- st_read(here::here( "data", "inter-output", 
+                                "boundaries", "mwi_admbnda_adm4_nso.shp"))  %>% 
+  left_join(., cluster.df)
+
+ea_admin$region <- as.factor(ea_admin$region)
+
+
+file <- grep("plasma.*v2.0.0", list.files(here::here("data", "inter-output", "model")), 
+             value = TRUE)
+
+# EA group data
+plasma_se <- readRDS(here::here("data", "inter-output", "model",
+                                file[9]))
+# Adding the spatial data
+data.df <- plasma_se %>% select(survey_cluster1, Se_median) %>% 
+  left_join(., ea_admin) %>% st_as_sf()
+
+
+tm_shape(ea_admin) +
+  tm_polygons() +
+  tm_shape(data.df) +
+  tm_polygons(fill = "Se_median") +
+tm_shape(ea_admin) +
+  tm_borders(fill = "survey_cluster1",  fill.legend = tm_legend_hide())
+
+#From 00_celaning-dhs.R
+class(ea_admin$survey_cluster1) 
+
+ea_admin$survey_cluster1 <- as.character(ea_admin$survey_cluster1)
+GPS$survey_cluster1 <- as.character(GPS$survey_cluster1)
+
+GPS <- GPS  %>% st_as_sf()
+
+tm_shape(ea_admin) +
+  tm_polygons(col_alpha = 0.2, col = "white") +
+#  tm_shape(data.df %>% filter(ADM2_EN == "Salima")) +
+ # tm_polygons(fill = "Se_median") +
+  tm_shape(ea_admin %>% filter(!is.na(survey_cluster1)))+
+  tm_borders(fill = "ADM1_EN")
+
+# Figure 2 - MAP detail ---- 
+
+tm_shape(ea_admin %>% filter(grepl("Lilongwe", ADM2_EN))) +
+  tm_polygons(col_alpha = 0.2, col = "white") +
+  #  tm_shape(data.df %>% filter(ADM2_EN == "Salima")) +
+  # tm_polygons(fill = "Se_median") +
+  tm_shape(ea_admin %>% filter(grepl("Lilongwe", ADM2_EN), 
+                               !is.na(survey_cluster1)))+
+  tm_borders(fill = "ADM1_EN") +
+  tm_shape(GPS %>% filter(grepl("Lilongwe", ADM2_EN))) +
+  tm_borders(col = "URBAN_RURA", lwd =3) 
+
+
+# Figure 2 -test ----
+# https://upgo.lab.mcgill.ca/2019/12/13/making-beautiful-maps/
+
+main <- ea_admin %>%
+  mutate(visualise = ifelse(is.na(survey_cluster1), NA, ADM1_EN)) %>% 
+  ggplot() +
+  geom_sf(
+    aes(fill = visualise), 
+    lwd = 0,
+    colour = "white") +
+  scale_fill_manual(
+    values = c("#9DBF9E", "#FCB97D", "#A84268"), 
+    na.value = "grey80") +
+  # Set a completely blank theme, to get rid of all background and axis elements
+  theme_void() +
+  theme(
+    # legend.justification defines the edge of the legend that the legend.position coordinates refer to
+    legend.justification = c(1, 0),
+    # Set the legend flush with the left side of the plot, and just slightly below the top of the plot
+    legend.position = c(0.90, 0.75)
+  )
+
+lilongwe <-  ea_admin %>% filter(grepl("Lilongwe", ADM2_EN))
+
+## Zoom over lilongwe ----
+main +
+  coord_sf(
+    xlim = sf::st_bbox(lilongwe)[c(1,3)],
+    ylim = sf::st_bbox(lilongwe)[c(2,4)],
+    expand = FALSE
+  ) +
+  theme(legend.position = "none")
+
+
+main <- ea_admin %>%
+  mutate(visualise = ifelse(is.na(survey_cluster1), NA, ADM1_EN)) %>% 
+  ggplot() +
+  geom_sf(
+    aes(fill = visualise), 
+    lwd = 0,
+    colour = "white") +
+  scale_fill_manual(
+    values = c("#9DBF9E", "#FCB97D", "#A84268"), 
+    na.value = "grey80") +
+  # Set a completely blank theme, to get rid of all background and axis elements
+  theme_void() +
+  theme(
+    # legend.justification defines the edge of the legend that the legend.position coordinates refer to
+    legend.justification = c(1, 0),
+    # Set the legend flush with the left side of the plot, and just slightly below the top of the plot
+    legend.position = c(0.90, 0.75)
+  ) 
+
+unique(ea_admin$ADM2_EN)
+
+tm_shape(ea_admin)
+
 
 ## Plot (3): Histograms for Maize aggregation  -----
 ## See - figures.R

@@ -3,7 +3,15 @@
 
 ## GeoNutrition (Kumssa et al., 2022)
 
-```{r}
+```{r, warning=FALSE}
+# Loading packages
+library(plyr) # weighted data analysis
+library(dplyr) # data wrangling 
+library(sf) # spatial data manipulation
+library(ggplot2) # data visualisation
+library(spdep) # grid and neighbours
+library(tmap) # (spatial) visualisation
+source(here::here("functions","CEPHaStat_3.R"))
 
 # Loading maize data (Kumssa - GeoNut, 00_cleaning-maize, line 16)
 # Grain & soil chem data
@@ -43,7 +51,7 @@ Additionally, the MAT values were added to this dataset for each sample location
 
 ### Spatial preliminary analysis
 
-The missing (i.e., BLOD values) are spatially clustered, which probably will influence (unbalancing) our results (Kumssa et al, 2022). We hypothesised that this is due to high concentration of very low maize grain Se concenrtation values likely driven by soil and environmental factors in those affected regions (@ref). 
+The missing (i.e., BLOD values) are spatially clustered, which probably will influence (unbalancing) our results (Kumssa et al, 2022). We hypothesised that this is due to high concentration of very low maize grain Se concentration values likely driven by soil and environmental factors in those affected regions (@ref). 
 
 Although, the samples collected provided a good coverage of Malawi, there were 2200 EAs without a maize Se conc. samples. In addition, low number of maize samples were found in the southern region of Malawi (Shire Valley), leading to a more scarce and, probably higher uncertainty in that region.  Moreorver, consumption of maize in that region is comparable with the other regions of Malawi, and probably the main reason for the lower maize values is that the harvest season is slightly earlier than in other regions of Malawi (probably due to difference in the climatic patterns), and hence maize was not found when the field team were there to collect the data. 
 
@@ -220,11 +228,11 @@ Additionally, due to the sensitive nature of the EAs (i.e., used in census data)
 ```{r label = "fig-6", fig.cap = paste("Location of the EAs (", unique(test$EACODE[is.na(test$ADM2_PCODE) & test$DISTRICT == "Mwanza"]), ") in Mwanza/Neno district.") }
 
 tm_shape(test %>% filter(DISTRICT %in% "Mwanza")) +
-  tm_polygons(border.col = "black") +
+  tm_polygons(col = "black") +
   tm_shape(dist_bnd %>% filter(ADM2_EN %in% "Mwanza")) +
-  tm_polygons("ADM2_EN", border.alpha = 0.01) +
+  tm_polygons("ADM2_EN", col_alpha = 0.01) +
   tm_shape(test$geometry[test$EACODE %in% test$EACODE[is.na(test$ADM2_PCODE) & test$DISTRICT == "Mwanza"]]) +
-  tm_polygons( col = "red") 
+  tm_polygons( fill = "red") 
 
 
 ```

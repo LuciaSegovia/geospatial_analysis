@@ -18,6 +18,7 @@ library(plyr) # weighted data analysis
 library(dplyr) # data wrangling 
 library(ggplot2) # visualisation
 library(survey) # survey design
+library(srvyr) # survey design 2
 #options(survey.lonely.psu="adjust") # For Error of one PSU at stage 1
 library(sf) # spatial data manipulation
 #library(tmap)  #spatial data manipulation and visualisation
@@ -814,6 +815,12 @@ GPS$buffer[i] <- st_buffer(GPS$geometry[i], dist = offset.dist)
 }
 
 # Transforming the list into spatial class
+GPS <- GPS %>% st_drop_geometry() 
+GPS$survey_cluster1 <- as.character(GPS$survey_cluster1)
+
+GPS <- GPS %>% left_join(., ea_admin %>% 
+                           select(survey_cluster1, ADM2_EN))
+
 GPS$buffer <- st_as_sfc(GPS$buffer)
 
 # Checking that the output
@@ -900,6 +907,36 @@ table(EligibleDHS$Malaria_test_result)
 DHSdesign<-svydesign(id=~survey_cluster1,  weights=~survey_weight,
                      strata=~urbanity+region, #This strata
                      data=subset(EligibleDHS, !is.na(selenium)))
+
+DHSdesign2 <- EligibleDHS %>%
+  as_survey_design(
+    weights = survey_weight,
+    strata = c(urbanity, region),
+    ids = survey_cluster1,
+    nest = TRUE
+  )
+
+# Checking the distribution of all variables reported in Table 2. 
+# Plasma Se
+svyhist(~selenium,   DHSdesign) # Median
+svyhist(~crp,   DHSdesign) # Median
+svyhist(~agp,   DHSdesign) # Median
+svyhist(~AGE_IN_YEARS,   DHSdesign) # Median
+
+# Median 
+variables <- c("selenium", "crp", "agp", "AGE_IN_YEARS")
+
+## Table 2 -----
+DHSdesign2 %>% 
+  summarise(Se = survey_quantile(selenium,
+             quantiles = c(0.25, .5, 0.75)),
+            crp = survey_quantile(crp,
+                       quantiles = c(0.25, .5, 0.75)), 
+             agp = survey_quantile(agp,
+                      quantiles = c(0.25, .5, 0.75)),                                 
+            Age = survey_quantile(AGE_IN_YEARS,
+                                   quantiles = c(0.25, .5, 0.75))) %>% 
+  select(-ends_with("se"))
 
 # Complex sample design parameters
 # PSU = cluster

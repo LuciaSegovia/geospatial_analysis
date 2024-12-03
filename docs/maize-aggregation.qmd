@@ -27,7 +27,7 @@ library(tmap)  #spatial data manipulation and visualisation
 
 # Reading the EA shapefile w/ updated districts (See 00_cleaning-boundaries.R)
 ea_admin <- st_read(here::here( "data", "inter-output", 
-                                "boundaries", "mwi_admbnda_adm4_nso.shp"), quite = TRUE)
+                                "boundaries", "mwi_admbnda_adm4_nso.shp"))
 # Changing variable region class to factor
 ea_admin$region <- as.factor(ea_admin$region)
                     
@@ -35,7 +35,7 @@ ea_admin$region <- as.factor(ea_admin$region)
 dist_bnd  <- st_read(here::here( "data",
                                 "mwi-boundaries",
                                 "mwi_adm_nso_hotosm_20230329_shp", 
-                                "mwi_admbnda_adm2_nso_hotosm_20230329.shp"), quite = TRUE)
+                                "mwi_admbnda_adm2_nso_hotosm_20230329.shp"))
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 
@@ -86,7 +86,7 @@ geopredmaize.df <-  st_as_sf( predmaize.df , coords =c("Longitude", "Latitude"),
 
 ::: {.callout-note}
 
-Because the dataset of the predicted maize is very large, and we only need the maize aggregation for the areas (e.g., clusters) were data on plasma Se were collected, we are using a shapefile with the cluster-level spatial data only for those EAs/clusters with plasma Se concentration collected. 
+Because the dataset of the predicted maize is very large, and we only need the maize aggregation for the areas (e.g., EA group) were data on plasma Se were collected, we are using a shapefile with the cluster-level spatial data only for those EAs/clusters with plasma Se concentration collected. 
 
 :::
 
@@ -176,7 +176,7 @@ data.df  <- data.df %>% left_join(., buffer) %>% st_as_sf()
 tm_shape(ea_admin) +
   tm_polygons() +
   tm_shape(data.df)+
-  tm_polygons(col = "Se_mean") 
+  tm_polygons(fill = "Se_mean") 
 
 
 ```

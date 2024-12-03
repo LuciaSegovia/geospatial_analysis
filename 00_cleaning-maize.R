@@ -10,7 +10,7 @@ library(sf) # for reading in and writting shapefiles
 library(raster) # raster manipulation
 library(tmap)  #spatial data manipulation and visualisation
 library(sfheaders) # 'deconstructing’ and ‘reconstructing’ sf objects
-source("CEPHaStat_3.R")
+source("functions/CEPHaStat_3.R")
 
 
 # Loading data (Kumssa - GeoNut) ----

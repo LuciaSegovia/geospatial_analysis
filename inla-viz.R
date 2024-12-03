@@ -72,6 +72,7 @@ models[[1]]$dic$dic
 plot(models[[11]])
 
 INLADICFig(models[c(1:10)]) + theme_bw() + 
+ # scale_x_discrete(labels= modelNames[1:10]) +
   theme(legend.position = "none", 
   strip.text = element_text(size = 12),
   axis.text.y = element_text(size = 12), 
@@ -79,7 +80,7 @@ INLADICFig(models[c(1:10)]) + theme_bw() +
 
 Efxplot(models[c(1:10)]) + theme_bw() +
   labs(y = "") +
-  scale_colour_discrete(labels = modelNames)+
+ # scale_colour_discrete(labels = modelNames[1:10])+
   theme(
         strip.text = element_text(size = 12),
         axis.text.y = element_text(size = 12), 
@@ -96,7 +97,7 @@ INLARange(ModelList = models, MaxRange= 1, MeshList = list(mesh))
 
 ## Getting fixed effect -----
 
-fix.effect <-  round(models[[6]]$summary.fixed, 4)
+fix.effect <-  round(models[[2]]$summary.fixed, 4)
 write.csv(round(models[[9]]$summary.fixed, 4), here::here("output", "fixed.effect-cluster_v1.0.0.csv"))
 
 fix.effect <-  NA
@@ -107,7 +108,7 @@ for(i in 1:length(models)){
   
 }
 
-#write.csv(fix.effect, here::here("output", "fixed.effect_v2.0.0.csv"))
+ write.csv(fix.effect, here::here("output", "fixed.effect_v2.0.1.csv"))
 
 
 
@@ -139,9 +140,13 @@ dat <- cbind(modelNames,M,L, U)
 ggplot(dat[c(1:10),], aes( modelNames, as.numeric(M))) +
   geom_point() +
   geom_linerange(ymin = L[1:10], ymax = U[1:10]) +
-  scale_y_continuous(limits = c(-0.40, 0.6)) +
+  scale_y_continuous(limits = c(-0.20, 0.6)) +
   theme_bw() +
-  labs(y = "", x = "")
+  labs(y = "", x = "") +
+  theme(
+    strip.text = element_text(size = 12),
+    axis.text.y = element_text(size = 12), 
+    axis.text.x = element_text(size = 10))
 
 ## Visualising model parameters for all models
 # (Krainski et al., p. 37)

@@ -55,7 +55,8 @@ names(plasma.df)
 # Number of WRA with plasma values
 length(unique(plasma.df$unique_id[!is.na(plasma.df$selenium)]))
 
-cluster.df <- plasma.df %>% 
+cluster.df <- plasma.df %>% filter(!is.na(selenium) & 
+                                     !is.na(wealth_quintile) & !is.na(agp)) %>% 
   distinct(survey_cluster1, EACODE, ADM2_PCODE, ADM2_EN, urbanity)
 
 EAselected <- unique(cluster.df$EACODE)
@@ -63,7 +64,7 @@ EAselected <- unique(cluster.df$EACODE)
 # Cluster area 
 
 geo.clust <- cluster.df %>% left_join(., ea_admin) %>% 
-  distinct(survey_cluster1, geometry) %>% 
+  distinct(survey_cluster1,urbanity,  geometry) %>% 
   st_as_sf() 
 
 ## Calculating the area of the EA groups ------------
@@ -73,10 +74,14 @@ geo.clust <-  geo.clust %>%
   dplyr::summarise()
 
 area.clust <-  cluster.df %>% left_join(., ea_admin) %>%
-  dplyr::select(survey_cluster1,  AREA_KM, 
+  dplyr::select(survey_cluster1,  AREA_KM, urbanity,
          geometry) %>%
-  group_by(survey_cluster1) %>%
+  group_by(survey_cluster1, urbanity) %>%
   dplyr::summarise(area = sum(AREA_KM))
+
+# Saving values to be merged with the other dataset.
+# EA cluster size
+# saveRDS(area.clust, here::here("data", "inter-ouptut", "EA-group-area.RDS"))
 
 summary(area.clust)
 
