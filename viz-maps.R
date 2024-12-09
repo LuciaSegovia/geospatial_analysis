@@ -44,7 +44,7 @@ table(sf::st_is_valid(parks))
 # EA code, EA area, TA code, district & geometry)
 ea_admin <- ea_bnd %>% filter(!grepl("lake", DISTRICT,
                                      ignore.case = TRUE)) %>% 
-  select(c(4, 10, 11, 17, 18))
+  dplyr::select(c(4, 10, 11, 17, 18))
 
 
 
@@ -677,7 +677,7 @@ i = 3
 maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
                                file[i])) %>%   # Aggregated Se conc
   left_join(., master) %>%              # Admin level info
-  left_join(., ea_bnd %>% select(EACODE, geometry))  # Boundaries for the admin
+  left_join(., ea_bnd %>% dplyr::select(EACODE, geometry)) %>%  # Boundaries for the admin
 st_sf(., crs = "EPSG:4326")  # Boundaries for the admin
 
 maize.df$log_Se <- log(maize.df$Se_mean)
@@ -686,9 +686,18 @@ maize.df$log_Se <- log(maize.df$Se_mean)
 # using "-palette.name". (e.g., palette = "-YlOBr")
 base_map +
   tm_shape(maize.df) +
-  tm_polygons(col = "Se_mean", palette = "YlOrBr") +
-  #  tm_polygons(col = "log_Se", palette = "-YlOrBr") +
+ # tm_polygons(fill = "Se_mean", fill.scale = tm_scale("YlOrBr")) +
+    tm_polygons(fill = "log_Se", fill.scale = tm_scale("-YlOrBr")) +
   tm_layout(legend.outside = TRUE, legend.text.size = 1.5)
+
+# For the log-transformed to keep the scale consistent we need to reverse it
+# using "-palette.name". (e.g., palette = "-YlOBr")
+mean[i] <- base_map +
+  tm_shape(maize.df) +
+  tm_polygons(fill = "Se_mean", 
+              fill.scale = tm_scale_continuous(values="brewer.yl_or_br"), 
+              col = "grey", col_alpha = 0.2) #+
+ # tm_layout(legend.outside = TRUE, legend.text.size = 1.5)
 
 
 ## District maize aggregation MAP -----

@@ -161,11 +161,24 @@ geodata.df  <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
  # Checking sample coverage location - Spatial pattern?
- plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "blue")
+ plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "blue",  
+      axes = TRUE)
  plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & is.na(geodata.df$Crop)], col = "green", add = TRUE)
  plot(geodata.df$geometry[is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "red", add = TRUE)
- plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop != "Maize"], col = "yellow", add = TRUE)
+ plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop != "Maize"], col = "yellow", add = TRUE )
 
+ locsv<-c(-16.2,-16.5,-16.8, -17.1)
+ locsv<-c(-9.5,-10,-10.5, -11)
+ cols <- c("blue","green","red","yellow")
+ points(35,locsv[1],pch=16, col=cols[1])
+ points(35,locsv[2],pch=16, col=cols[2])
+ points(35,locsv[3],pch=16, col=cols[3])
+ points(35,locsv[4],pch=16, col=cols[4])
+ 
+ text(35.2,locsv[1],"Maize grain (GeoNutrition)",pos=4)
+ text(35.2,locsv[2],"Maize grain (Chilimba)",pos=4)
+ text(35.2,locsv[3],"Maize grain (<LOD)",pos=4)
+ text(35.2,locsv[4],"Other grains",pos=4)
 
 # Adding covariate variable BIO1 (Mean Annual Temp - CHELSA dataset) ------
 

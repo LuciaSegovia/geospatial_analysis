@@ -209,11 +209,12 @@ sqrt((max(st_area(dist_bnd))/10^6)/pi) # around 60km
 
 # Getting the folder path to save the output
 # Need to shorten the path due to issues with the st_write funtion
-#folder <- here::here("data", "inter-output", "boundaries", "buffer")
+folder <- here::here("data", "inter-output", "boundaries", "buffer")
 folder <- here::here( "buffer")
 
-# Funtion to generate the buffers
+# Function to generate the buffers
 buffer_generator(geogps, 10, 60, 10, folder)
+buffer_generator(geogps, 10, 30, 5, folder)
 
 # Choice of buffers
 # buffer <- c(10, 25, 30) # we also tested 12km

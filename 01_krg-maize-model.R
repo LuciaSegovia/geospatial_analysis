@@ -118,7 +118,7 @@ data.df$Se_std[data.df$Crop == "Maize_pred"]  <-  NA # Removing other crop value
 
 # Saving the dataset -----
 #saveRDS(grain.df, here::here("data", "inter-output", "mwi-predicted-maizeSe.RDS"))
-saveRDS(data.df here::here("data", "inter-output",
+saveRDS(data.df, here::here("data", "inter-output",
  "mwi-predicted-maizeSe_LOD.RDS"))
 
 # Loading predicted maize values 

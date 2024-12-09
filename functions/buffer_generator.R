@@ -6,7 +6,7 @@
 buffer_generator <- function(geo.df, min_b, max_b , increase, folder = NA){
 
 # Data checks (if it's not spatial object)
- if(!sum(class(geogps) == "sf")>=1){
+ if(!sum(class(geo.df) == "sf")>=1){
    print("The dataset is not an spatial object")
  }
   

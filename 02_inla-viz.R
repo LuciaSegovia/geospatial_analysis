@@ -1,5 +1,6 @@
 
 library(ggplot2)
+library(tmap)
 # From https://rdrr.io/github/gfalbery/ggregplot/
 library(ggregplot)
 #install.packages("MCMCglmm")
@@ -8,7 +9,7 @@ library(magrittr)
 library(raster)  #raster data
 library(gridExtra)
 library(RColorBrewer)
-#library(fields)
+library(fields) # colour function for levelplot
 library(lattice) # Mapping residual + Malawi map
 options(scipen=999)
 #ggplot(plasma_se, aes(Longitude, Latitude )) + 
@@ -264,8 +265,11 @@ mean <- list()
 # Storing sd maps
 sd <- list()
 
+# Base map
+#base <- ggplot() + geom_sf(data = dist_bnd, colour = "grey", fill = NA)
+
 # Looping over all model resutls
-for(i in 1:length(models)){
+for(i in 1:length(models[c(1:10)])){
   
 # Extracting the spatial field values (mean and sd of residual spatial field)
   
@@ -274,36 +278,83 @@ mean_s <- inla.mesh.project(proj,
 sd_s <- inla.mesh.project(proj, 
                           models[[i]]$summary.random$spatial.field$sd)
 
+
 # Storing the data together as dataframe
 df <- expand.grid(x = proj$x, y = proj$y)
 df$mean_s <- as.vector(mean_s)
 df$sd_s <- as.vector(sd_s)
+names(df) <- c("x", "y", "Mean", "SD") # Change names
 
 # Mapping the spatial results
-mean[[i]] <-  ggplot(df, aes(x = x, y = y, fill = mean_s)) +
+mean[[i]] <-  ggplot(df, aes(x = x, y = y, fill = Mean)) +
   geom_raster() +
   scale_fill_viridis_b(na.value = "transparent") +
   coord_fixed(ratio = 1) + 
-  labs(title = gsub("_v2.0.0.RDS", "", file[i])) +
+#  geom_sf(data = dist_bnd, colour = "grey", fill = NA) +
+ # labs(title = gsub("_v2.0.0.RDS", "", file[i])) +
+  labs(title = modelNames[i]) +
    theme_bw()
 
 
-sd[[i]] <-  ggplot(df, aes(x = x, y = y, fill = sd_s)) +
+sd[[i]] <-  ggplot(df, aes(x = x, y = y, fill = SD)) +
   geom_raster() +
   scale_fill_viridis_b(na.value = "transparent") +
   coord_fixed(ratio = 1) + theme_bw()
 
 }
 
+
 # Saving into one pdf
 
 pdf("visuals/spatial.pdf", onefile = TRUE)
 
 for(i in 1:length(mean)){
+  
   grid.arrange(mean[[i]], sd[[i]])
 }
 
 dev.off()
+
+
+
+## Map 2: Spatial residual simple ----
+
+pdf("visuals/spatial-residual.pdf", onefile = TRUE)
+par(mfrow = c(1, 2), mar = c(5, 3, 4, 2))
+
+for(i in 1:length(models[c(1:10)])){
+  
+  # Extracting the spatial field values (mean and sd of residual spatial field)
+  
+  mean_s <- inla.mesh.project(proj, 
+                              models[[i]]$summary.random$spatial.field$mean)
+  sd_s <- inla.mesh.project(proj, 
+                            models[[i]]$summary.random$spatial.field$sd)
+  
+  
+  # Storing the data together as dataframe
+  df <- expand.grid(x = proj$x, y = proj$y)
+  df$mean_s <- as.vector(mean_s)
+  df$sd_s <- as.vector(sd_s)
+  
+  # Converting into raster
+  dfr <- rasterFromXYZ(df)  #Convert first two
+  names(dfr) <- c("Mean", "SD") # Change names
+  
+  plot(dfr, "Mean", xlim =c(30, 38))
+  lines(dist_bnd, col="darkgrey", lwd = 1.5)
+ # points(coord, col = "red", pch = 1)
+  plot(dfr, "SD", xlim =c(30, 38))
+  lines(dist_bnd, col="darkgrey", lwd = 1.5)
+ #  points(coord, col = "red", pch = 1)
+  
+}  
+
+dev.off()
+
+
+
+
 
 ## Adding Malawi map into the residual map ----
 
@@ -321,7 +372,7 @@ sd <- list()
 pdf("visuals/spatial-field_and_map.pdf", onefile = TRUE)
 
 # Looping over all model resutls
-for(i in 1:length(models)){
+for(i in 1:length(models[c(1:10)])){
   
   # Extracting the spatial field values (mean and sd of residual spatial field)
   
@@ -337,14 +388,18 @@ for(i in 1:length(models)){
   
 ### for grey colour scale: col.regions=gray.colors(16,start=1,end=0)
   #https://github.com/GodinA/cjfas-bycatch-INLA-SPDE/blob/master/Rcodes/Suppl_Material.R
-  mean[[i]] <- levelplot(mean_s ~ x*y, data=df,xlab='', ylab='',
-          col.regions=tim.colors(100), scale=list(draw=FALSE),
+  mean[[i]] <- levelplot(mean_s ~ x*y, data=df,xlab='', ylab='',# xlim = c(30, 38),
+          #col.regions=tim.colors(100),
+           main=modelNames[i], sub = "Mean", 
+          col.regions=gray.colors(16,start=1,end=0),  scale=list(draw=FALSE),
           par.strip.text=list(cex=2),strip = strip.custom(bg="white")) + 
   latticeExtra::layer(sp::sp.polygons(mwi, col = 1, alpha =0.4, fill="transparent"))
 
 
   sd[[i]] <- levelplot(sd_s ~ x*y, data=df,xlab='', ylab='',
-                       col.regions=tim.colors(100), scale=list(draw=FALSE),
+                      # col.regions=tim.colors(100),
+                       sub="SD", 
+                       col.regions=gray.colors(16,start=1,end=0), scale=list(draw=FALSE),
                        par.strip.text=list(cex=2),strip = strip.custom(bg="white")) + 
     latticeExtra::layer(sp::sp.polygons(mwi, col = 1, alpha =0.4, fill="transparent"))
   
@@ -353,6 +408,14 @@ grid.arrange(mean[[i]], sd[[i]])
 }
 
 dev.off()
+
+
+#(31.34366,37.30330) x (-18.741212, -7.858583)
+
+new_mwi <- mwi
+st_bbox(new_mwi) 
+
+# st_bbox(31.34366,-18.741212, 37.30330, -7.858583)
 
 # Variance --------
 inla.zmarginal(spde.est$marginals.variance.nominal[[1]])
