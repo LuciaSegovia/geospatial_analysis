@@ -17,6 +17,7 @@ library(tmap) # (spatial) visualisation
 
 # Loading stat functions
 source(here::here("functions", "CEPHaStat_3.R"))
+source(here::here("functions", "viz_micro_region.R"))
 
 # Variables for visualisation
 
@@ -313,7 +314,7 @@ summaplot(log(Malawi_WRA$selenium))
 
 Moreover, when we see the distribution by region and residency, we can see that there are differences by regions (see @fig-2_4).
 
-```{r label = "fig-2_4", fig.cap = "Distribution of the plasma Se concentration (ng/mL) of women in Malawi by region and the colour represents the urbanicity."}
+```{r label = "fig-2_4", fig.cap = "Distribution of the plasma Se concentration (ng/mL) of women in Malawi by region and the colour represents the urbanicity (no survey weights applied).", warning=FALSE}
 
 # Ridges: Plasma Se per region and residency
 # Selecting the variable & the label
@@ -322,7 +323,7 @@ x_label <- plasma_lab
   
 Malawi_WRA %>% filter(!is.na(!!sym(var_x))) %>% 
   mutate(region = forcats::fct_relevel(region,"3", "2", "1")) %>% 
-  ggplot(aes(x = !!sym(var_x), weight=wt,  region, fill=urbanity, colour = urbanity)) +
+  ggplot(aes(x = !!sym(var_x),  region, fill=urbanity, colour = urbanity)) +
   ggridges::geom_density_ridges(alpha = 0.5)  +
     scale_fill_manual("", values = col_break, labels = lab_reside)+
   scale_colour_discrete( guide = "none") +
@@ -367,44 +368,18 @@ data.df <- Malawi_WRA %>% dplyr::filter(!is.na(selenium))
 data.df$survey_cluster1 <- as.character(data.df$survey_cluster1)
 data.df$urbanity <- as.factor(data.df$urbanity)
 
- var_x <- "survey_cluster1"
- var_y <- "selenium" 
- var_col <- "urbanity"
- 
- n_breaks <- unique(data.df[, var_col])
- 
  # Custom legend colour & labels
  col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
  col_labels <- c("1" = "Urban", "2" = "Rural")
+ unit_micro <- expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))
  
- # Custom X-axis labels 
- col_labels <- c("Urban", "Rural")
- 
- 
- ggplot(data = data.df 
-        ,
-        mapping = aes(x = !!sym(var_x), y =!!sym(var_y),
-                      colour = !!sym(var_col))) +
-   geom_boxplot() +
-   theme_classic() +
-   scale_colour_manual("", 
-     values =  col_break,
-                    # breaks = col_break,
-                     labels = col_labels) +
-   facet_wrap(~region, labeller = as_labeller(c(`1` = "Northern", 
-                                                `2` = "Central", 
-                                                `3` = "Southern")),
-              scales = "free_x") +
-  # scale_x_discrete(label = labels) +
-   labs(
-     x= "DHS-MNS Clusters",
-        y = expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))) + 
-   scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
-   theme(strip.text = element_text(size = 12),
-         axis.text.y = element_text(size = 12), 
-         axis.text.x = element_text(size = 10, angle =30), 
-         legend.position = "top")
+micro_region(data.df, micro = selenium, var_sorting = survey_cluster1,
+             var_colouring = urbanity, unit_micro = unit_micro, label_sorting = "Survey Cluster", 
+             col_break =col_break, col_labels = col_labels)
 
+# Custom X-axis labels 
+col_labels <- c("Urban", "Rural")
+ 
 
 ```
 
@@ -764,10 +739,60 @@ Plasma Se values were slightly higher in the highest education level, with lower
 
 Plasma Se values were similar when aggregated by region, whereas we can start seeing some differences when we are plotting the results by district. Also notice, that the number of observations per district is 1) much smaller and 2) much diverse (from `r min(table(EligibleDHS$sdist))` to `r max(table(EligibleDHS$sdist))`). 
 
+There are missing values `r sum(is.na(EligibleDHS$sdist))` for the district variable which is an important variable (See [Chapter 4]()), this was solved by using the district, of the same cluster (EA) as they should be in the same district.
+
+
+```{r}
+
+# Checking if we have same cluster with sdist for imputing.
+test <- unique(EligibleDHS$survey_cluster1[is.na(EligibleDHS$sdist)])
+
+EligibleDHS %>% filter(survey_cluster1 %in% test) %>% 
+  distinct(survey_cluster1, sdist)
+
+# Fixing the missing values
+for(i in 1:length(test)){
+  
+x <- unique(na.omit(EligibleDHS$sdist[EligibleDHS$survey_cluster1 %in% test[i]]))
+EligibleDHS$sdist[EligibleDHS$survey_cluster1 %in% test[i]] <- x
+
+x <- unique(na.omit(EligibleDHS$dist_name[EligibleDHS$survey_cluster1 %in% test[i]]))
+EligibleDHS$dist_name[EligibleDHS$survey_cluster1 %in% test[i]] <- x
+}
+
+sum(is.na(EligibleDHS$sdist))
+
+```
+
+
+
 Because we are exploring how much Plasma Se variability is explained by Maize Se concentration, we do not need to apply (or worry about) the weights. Only, we would need to apply them if we want to express some findings at population level, e.g., perc. of population at risk. We are not likely to do that, as 1) it is not the objective of the study/ model, and 2) we are working at certain scales where data will not be representative (e.g., district). 
 
 **Note**: What it would be important to check, it is whether the data is balance (e.g., highly skewed to one side and hence driving the model outcomes). 
-We checked wealth by region and it seemed that there is a slight unbalance for the lowest Q in the middle region and towards the highest Q in the Northern region. See above (@sec-wq). Maybe we need to check for confounding effect.  
+We checked wealth by region and it seemed that there is a slight unbalance for the lowest Q in the middle region and towards the highest Q in the Northern region. See above (@sec-wq). Maybe we need to check for confounding effect. 
+
+
+```{r}
+
+ # Custom legend colour & labels
+ col_break <- c("1" = "#00BFC4", "2" = "#F8766D")
+ col_labels <- c("1" = "Urban", "2" = "Rural")
+ unit_micro <- expression(paste("Plasma Se conc. (ng  ",  mL^{-1}, ")"))
+ 
+micro_region(EligibleDHS, micro = selenium, var_sorting = sdist,
+             var_colouring = urbanity, unit_micro = unit_micro, label_sorting = "Districts", 
+             col_break =col_break, col_labels = col_labels)
+
+```
+
+
+```{r}
+
+EligibleDHS %>% group_by(dist_name, region) %>% 
+  summarise(Median_se = median(selenium, na.rm = TRUE)) %>% 
+  arrange(desc(Median_se)) %>% knitr::kable()
+
+```
 
 
 ### Smoking
@@ -809,7 +834,7 @@ EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds")
 
 # Loading the dataset
  # GPS location DHS
-GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp"), quite = TRUE) 
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) 
 
 # Renaming variables
 GPS <- dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM', 

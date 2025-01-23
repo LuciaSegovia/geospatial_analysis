@@ -39,6 +39,7 @@ dist_bnd  <- st_read(here::here( "data",
 dist_bnd <- st_make_valid(dist_bnd) # Check this
 
 
+
 # Checks
 # https://julianfaraway.github.io/brinla/examples/chicago.html
 # Checking CPO observed response based on model fit (small no. = unexpected?)
@@ -220,7 +221,12 @@ post.var <- inla.tmarginal(function(x) exp(-x),
 # Compute summary statistics
 inla.zmarginal(post.var)
 
-
+i = 11
+# Compute posterior marginal of variance
+post.var <- inla.tmarginal(function(x) exp(-x), 
+                           models[[i]]$internal.marginals.hyperpar[[1]])
+# Compute summary statistics
+inla.zmarginal(post.var)
 
 # Spatial Results ----
 
@@ -536,5 +542,18 @@ cluster %>%
   geom_sf(aes(color = cluster.mean), size =2) +
   theme_bw()
 
+
+
+## Linear predictor -----
+
+i = 9
+
+idx.obs <- inla.stack.index(stack, tag = "est")$data ## index in the stack
+order.eta <- order(models[[i]]$summary.fitted.values$mean[idx.obs])
+plot(log(plasma_se$Plasma_Se[order.eta]), pch=19, ylab='y')
+segments(1:n, models[[i]]$summary.fitted.val$'0.025quant'[idx.obs][order.eta],
+         1:n, models[[i]]$summary.fitted.val$'0.975quant'[idx.obs][order.eta])
+
+models[[i]]$marginals.fitted.values[idx.obs]
 
 

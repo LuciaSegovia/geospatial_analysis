@@ -9,6 +9,10 @@ library(sf) # spatial data manipulation
 library(spdep) # grid and neighbours
 library(dplyr) # data wrangling
 
+# Parameters 
+# No of locations (nrow(plasma_se))
+n <- 745
+
 ## Loading the data
 
 file <- grep("plasma.*v2.0.0", list.files(here::here("data", "inter-output", "model")), 
@@ -129,7 +133,7 @@ covs <- plasma_se %>%  dplyr::select(covar) %>% as.list()
 
 N <- nrow(plasma_se)
 
-stack <- inla.stack(
+stack <- inla.stack(tag ="est", 
   data = list(y = plasma_se$Plasma_Se), # specify the response variable
   
   A = list(1, 1, 1, A), # Vector of Multiplication factors for random and fixed effects              

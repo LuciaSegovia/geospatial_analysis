@@ -2,14 +2,6 @@
 # Methods: Generating predicted maize grain Se concentration for Malawi
 
 
-**TO-DO:**
-Ask ML about the choice of:
-
-1) 100km and 10km bins and potential differences in the estimates 
-2) estimates of the parameters
-3) percentage of the sample needed for testing the cross-validation 
-4) The value for the cross-validation (0.445)
-
 Here, we describe all the steps performed to obtain the prediction of maize grain Se concentration in unsampled location of Malawi. The R script (`01_maize-model.R`) used to run the analysis can be found in the accompanying repository and are an adaptation of the script developed by Prof Murray Lark for the GeoNutrion project which are published [here](https://github.com/rmlark/GeoNutrition/blob/main/Geostatistics_and_mapping/Grain_exploratory_spatial_analysis_and_mapping.R).
 
 
@@ -824,5 +816,5 @@ write.csv(krop,fname,row.names=F)
 
 ```
 
-Finally, we will proceed to back-transform the data and saving the output. 
+Finally, we had to back-transform the data and saved the output in the data folder.
  

@@ -15,8 +15,8 @@ The scripts for processing the raw data for modelling are those staring with "00
 1) 00_cleaning-dhs.R
 2) 00_cleaning-maize.R
 3) 00_cleaning-boundaries.R
-4) 01_maize-model.R
-5) 00_cleaning-locations.R
+4) 00_cleaning-locations.R
+5) 01_maize-model.R
 6) 01_maize-aggregation.R
 7) 01_combining-data.R
 8) 02_inla-loop.R

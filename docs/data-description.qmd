@@ -6,7 +6,7 @@ In this section we describe the data sets and variables that were evaluated for 
 
 ## Plasma Se concentration and other biological data
 
-Geo-referenced biomarker and other information for women (15-50yo) was obtained from the Malawi DHS - MNS 2015-2016 (@NSOMalawiDHS2017). Access need to be requested to DHS data [here](https://dhsprogram.com/methodology/survey/survey-display-483.cfm).
+Geo-referenced biomarker and other information for women (15-45 yo) was obtained from the Malawi DHS - MNS 2015-2016 (@NSOMalawiDHS2017). Access need to be requested to DHS data [here](https://dhsprogram.com/methodology/survey/survey-display-483.cfm).
 
 
 #### Micronutrient survey data 

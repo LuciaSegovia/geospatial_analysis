@@ -3,8 +3,8 @@ project:
   output-dir: _book
 
 book:
-  title: "Reproducible documentation for the study on geospatial relationship between plasma Se concetration in WRA & maize grain Se concentration in Malawi"
-  subtitle: ""
+  title: "Reproducible documentation"
+  subtitle: "Spatial food composition models for use in dietary micronutrient assessment: a case study of maize grain and selenium status in Malawi"
   author: 
     - "Lucia Segovia De La Revilla"
     - "Claire Dooley"
@@ -21,6 +21,7 @@ book:
     - intro.qmd
     - data-description.qmd
     - data-dhs.qmd
+    - data-boundaries.qmd
     - data-maize.qmd
     - predicted-maize.qmd
     - data-processing.qmd

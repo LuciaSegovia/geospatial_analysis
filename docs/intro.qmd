@@ -19,4 +19,4 @@ The objectives of these documentation and the exploratory analysis are:
 
 2)  to evaluate the different variables that will be used in the analysis
 
-3) to document and calculate the mean/median maize Se concentration at different level of spatial aggregation (i.e., from 15km radius up to district averages).
+3) to document and calculate the mean/median maize Se concentration at different level of spatial aggregation (i.e., from 10km radius up to district averages).

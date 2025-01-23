@@ -73,8 +73,12 @@ ea_admin$region <- as.factor(ea_admin$region)
 
 # Loading the data
 # Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
-plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
-  filter(!is.na(selenium))
+plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% 
+  # cleaned geo-loc plasma Se data
+  filter(!is.na(selenium)) 
+
+plasma.df %>% left_join(., ea_admin %>% 
+                      dplyr::select(survey_cluster1, ADM2_EN))
 
 names(plasma.df)
 
@@ -250,6 +254,8 @@ test1$geometry[test1$srvy_c1=="497"]
 # Maize Se conc.  ----
 # Loading the data (from cleaned from 00_cleaning-maize.R)
 maize.df  <- readRDS(here::here("data", "inter-output", "mwi-grain-se_raw.RDS")) 
+names(maize.df)
+table(maize.df$survey)
 
 # Explore the dataset
 head(maize.df)
@@ -996,7 +1002,8 @@ Se_admin$EACODE  <- as.integer(Se_admin$EACODE)
 ggplot(Se_admin, aes(EACODE, selenium)) + geom_point() +
 facet_wrap(vars(DISTRICT))
 
-Se_admin  %>% dplyr::count(DISTRICT, sdist, urbanity, EACODE)  %>% arrange(desc(DISTRICT))  %>% View()
+Se_admin  %>% dplyr::count(DISTRICT, sdist, urbanity, EACODE)  %>%
+  arrange(desc(DISTRICT))  %>% View()
 
 boxplot(pH ~ EACODE, Se_admin)
 
@@ -1050,7 +1057,7 @@ test_centroid  <- st_point_on_surface(ea_bnd[, c(1,27)])
 
 names(test_centroid)
 
-#Checking that centroid have been created correclty
+#Checking that centroid have been created correctly
 tm_shape(nso_bound) +
 tm_polygons() +
 tm_shape(test_centroid) +
