@@ -834,7 +834,8 @@ EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds")
 
 # Loading the dataset
  # GPS location DHS
-GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) 
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp"), quiet = TRUE)
+
 
 # Renaming variables
 GPS <- dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM', 
@@ -878,7 +879,17 @@ plot(GPS$buffer[GPS$URBAN_RURA == "U"],col='red',add=TRUE) # colouring red those
 ```
 
 
-Final cleaned dataset was stored in: `data/inter-output/dhs-gps.rds`
+Final cleaned dataset () and the spatial information (`GPS`) are merged andwas stored in: `data/inter-output/dhs-gps.rds`
+
+```{r, eval=FALSE}
+# Then the GPS w/ the geometry and buffer and the DHS data 
+EligibleDHS <- left_join(EligibleDHS, GPS) 
+
+# Saving DHS + GPS dataset into R object 
+saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
+
+```
+
 
 Then, the next step will be to combine with the information on maize Se at different aggregation level. 
 
