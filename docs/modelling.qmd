@@ -19,32 +19,14 @@ Based on the previous analysis performed in the same dataset by Phiri et al (201
 Of those four, we only included inflammation, smoking was excluded due to the low number of women reporting smoking in our sample, and the low prevalence of smoking behaviour among women in Malawi (see variable exploration section for more information), BMI was excluded as most of the women were within normal weight range, and there was no strong correlation between BMI and Plasma Se, and also it has only be reported to be correlated to SEPP1 in literature, and studies done in high income countries, where Se intake and plasma level as well as weight and BMI were higher than in our population. Finally, malaria was excluded because it has low correlation with the plasma Se (no significant difference between the two groups) and similar prevalence was reported across regions, and we because its impact it may be well explained by inflammation. 
 
 
-
-
-# To be tested:
-
-1) Different buffer size (from 5km to 60km)
-2) Cluster as random effect
-3) Distance to inland water bodies 
-
-### Model considerations
-
-See model framework
-
-p(s_i) = \beta_0(cluster) + \beta_1X_1 + \psi(s_i)
-
-
-### Test 1: Irregular lattice model (areal data)
-
-At EA level, it seemed that the random effect model was performing better than the spatial model, and convolution model.
-
-At district level, it seemed that the convolution model was performing the best, followed quite closely by the random effect. 
-
-For both aggregation levels, the likelihood models were showing opposite results as the other parameters (DIC and CPO). 
-
-### Test 2: Geostatistics & point data
+## Geostatistics & point data
 
 INLA + SPDE 
+
+### INLA resources
+
+Tutorial & good visualisation
+https://ourcodingclub.github.io/tutorials/inla/
 
 ## Parameter inclusion
 
@@ -96,14 +78,14 @@ We saw bigger effect on the maize Se (although check whether is only the scale),
 
 Question: Is the intercept indicating that the spatial is performing better (high non-accounted variability)??
 
-Also, although non-significant we could see a pattern for the wealth Q, with the low-est Q negative influencing plasma Se and high-est positively.
+Also, although non-significant we could see a pattern for the wealth Q, with the low-est Q negative influencing plasma Se and highest positively.
 
 Question: Check whether urbanity and cluster may have interaction effect. 
 
 
 # Testing 5
 
-When we used only the predicted values with buffers from 10-60km and cluster and district. The best performing model was the one using the cluster. Interenstingly, we can see a dicrease in the model fit as the buffer increases. Also, the distance to the lake, was only negatively correlated with some of the buffers aggregation (e.g, 2-4, and then 7and 8). 
+When we used only the predicted values with buffers from 10-60km and cluster and district. The best performing model was the one using the cluster. Interenstingly, we can see a decrease in the model fit as the buffer increases. Also, the distance to the lake, was only negatively correlated with some of the buffers aggregation (e.g, 2-4, and then 7and 8). 
 
 These results were obtained when establishing prior. 
 
@@ -169,10 +151,7 @@ The model is robust as the conclusion remained the same through out the three mo
 In order to see how the displacement may potentially affect the model results. We have displaced all/ X% of the sample within range. Hence, the point locations were displaced by 2km, and the analysis were re-run. 
 
 
-### INLA resources
 
-Tutorial & good visualisation
-https://ourcodingclub.github.io/tutorials/inla/
 
 
 
