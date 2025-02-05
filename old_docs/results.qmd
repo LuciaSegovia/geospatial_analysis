@@ -1,6 +1,19 @@
 
 # Variation in plasma & maize grain Se concentration
 
+```{r set-up, message=FALSE, warning=FALSE}
+
+# Loading packages
+library(dplyr) # data wrangling 
+library(stringr) # string data manipulation 
+library(ggplot2) # data visualisation
+library(sf) # spatial data manipulation
+library(tmap) # spatial data visualisation
+library(DT) # pretty & interactive tables
+```
+
+
+
 See (SM: Maize aggreg by cluster in paper-fig.R)
 
 Soil characteristics is likely to be one of the underlying drivers of Se concentration spatial variation, for these three districts: Karonga, Salima and Ndanje where particularly high Se values were found . Following the FAO soils classification, these areas are mainly composed by Eutric Vertisol and Fluvisols: for instance, in Karonga, Anthrosols were found, also known as Eutric Fluvisols, while in Salima, and Ndanje, mainly Eutric Vertisols were identified with some Fluvisols pockets (Dijkshoorn et al., 2016). These types of soils are classified as calcareous soils which are characterise by low pH. 

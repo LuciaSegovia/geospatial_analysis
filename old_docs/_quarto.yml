@@ -1,6 +1,6 @@
 project:
-  type: book
-  output-dir: _book
+  type: website
+  output-dir: docs
 
 book:
   title: "Reproducible documentation"
@@ -27,7 +27,6 @@ book:
     - maize-aggregation.qmd
    # - modelling.qmd
     - references.qmd
-
   sidebar:
     tools:
       - icon: cloud-arrow-down
@@ -43,8 +42,14 @@ format:
     toc-title: "On this page"
     code-fold: show 
     embed-resources: true
+    fig-width: 8
+    fig-height: 6
   pdf:
     documentclass: scrreprt
+knitr:
+  opts_chunk:
+    message: false
+    warning: false
    
 editor: source
 

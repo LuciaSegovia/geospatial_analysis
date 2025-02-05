@@ -47,6 +47,9 @@ plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>%
   # removing entries with missing values in plasma Se conc.
  filter(!is.na(selenium))
 
+# Cluster data (cleaned from 00_cleaning-location.R)
+cluster.df <- readRDS(here::here("data", "inter-output", "aggregation", "master-cluster-admin-level.RDS"))
+
 
 ```
 
@@ -177,7 +180,7 @@ First, we are getting the cluster-EA information for which we would need the mai
 ```{r}
 
 # Cluster's EA info
-cluster.df <- plasma.df %>% 
+cluster.df <- cluster.df %>% 
   distinct(survey_cluster1, EACODE, ADM2_PCODE, ADM2_EN, urbanity)
 
 ```

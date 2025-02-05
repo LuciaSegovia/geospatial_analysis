@@ -72,3 +72,4 @@ visuals/
 # Documentation (html files)
 
 documentation/*.html
+/.quarto/

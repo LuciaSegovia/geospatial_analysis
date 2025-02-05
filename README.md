@@ -22,11 +22,11 @@ And, run the following script in the outlined order:
 
 01_maize-model.R
 
-To generate the cleaned version of the plasma Se concentration used in this analysis you need access the data from [DHS website](https://dhsprogram.com/methodology/survey/survey-display-483.cfm?showall=yes), and to get the following datasets:
+To generate the cleaned version of the plasma Se concentration used in this analysis you need access the data from [DHS website](https://dhsprogram.com/data/dataset/Malawi_Standard-DHS_2015.cfm), and to get the following datasets:
 
-1) DHS Survey data (MWIR7AFL.dta)
-2) DHS Biomarkers data (MW_WRA.dta)
-3) DHS GPS location ("MWGE7AFL.shp")
+1) DHS Survey data: Individual Recode (MWIR7ADT.ZIP)
+2) DHS Other Biomarkers data (MWOB7ADT.ZIP)
+3) DHS GPS location: Geographic Data (MWGE7AFL.ZIP)
 
 And, run the following script in the outlined order:
 
