@@ -41,7 +41,8 @@ vignettes/*.pdf
 .Renviron
 
 # pkgdown site
-docs/
+# docs/
+docs/*.rmarkdown
 
 # translation temp files
 po/*~
@@ -49,8 +50,14 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-# Data file
+# Data file & other forlders
 data/
+exploratory/
+excluded/
+old_docs/*/
+
+# Ethiopia case-study
+ethiopia/
 
 # produced presentations
 presentation/*.html
@@ -60,3 +67,10 @@ presentation/*/
 # outputs
 *.pdf
 visuals/
+*.dat
+*.csv
+
+# Documentation (html files)
+
+documentation/*.html
+/.quarto/

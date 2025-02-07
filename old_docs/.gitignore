@@ -1,0 +1,8 @@
+/.quarto/
+
+
+_book/
+
+*files/
+
+*.rmarkdown
