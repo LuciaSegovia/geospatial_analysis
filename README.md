@@ -1,5 +1,7 @@
 # Geospatial analysis
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14843604.svg)](https://doi.org/10.5281/zenodo.14843604)
+
 Geospatial analysis of plasma Selenim (Se) concentration in women (15-49 years old) and maize Se concentration in Malawi.
 
 This study is part of my PhD on the spatial variation of mineral composition in foods and its impact in nutritional outcomes. 
