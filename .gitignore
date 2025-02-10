@@ -1,0 +1,14 @@
+/.quarto/
+.Rproj.user
+
+
+# Folders to be ignored
+data/
+ethiopia/
+excluded/
+exploratory/
+old_docs/
+output/
+presentation/
+visuals/
+renv/

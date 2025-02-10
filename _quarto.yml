@@ -1,0 +1,59 @@
+project:
+  type: book
+  output-dir: docs
+
+book:
+  title: "Reproducible documentation"
+  subtitle: "Spatial food composition models for use in dietary micronutrient assessment: a case study of maize grain and selenium status in Malawi"
+  author: 
+    - "Lucia Segovia De La Revilla"
+    - "Claire Dooley"
+    - "Edward Joy"
+    - "Elaine Ferguson"
+  date: "31/01/2024"
+  repo-url: https://github.com/LuciaSegovia/geospatial_analysis/
+  repo-actions: [edit, issue]
+  downloads: [pdf, epub]
+  sharing: [twitter, facebook]
+  chapters:
+    - index.qmd
+    - intro.qmd
+    - data-description.qmd
+    - data-dhs.qmd
+    - data-boundaries.qmd
+    - data-maize.qmd
+    - predicted-maize.qmd
+    - data-processing.qmd
+    - maize-aggregation.qmd
+   # - modelling.qmd
+    - references.qmd
+  sidebar:
+    tools:
+      - icon: cloud-arrow-down
+
+bibliography: references.bib
+
+format:
+  html:
+    theme: cosmo
+    number-sections: true
+    number-offset: 1
+    number-depth: 4
+    toc-title: "On this page"
+    code-fold: show 
+    embed-resources: true
+    fig-width: 8
+    fig-height: 6
+knitr:
+  opts_chunk:
+    message: false
+    warning: false
+   
+editor: source
+
+# Do not evaluate code chunks
+# eval: false
+# callout-icon: false
+
+
+
