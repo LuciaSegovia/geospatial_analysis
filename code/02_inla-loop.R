@@ -82,16 +82,19 @@ if(sum(plasma_se$Se_mean ==0)>0){
   stop(paste0("Zero values found in ", file[i]))
 }
 
-#plasma_se <- na.omit(plasma_se)
-
 
 # Locations
 coord <- cbind(plasma_se$Longitude, plasma_se$Latitude)
 
 # Creating the mesh
-mesh <- inla.mesh.2d(loc = coord, max.edge = c(.3, .7), cutoff = c(0.0001)) 
-# mesh <- inla.mesh.2d(loc = coord, max.edge = c(.3, .7), cutoff = c(0.001)) 
-#mesh <- inla.mesh.2d(loc = coord, max.edge = c(.5, 3), cutoff = c(0.001)) 
+## Mesh testing in mesh-testing.R (Selected Krainski and Rue,  2017)
+# Using the range as reference (from the variogram in "01_plasma-variogram.R")
+
+# Range (downscale)
+r <- 110/100
+mesh <- inla.mesh.2d(coord, cutoff=r/10,
+                     max.edge=c(r/4, r/2), offset=c(r/2, r))
+# plot(mesh, asp=1); points(coord, col='red') 
 
 
 # Projection matrix (A) obs.

@@ -54,7 +54,7 @@ plasma_se <- na.omit(plasma_se)
 
 # First, preparing the data:
 
-## Covariates (in a list)
+## Covariates selection (in a list) -----
 
 #Check
 # Change `had_malaria` for `Malaria_test_results`, and
@@ -103,47 +103,45 @@ covs <- plasma_se %>% select(wealth_quintile, BMI,  urbanity,
 
 ## INLA for point data
 
-# Creating the mesh
+# Creating the mesh -----
+# Mesh testing in mesh-testing.R
 
 names(plasma_se)
 
 coord <- cbind(plasma_se$Longitude, plasma_se$Latitude)
 
-min(coord)
-max(coord)
+# Now compared with Krainski and Rue,  2017.
+# https://inla.r-inla-download.org/r-inla.org/doc/vignettes/SPDEhowto.pdf
+# Using the range as reference (from the variogram in "01_plasma-variogram.R")
+# Range (downscale)
+r <- 110/100
+mesh <- inla.mesh.2d(coord, cutoff=r/10,
+                     max.edge=c(r/4, r/2), offset=c(r/2, r))
+plot(mesh, asp=1); points(coord, col='red')
 
-# NOT WORKING: Inner dist = max(coord), outter dist double inner dist and 
-# distance in triangles 1/5 of range (Moraga et al., 2021)
-
-# mesh <- inla.mesh.2d(loc = coord,  
-#                      max.edge = c(17,34),
-#                      cutoff = 24)
-
-
-#mesh <- inla.mesh.2d(loc = coord, 
-#                      max.edge = c(.5, 3), 
-#                      cutoff = c(0.03))
-
-mesh <- inla.mesh.2d(loc = coord, 
-                     max.edge = c(.5, 3), 
-                     cutoff = c(0.001))
-
-# Best one in Righetto et al., 2020 (simulated data)
-#mesh2 <- inla.mesh.2d(loc = geom, max.edge = c(0.09, 0.3), 
-                 #     cutoff = c(0.03))
-
-plot(mesh)
 
 # Getting the spatial term (s) ----
 
-### From becario precario (7.3.3) & Moraga et al, 2021
-
 ## Setting the SPDE model (Matern estimator) 
 # (alpha is related to the smoothness parameter)
-# No priors are set
-spde <- inla.spde2.matern(mesh = mesh,
+
+
+# No priors are set 
+### From becario precario (7.3.3) & Moraga et al, 2021
+spde0 <- inla.spde2.matern(mesh = mesh,
                           alpha = 2 ,
                           constr = TRUE) # this is optional
+
+# Setting priors
+# From: Krainski and Rue,  2017.
+# https://inla.r-inla-download.org/r-inla.org/doc/vignettes/SPDEhowto.pdf
+#Build the SPDE model on the mesh, where α = 3/2 for the exponential correlation
+# and set the RF (Random Field) parameters prior distributions, [Fuglstad et al., 2017]
+
+spde1 <- inla.spde2.pcmatern(
+    mesh=mesh, alpha=1.5,
+    prior.range=c(0.2, 0.5), ##P(range<0.2)=0.5 # Test instead c(1.1. 0.5) rest =
+    prior.sigma=c(1, 0.5)) ## P(sigma>1)=0.5
 
 
 ## Setting the SPDE index (to store the random effect)

@@ -65,7 +65,7 @@ plot(log(plasma_se$Se_mean), pit, xlab="Mazie Se", ylab="PIT")
 #text(log(plasma_se$crp), pit, 1:n)
 
 #DIC
-models[[1]]$dic$dic
+models[[11]]$dic$dic
 
 
 # Visualisation ------
@@ -151,6 +151,48 @@ ggplot(dat[c(1:10),], aes( modelNames, as.numeric(M))) +
     axis.text.x = element_text(size = 10))
 
 ## Visualising model parameters for all models
+# Krainski and Rue,  2017.
+# https://inla.r-inla-download.org/r-inla.org/doc/vignettes/SPDEhowto.pdf
+
+# Testing...
+pmd.s2e <- lapply(models, function(m) inla.tmarginal(function(x) sqrt(1/x), ## inverse and square root
+                          m$marginals.hyperpar$'Precision for the Gaussian observations'))
+
+# Error term (noise or nugget effect)
+plot(pmd.s2e[[1]], type='l', ylab='Density', xlab=expression(sigma[e]))
+#abline(v=sqrt(s2e), col=2) ## add the 'true' value
+
+# spatial RF (sigma)
+plot(models[[1]]$marginals.hy[[3]], type='l', xlab=expression(sigma[u]), ylab='Density')
+#abline(v=sqrt(s2u), col=2) ## add the 'true' value
+
+# (spatial) range
+plot(models[[1]]$marginals.hy[[2]], type='l', xlab='range nominal', ylab='Density')
+#abline(v=r, col=2) ## add the 'true' value
+
+# Viz
+rcols <- rainbow(10) ##c(rgb(4:1/4,0:3/5,0), c(rgb(0,0:3/5,4:1/4))) 
+par(mfrow=c(1,3), mar=c(2.5,2.5,1,.5), mgp=c(1.5,.5,0), las=1)
+
+plot(pmd.s2e[[4]], type='l', ylab='Density', xlab=expression(sigma[e]))
+for (k in 1:length(models))
+lines(pmd.s2e[[k]], col=rcols[k], lwd=2, ylab='Density', xlab=expression(sigma[e]))
+
+plot(models[[4]]$marginals.hy[[3]], type='l', xlab=expression(sigma[u]), ylab='Density')
+for (k in 1:length(models))
+lines(models[[k]]$marginals.hy[[3]], col=rcols[k], lwd=2, xlab=expression(sigma[u]), ylab='Density')
+
+plot(models[[4]]$marginals.hy[[2]], type='l', xlab='range nominal', ylab='Density')
+for (k in 1:length(models))
+lines(models[[k]]$marginals.hy[[2]], col=rcols[k], lwd=2, xlab='range nominal', ylab='Density')
+
+legend('topright', c(paste('buffer',1:8, sep=''), 'cluster', 'district'), 
+       lty=c(rep(1,10), 2, 3), lwd=rep(2, 10), col=c(rcols), bty='n')
+
+
+
+
+## Visualising model parameters for all models
 # (Krainski et al., p. 37)
 
 s2.marg <- lapply(models, function(m) inla.tmarginal(function(x) 1/x, m$marginals.hy[[1]]))
@@ -160,7 +202,6 @@ spde.est <- lapply(models, function(m) inla.spde2.result(m, name = "spatial.fiel
                               spde = spde, do.transf = TRUE))
 
 # looping over all model results
-
 rcols <- rainbow(10) ##c(rgb(4:1/4,0:3/5,0), c(rgb(0,0:3/5,4:1/4))) 
 par(mfrow=c(2,3), mar=c(2.5,2.5,1,.5), mgp=c(1.5,.5,0), las=1)
 xrange <- range(sapply(models, function(x) range(x$marginals.fix[[1]][,1]))) 

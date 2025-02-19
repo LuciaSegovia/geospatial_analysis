@@ -9,6 +9,7 @@
 
 # User-specific files
 .Ruserdata
+.nojekyll
 
 # Example code in package build process
 *-Ex.R
@@ -41,8 +42,9 @@ vignettes/*.pdf
 .Renviron
 
 # pkgdown site
-# docs/
+docs/
 docs/*.rmarkdown
+site_libs/
 
 # translation temp files
 po/*~
