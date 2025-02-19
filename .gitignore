@@ -1,6 +1,6 @@
 /.quarto/
 .Rproj.user
-
+/_site/
 
 # Folders to be ignored
 data/
