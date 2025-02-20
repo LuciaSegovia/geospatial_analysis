@@ -58,7 +58,7 @@ plasma_se <- na.omit(plasma_se)
 
 #Check
 # Change `had_malaria` for `Malaria_test_results`, and
-# ANY_INFLAMATION for biomakers of infam: `crp` and `agp` 
+# ANY_INFLAMATION for biomakers of inflam: `crp` and `agp` 
 # HIV check again
 
 # Creating the mesh using the point data. (Not sure if it works)
@@ -125,11 +125,10 @@ plot(mesh, asp=1); points(coord, col='red')
 ## Setting the SPDE model (Matern estimator) 
 # (alpha is related to the smoothness parameter)
 
-
-# No priors are set 
+# No priors are set (very high tau)
 ### From becario precario (7.3.3) & Moraga et al, 2021
 spde0 <- inla.spde2.matern(mesh = mesh,
-                          alpha = 2 ,
+                          alpha = 2 , # testing alpha = 1.5
                           constr = TRUE) # this is optional
 
 # Setting priors
@@ -143,6 +142,27 @@ spde1 <- inla.spde2.pcmatern(
     prior.range=c(0.2, 0.5), ##P(range<0.2)=0.5 # Test instead c(1.1. 0.5) rest =
     prior.sigma=c(1, 0.5)) ## P(sigma>1)=0.5
 
+# Adapting the range to our downscale range (r) 
+# Test instead c(1.1. 0.5) rest =
+spde2 <- inla.spde2.pcmatern(
+  mesh=mesh, alpha=1.5,
+  prior.range=c(1.1, 0.5), ##P(range<1.1)=0.5 
+  prior.sigma=c(1, 0.5)) ## P(sigma>1)=0.5
+
+# Based on the range and variance from the variogram (in "01_plasma-variogram.R")
+# https://www.r-bloggers.com/2020/06/spatial-regression-in-r-part-2-inla/
+# range of the spatial effect (how far do you need to go for two points to be independent, the κ parameter)
+# variation in the spatial effect (how variable is the field from a point to the next, the δ parameter).
+
+spde3 <- inla.spde2.pcmatern(
+  mesh=mesh, alpha=1.5,
+  prior.range=c(100, 0.5), ##P(range < 100) = 0.5 
+  prior.sigma=c(21, 0.01)) ## P(sigma >21) = 0.01
+
+# This is the one performing the best
+# Although some variation in the values, the conclusions reminded the
+# same over all the prior, with the exception of the spatial field.
+spde <- spde3
 
 ## Setting the SPDE index (to store the random effect)
 # Moraga called indexs
@@ -505,3 +525,22 @@ IM2b <- inla(f2b,
 summary(IM2b)
 # Compare them
 c(IM2a$dic$dic, IM2b$dic$dic)
+
+# Testing likelihood... -------
+# From Krainski ,et al 2016. 
+require(geoR) 
+lkf <- likfit(as.geodata(SPDEtoy), ini=c(sigma2x, 1/kappa), kappa=1, ### kappa in geoR is nu 
+              nugget=sigma2e, messages=FALSE)
+
+plasma_se$Plasma_Se <- log(plasma_se$Plasma_Se)
+plasma_se$Se_mean <- plasma_se$Se_mean/100
+
+test <- na.omit(plasma_se[, c("Plasma_Se", "Se_mean", "Latitude","Longitude")])
+
+lkf <- likfit(as.geodata(test), ini=c(1, #sigma (s2x) 
+                                      1/1 # 1/kappa
+                                      ), kappa=1, ### kappa in geoR is nu
+              # sigma (s2e)
+              nugget=0.05, messages=FALSE)
+
+rbind(geoR=c(lkf$beta, lkf$nugget, lkf$sigmasq, 1/lkf$phi))

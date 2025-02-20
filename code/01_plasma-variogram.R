@@ -11,6 +11,7 @@ source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 # Skewness[-1,+1], Octile skewness [−0.2,0.2]
 library(geoR)  # geospatial modelling
 library(geosphere) # spatial functions for variogram
+library(gstat) # variogram function
 
 ## Loading data ----
 
@@ -20,7 +21,11 @@ plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% #
 
 names(plasma.df)
 
-data.df <- plasma.df %>% select(selenium, Latitude, Longitude)
+data.df <- plasma.df %>% dplyr::select(selenium, Latitude, Longitude)
+
+hist(data.df$selenium)
+summaplot(data.df$selenium)
+summaplot(log(data.df$selenium))
 
 
 ######################################################################################################################
@@ -37,7 +42,8 @@ NP<-0.5*N*(N-1)
 
 Long<-data.df$Longitude
 Lat<-data.df$Latitude
-z<-data.df$selenium
+#z<-data.df$selenium
+z<-log(data.df$selenium)
 
 lag<-vector("numeric",NP)
 vclo<-vector("numeric",NP)
@@ -130,15 +136,19 @@ text(65,locsv[2],"Cressie-Hawkins",pos=4)
 text(65,locsv[3],"Dowd",pos=4)
 
 
-# Variogram
+# Variogram (gstat) -----
+#https://r-spatial.org/r/2016/02/14/gstat-variogram-fitting.html
 
 coordinates(data.df) <- ~Longitude+Latitude
 proj4string(data.df) <- CRS("+init=epsg:4326")
 
 # Variogram and fit variogram
-vgm <- variogram(selenium ~1, data.df)
-fit.vgm <- fit.variogram(vgm, vgm("Sph"))
+v <- variogram(log(selenium) ~1, data.df)
+fit.vgm <- fit.variogram(v, vgm("Exp"))
+fit.variogram(v, vgm(c("Exp", "Sph")), fit.kappa = TRUE)
 
+plot(v)
+abline(v=110)
 
 m = 100 
 points = matrix(runif(m*2),m,2)

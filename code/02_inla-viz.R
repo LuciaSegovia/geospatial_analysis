@@ -65,7 +65,7 @@ plot(log(plasma_se$Se_mean), pit, xlab="Mazie Se", ylab="PIT")
 #text(log(plasma_se$crp), pit, 1:n)
 
 #DIC
-models[[11]]$dic$dic
+models[[8]]$dic$dic
 
 
 # Visualisation ------
@@ -93,7 +93,7 @@ Maxrange = 1000
 
 INLARange(list(models[[1]]), MaxRange = Maxrange)
 
-INLARange(ModelList = models, MaxRange= 1, MeshList = list(mesh))
+INLARange(ModelList = models[[1]], MaxRange= 1, MeshList = mesh)
 
 # Results ----
 
@@ -139,10 +139,11 @@ U[i] <- up
 
 dat <- cbind(modelNames,M,L, U)
 
-ggplot(dat[c(1:10),], aes( modelNames, as.numeric(M))) +
+i = 11
+ggplot(dat[c(1:i),], aes( modelNames, as.numeric(M))) +
   geom_point() +
-  geom_linerange(ymin = L[1:10], ymax = U[1:10]) +
-  scale_y_continuous(limits = c(-0.20, 0.6)) +
+  geom_linerange(ymin = L[1:i], ymax = U[1:i]) +
+  scale_y_continuous(limits = c(ifelse(min(L[1:i])>0, -0.1,min(L[1:i])), 0.6)) +
   theme_bw() +
   labs(y = "", x = "") +
   theme(
@@ -177,15 +178,18 @@ par(mfrow=c(1,3), mar=c(2.5,2.5,1,.5), mgp=c(1.5,.5,0), las=1)
 plot(pmd.s2e[[4]], type='l', ylab='Density', xlab=expression(sigma[e]))
 for (k in 1:length(models))
 lines(pmd.s2e[[k]], col=rcols[k], lwd=2, ylab='Density', xlab=expression(sigma[e]))
+abline(v=sqrt(0.3799046), col=2) ## add the 'true' value
 
-plot(models[[4]]$marginals.hy[[3]], type='l', xlab=expression(sigma[u]), ylab='Density')
+
+plot(models[[7]]$marginals.hy[[3]], type='l', xlab=expression(sigma[u]), ylab='Density')
 for (k in 1:length(models))
 lines(models[[k]]$marginals.hy[[3]], col=rcols[k], lwd=2, xlab=expression(sigma[u]), ylab='Density')
+abline(v=sqrt(225.95), col=2) ## add the 'true' value
 
 plot(models[[4]]$marginals.hy[[2]], type='l', xlab='range nominal', ylab='Density')
 for (k in 1:length(models))
 lines(models[[k]]$marginals.hy[[2]], col=rcols[k], lwd=2, xlab='range nominal', ylab='Density')
-
+abline(v=r*100, col=2) ## add the 'true' value
 legend('topright', c(paste('buffer',1:8, sep=''), 'cluster', 'district'), 
        lty=c(rep(1,10), 2, 3), lwd=rep(2, 10), col=c(rcols), bty='n')
 
@@ -204,47 +208,52 @@ spde.est <- lapply(models, function(m) inla.spde2.result(m, name = "spatial.fiel
 # looping over all model results
 rcols <- rainbow(10) ##c(rgb(4:1/4,0:3/5,0), c(rgb(0,0:3/5,4:1/4))) 
 par(mfrow=c(2,3), mar=c(2.5,2.5,1,.5), mgp=c(1.5,.5,0), las=1)
+
 xrange <- range(sapply(models, function(x) range(x$marginals.fix[[1]][,1]))) 
 yrange <- range(sapply(models, function(x) range(x$marginals.fix[[1]][,2]))) 
 plot(models[[1]]$marginals.fix[[1]], type='l', xlim=xrange, ylim=yrange, 
     # xlab=expression(beta[0]), ylab='Density')
      xlab=expression(alpha[c]), ylab='Density')
-
 for (k in 1:length(models))
   lines(models[[k]]$marginals.fix[[1]], col=rcols[k], lwd=2)
+
 xrange <- range(sapply(s2.marg, function(x) range(x[,1])))
 yrange <- range(sapply(s2.marg, function(x) range(x[,2])))
   plot.default(s2.marg[[k]], type='l', xlim=xrange, 
                 ylim=yrange, xlab=expression(sigma[e]^2), ylab='Density')
-
 for (k in 1:length(models))
   lines(s2.marg[[k]], col=rcols[k], lwd=2)
+  
+# Variance  
   xrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,1])))
   yrange <- range(sapply(spde.est, function(r) range(r$marginals.variance.nominal[[1]][,2]))) 
 plot(spde.est[[1]]$marginals.variance.nominal[[1]], type='l', xlim=xrange, ylim=yrange, 
     # xlab=expression(sigma[x]^2), ylab='Density')
      xlab=expression(sigma[omega]^2), ylab='Density')
-
 for (k in 1:length(models))
   lines(spde.est[[k]]$marginals.variance.nominal[[1]], col=rcols[k], lwd=2)
+
+# kappa
 xrange <- range(sapply(spde.est, function(r) range(r$marginals.kappa[[1]][,1]))) 
 yrange <- range(sapply(spde.est, function(r) range(r$marginals.kappa[[1]][,2])))
 plot(spde.est[[1]]$marginals.kappa[[1]], type='l', xlim=xrange, ylim=yrange, 
      xlab=expression(kappa), ylab='Density') 
-
 for (k in 1:length(models))
   lines(spde.est[[k]]$marginals.kappa[[1]], col=rcols[k], lwd=2)
+
+# Nominal range
 xrange <- range(sapply(spde.est, function(r) range(r$marginals.range.nominal[[1]][,1])))
 yrange <- range(sapply(spde.est, function(r) range(r$marginals.range.nominal[[1]][,2])))
 plot(spde.est[[1]]$marginals.range.nominal[[1]], type='l', xlim=xrange,
      ylim=yrange, xlab='nominal range', ylab='Density') 
-
 for (k in 1:length(models))
   lines(spde.est[[k]]$marginals.range.nominal[[1]], col=rcols[k], lwd=2)
+abline(v=r*100, col=2) ## add the 'true' value
+
+# Tau
 xrange <- range(sapply(spde.est, function(r) range(r$marginals.tau[[1]][,1])))
 yrange <- range(sapply(spde.est, function(r) range(r$marginals.tau[[1]][,2])))
 plot(spde.est[[1]]$marginals.tau[[1]], type='l', xlim=xrange, ylim=yrange, xlab=expression(tau), ylab='Density') 
-
 for (k in 1:length(models)) 
   lines(spde.est[[k]]$marginals.tau[[1]], col=rcols[k], lwd=2)
 legend('topright', c(paste('buffer',1:8, sep=''), 'cluster', 'district'), 
@@ -596,5 +605,4 @@ segments(1:n, models[[i]]$summary.fitted.val$'0.025quant'[idx.obs][order.eta],
          1:n, models[[i]]$summary.fitted.val$'0.975quant'[idx.obs][order.eta])
 
 models[[i]]$marginals.fitted.values[idx.obs]
-
 

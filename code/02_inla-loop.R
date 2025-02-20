@@ -102,20 +102,17 @@ A <- inla.spde.make.A(mesh = mesh , loc = coord)
 # Ap <- inla.spde.make.A(mesh = mesh , loc = coord) 
 
 ## Setting the SPDE model (Matern estimator) 
-# (alpha is related to the smoothness parameter)
-# No priors are set
-# spde <- inla.spde2.matern(mesh = mesh,
-#                             alpha = 2 ,
-#                             constr = TRUE) # this is optional
+ spde <- inla.spde2.pcmatern(
+   mesh=mesh, alpha=1.5,
+   prior.range=c(100, 0.5), ##P(range < 100) = 0.5 
+   prior.sigma=c(21, 0.01)) ## P(sigma > 21) = 0.01
 
-# Priors are set
- spde <- inla.spde2.pcmatern(mesh = mesh,
-                          alpha = 2 ,
-                          prior.range = c(1, 0.01), ## P(range < 1) = 0.01
-                          prior.sigma = c(1, 0.5), ## P(sigma > 1) = 0.5
-                          constr = TRUE) # this is optional
 
-## Setting the SPDE index (to store the random effect)
+
+#
+
+# 
+### Setting the SPDE index (to store the random effect)
 spde.index <- inla.spde.make.index(name = "spatial.field",
                                    n.spde = spde$n.spde)
 
