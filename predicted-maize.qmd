@@ -764,15 +764,13 @@ Allpoints<-cbind(Lat,Long)
 
 ```
 
-Finally, we performed the prediction. Note that the outputs are the locations (Long/Lat), the log-tranformed predicted value for each location, the log-transformed kriging variance and the Lagrange multiplier. The later one is important because as reported previously (@), the back transformation of the lognormal kriging for ordinary kriging need to be done using the following @eq-poisson:
-
-Let $x$ denote the number of eruptions in a year. Then, $x$ can be modeled by a Poisson distribution
+Finally, we performed the prediction. Note that the outputs are the locations (Long/Lat), the log-tranformed predicted value for each location, the log-transformed kriging variance and the Lagrange multiplier. The later one is important because as reported previously (@WebsterandOliverGeostatistics2007), the back transformation of the lognormal kriging for ordinary kriging need to be done using the following @eq-poisson:
 
 $$
 Z_{OK}(x_0) = exp(Y_{OK}(x_0) + Var_{OK}(x_0)/2 - \lambda(x_0))
 $$ {#eq-poisson}
 
-Where $Z_{OK}(x_0)$ is the back transformed variable at a given point $(x_0)$, $Y_{OK}(x_0)$ and $Var_{OK}(x_0)$ are the predicted log-transformed variable (maize Se concentration) and its variance using ordinary kriging at the same location, respectively, and $\lambda(x_0)$ is the Lagrange multiplier. 
+Where $Z_{OK}(x_0)$ is the back transformed variable at a given point location $(x_0)$, $Y_{OK}(x_0)$ and $Var_{OK}(x_0)$ are the kriged estimated log-transformed of the maize Se concentration and its variance using ordinary kriging at the same location, respectively, and $\lambda(x_0)$ is the Lagrange multiplier. 
 
 Note that the prediction will take some time to run, hence, after finishing, we will save the file, before proceeding to back-transforming the data.
 

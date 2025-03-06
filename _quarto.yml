@@ -41,7 +41,7 @@ format:
     number-depth: 4
     toc-title: "On this page"
     code-fold: show 
-    embed-resources: true
+ #   embed-resources: true
     fig-width: 8
     fig-height: 6
 knitr:
