@@ -527,8 +527,13 @@ print(c(thetaCLL,thetaCLU))
 #ooX<-ooCH #non-log
 #ooX<-ooMa  #log
 ooX<-ooDo  #log, BLOD no zero.
+<<<<<<< HEAD:code/01_maize-model.R
 
 
+=======
+
+
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42:01_maize-model.R
 # Writing output prior to kriging -----
 
 Models<-rbind(ooMa$par,ooCH$par,ooDo$par)

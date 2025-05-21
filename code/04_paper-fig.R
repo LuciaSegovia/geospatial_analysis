@@ -8,8 +8,12 @@
 #   
 ###########
 
+<<<<<<< HEAD
 # Libraries  -------
 
+=======
+# Loading libraries
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42
 library(ggplot2)
 library(ggridges)
 library(dplyr)
@@ -19,7 +23,11 @@ library(sf) # spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 library(survey) # survey design
 library(srvyr) # survey design 2
+<<<<<<< HEAD
 source("code/04_loading-spatial-data.R") # Loading all base shape files needed for viz.
+=======
+
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42
 #library(summarytools) # didn't work
 
 
@@ -453,6 +461,7 @@ plot[[i]] <- data.df %>%
 
 # Figure 2 - Map of EA group & detail ---- 
 ## Data: Maps for Maize aggregation  -----
+
 file <- grep("plasma.*v2.0.0", list.files(here::here("data", "inter-output", "model")), 
              value = TRUE)
 
@@ -547,7 +556,7 @@ map_lilongwe <-
 map_malawi
 # Adding the close up map (sides and up (0-1, 6 is about centre)
 print(map_lilongwe, vp = grid::viewport(0.72, 0.65, width = 0.5, height = 0.5))
-
+                      
 
 ## Plot (3): Histograms for Maize aggregation  -----
 ## See - figures.R
@@ -573,7 +582,3 @@ plot[[1]]
 
 
 
-tm_shape(ea_admin %>% filter(region == "3")) +
-           tm_borders() +
-tm_shape(ea_admin %>% filter(ADM2_EN == "Mangochi" & !is.na(survey_cluster1) & is.na(ADM1_EN))) +
-  tm_polygons(fill = "red")

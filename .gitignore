@@ -54,6 +54,7 @@ rsconnect/
 data/
 # excluded/
 old_docs/
+exploratory/
 
 # Ethiopia case-study
 ethiopia/

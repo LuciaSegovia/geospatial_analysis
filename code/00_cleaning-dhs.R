@@ -281,6 +281,7 @@ Malawi_WRA <- Malawi_WRA%>%
     BMI>18.5 & BMI <24.5 ~ "normal",
     BMI>24.5 ~ "high")),
     BMI_cat = forcats::fct_relevel(BMI_cat, "low", "normal", "high"))
+<<<<<<< HEAD:code/00_cleaning-dhs.R
 
 ddply(Malawi_WRA, ~ BMI_cat, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
 ddply(Malawi_WRA, ~ region, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
@@ -289,6 +290,16 @@ ddply(Malawi_WRA, ~ region, summarise, median=matrixStats::weightedMedian(BMI, w
 Malawi_WRA%>%
   rstatix::pairwise_t_test(BMI ~ region, p.adjust.method = "bonferroni")
 
+=======
+
+ddply(Malawi_WRA, ~ BMI_cat, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+ddply(Malawi_WRA, ~ region, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+
+#Which BMI
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(BMI ~ region, p.adjust.method = "bonferroni")
+
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42:00_cleaning-dhs.R
 Malawi_WRA%>%
 group_by(region) %>% 
     rstatix::pairwise_t_test(BMI ~ urbanity, p.adjust.method = "bonferroni")
@@ -602,8 +613,13 @@ sum(EligibleDHS$household_id1==0) #All observations have weight > 0
 unique(EligibleDHS$wealth_quintile)
 sum(is.na(EligibleDHS$wealth_quintile)) # 29 observations are missing WQ
 sum(is.na(EligibleDHS$wealth_idx)) # 29 observations are missing WQ
+<<<<<<< HEAD:code/00_cleaning-dhs.R
 
 
+=======
+
+
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42:00_cleaning-dhs.R
 # Wealth Quintiles ----
 boxplot(selenium ~ wealth_quintile, data = EligibleDHS, 
      main="Plasma Selenium by Wealth Quintile",
@@ -878,6 +894,7 @@ ggplot() +
  # Saving Se dataset into R object
 #saveRDS(GPS_Se, file=here::here("data", "inter-output","dhs_se.rds"))
 
+<<<<<<< HEAD:code/00_cleaning-dhs.R
 # Saving DHS + GPS dataset into R object
 saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
 
@@ -939,6 +956,9 @@ svyboxplot(selenium~region,   DHSdesign)
 =======
 dim(EligibleDHS)
 >>>>>>> 504882a58c86206e93b476f69f95a695e890ab42:code/00_cleaning-dhs.R
+=======
+dim(EligibleDHS)
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42:00_cleaning-dhs.R
 
 # 3) Saving DHS + GPS dataset into R object ----
 # saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))

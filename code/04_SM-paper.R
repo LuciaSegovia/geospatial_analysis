@@ -64,9 +64,12 @@ data.df$Crop_lab[data.df$Crop == "Sorghum"] <- "Sorghum\n(n=117)"
 boxplot(Se_raw ~ Crop_lab, data.df, xlab ="", 
         ylab = expression(paste("Se (mcg  ",  Kg^{-1}, ")")))
 
+<<<<<<< HEAD
 ## SM - Fig. 2 -----
 # Both 2a and 2b are in 01_maize-model.R
 
+=======
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42
 ## SM - Fig.3 -----------------
 
 data.df <- read.csv(here::here("data", "OK", "2024-05-03Se_raw_OK_expmaize.csv"))
@@ -113,6 +116,7 @@ text(30.2,locsv[2],"Mid-lower Quantile (25-50%)",pos=4)
 text(30.2,locsv[3],"Mid-higher Quantile (50-75%)",pos=4)
 text(30.2,locsv[4],"Highest Quantile (75-100%)",pos=4)
 
+<<<<<<< HEAD
 
 ## SM - Fig. 4 -----
 
@@ -127,6 +131,8 @@ data <- readRDS(here::here("data", "inter-output", "model",
 plot(log(data$Se_median.x), log(data$Se_median.y))
 
 
+=======
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42
 # SM - Fig.5 ---- 
 
 # For mapping

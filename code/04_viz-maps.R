@@ -1003,5 +1003,8 @@ unique(ea_admin$ADM2_EN)
 tm_shape(ea_admin)
 
 
-
+tm_shape(ea_admin %>% filter(region == "3")) +
+  tm_borders() +
+  tm_shape(ea_admin %>% filter(ADM2_EN == "Mangochi" & !is.na(survey_cluster1) & is.na(ADM1_EN))) +
+  tm_polygons(fill = "red")
 
