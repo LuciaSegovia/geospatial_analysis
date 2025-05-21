@@ -52,7 +52,7 @@ rsconnect/
 
 # Data file & other forlders
 data/
-excluded/
+# excluded/
 old_docs/
 
 # Ethiopia case-study
