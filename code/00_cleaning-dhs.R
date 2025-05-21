@@ -1,30 +1,37 @@
 
-#######################################################################
+################################################################################
 #
-#   Cleaning & exploring the DHS data from MNS in Malawi
-#     variables of interest: Plasma Se conc., wealth Q, BMI,
-#     # urbanity, HH location, district, region,
+#        Cleaning & exploring the DHS data from MNS in Malawi
+#        variables of interest: Plasma Se conc., wealth Q, BMI,
+#             urbanity, HH location, district, region.
 #
-#####################################################################################################
+################################################################################
+# Setting up ----
+
 # Cleaning the environment
 rm(list = ls())
 
 # Loading libraries and functions
-
 library(plyr) # weighted data analysis
 library(dplyr) # data wrangling 
 library(ggplot2) # visualisation
 library(survey) # survey design
+library(srvyr) # survey design 2
 #options(survey.lonely.psu="adjust") # For Error of one PSU at stage 1
-#library(sf) #spatial data manipulation
+library(sf) # spatial data manipulation
 #library(tmap)  #spatial data manipulation and visualisation
-source(here::here("CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 
-# Loading the datat
+# Loading the data
 dhs.df<- haven::read_dta(here::here("data","MWIR7AFL.dta")) # survey data DHS
 Malawi_WRA <- haven::read_dta(here::here("data", "MW_WRA.dta")) #Biomarkers data DHS
 # b_admin3  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_3.shp")) #EA boundaries
 # b_admin1  <- st_read(here::here("data", "mwi-boundaries", "gadm40_MWI_1.shp")) #District boundaries
+# Reading the EA shapefile w/ updated districts (See 00_cleaning-boundaries.R)
+ea_admin <- st_read(here::here( "data", "inter-output", 
+                                "boundaries", "mwi_admbnda_adm4_nso.shp"))
+
+table(Malawi_WRA$mcluster)
 
 # Import checks
 n01 <-  dim(Malawi_WRA)[1]
@@ -34,8 +41,10 @@ dim(dhs.df)
 head(dhs.df)
 #plot(b_admin1[,1])
 
+# MNS data ----
+
 # Renaming variables 
-Malawi_WRA <-Malawi_WRA %>% dplyr::rename(
+Malawi_WRA <- Malawi_WRA %>% dplyr::rename(
   ferritin='fer',
   region='mregion',
   sex = "m04", 
@@ -88,7 +97,7 @@ had_malaria= 'm420')
 
 # Selecting variables of interest:
 
-Malawi_WRA <- Malawi_WRA %>% select(region, sex , crp,  agp, urbanity, 
+Malawi_WRA <- Malawi_WRA %>% dplyr::select(region, sex , crp,  agp, urbanity, 
                                     survey_cluster1,
 household_id1, survey_weight, LINENUMBER, AGE_IN_YEARS, supple, # took any supplements
 Malaria_test_result, WEIGHT, HEIGHT, is_pregnant, selenium) 
@@ -96,8 +105,8 @@ Malaria_test_result, WEIGHT, HEIGHT, is_pregnant, selenium)
 # Checking variables
 str(Malawi_WRA)
 
-# Checking class of discrete variables (imported from stata)
-
+# Formatting variables ----
+## Checking class of discrete variables (imported from stata)
 # Region
 class(Malawi_WRA$region)
 Malawi_WRA$region  <- as.factor(Malawi_WRA$region)
@@ -130,11 +139,12 @@ class(Malawi_WRA$Malaria_test_result)
 sum(is.na(Malawi_WRA$Malaria_test_result)) # 28 NA
 hist(Malawi_WRA$Malaria_test_result)
 table(Malawi_WRA$Malaria_test_result)
-# recoding others values into NA 
+
+# Recoding Malaria ----
+# others values into NA 
 Malawi_WRA$Malaria_test_result <- ifelse(Malawi_WRA$Malaria_test_result==4| 
                                         Malawi_WRA$Malaria_test_result==6, 
                                          NA, Malawi_WRA$Malaria_test_result)
-
 Malawi_WRA$Malaria_test_result  <- as.factor(Malawi_WRA$Malaria_test_result)
 
 # survey ids
@@ -143,15 +153,15 @@ sum(duplicated(Malawi_WRA$survey_cluster1))
 sum(duplicated(Malawi_WRA$LINENUMBER))
 table(Malawi_WRA$LINENUMBER)
 
-# Creating a unique id for each WRA
+# Creating a unique id for each WRA ----
 Malawi_WRA$unique_id  <- paste0(Malawi_WRA$survey_cluster1,
                         Malawi_WRA$household_id1, Malawi_WRA$LINENUMBER)
 
 # Checking the unique id
 sum(duplicated(Malawi_WRA$unique_id))
 
+# MNS Weight survey ----
 # Checking survey weight & generating the variable
-# MNS Weight survey
 unique(Malawi_WRA$survey_weight)
 sum(is.na(Malawi_WRA$survey_weight)) # All observations have weight
 sum(Malawi_WRA$survey_weight==0) # All observations have weight > 0
@@ -169,33 +179,43 @@ table(Malawi_WRA$wt)
 # Perc. difference with population (WRA)
 (n01-sum(Malawi_WRA$wt))/n01*100
 
-
-# Description of the sample ----
+## Description of the sample ----
 
 # Looking at variables of interest: summary stats + histogram
-#Age - Women of reproductive age (15-49 years)
+## Age - Women of reproductive age (15-49 years) ----
 # REVIEW: Not excluding outside WRA age range
 # Note: That in the histogram women = 15yo are counted in the first
 # bar (that's why the freq. is over 50)
-sum(is.na(Malawi_WRA$AGE_IN_YEARS)) #no missing values
+sum(is.na(Malawi_WRA$AGE_IN_YEARS)) # No missing values
 hist(Malawi_WRA$AGE_IN_YEARS)
 summary(Malawi_WRA$AGE_IN_YEARS)
-sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49) #8 younger than range
+sum(Malawi_WRA$AGE_IN_YEARS<15 | Malawi_WRA$AGE_IN_YEARS>49) # 8 younger than range
 subset(Malawi_WRA, AGE_IN_YEARS<15 | AGE_IN_YEARS>49,
-select = c(region, urbanity, selenium)) #8 younger than range
+select = c(region, urbanity, selenium)) # 8 younger than range
+
+# Testing significance (w/o weights)
+Malawi_WRA%>% rstatix::anova_test(AGE_IN_YEARS ~ region)
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(AGE_IN_YEARS ~ region, p.adjust.method = "bonferroni")
+
+Malawi_WRA %>%
+  group_by(urbanity, region) %>%
+  rstatix::shapiro_test(AGE_IN_YEARS)
 
 # Age Weighted mean by region/urbanity
 ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(AGE_IN_YEARS, wt,na.rm = T))
 ddply(Malawi_WRA,~urbanity,summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, Malaria_test_result), summarise,median=matrixStats::weightedMedian(AGE_IN_YEARS, wt,na.rm = T))
 
-# Sex - Female == 2 & pregnancy
+## Sex  ----
+# Female == 2 
 unique(Malawi_WRA$sex)
 which(Malawi_WRA$sex==1) #Label as male
 # REVIEW: Changing coded "men" to "women"
 Malawi_WRA$sex[Malawi_WRA$sex==1]  <- 2 #converting into women
 
-# Pregnancy
+## Pregnancy ----
 dim(Malawi_WRA)
 unique(Malawi_WRA$is_pregnant)
 which(Malawi_WRA$is_pregnant==1) #Label as pregnant
@@ -204,26 +224,28 @@ subset(Malawi_WRA, is_pregnant==1,
 select = c(region, urbanity #, selenium
 ))  %>%  count()
 subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant))  %>% dim()
-# REVIEW: Removing the pregnant women and unkown status
+# REVIEW: Removing the pregnant women and unknown status
 Malawi_WRA  <- subset(Malawi_WRA, is_pregnant==0 | is.na(is_pregnant)) 
 
-# Height - ouliers (converting 999 to NA)
+## Height ----
+# Checking outliers 
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >200]
-# REVIEW: Outliers 999 to NA
+# REVIEW: Missing values (999 to NA)
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT >999] <- NA
 Malawi_WRA$HEIGHT[Malawi_WRA$HEIGHT <130] 
 Malawi_WRA$AGE_IN_YEARS[Malawi_WRA$HEIGHT <120] 
 
 # Height Weighted mean by region
-ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(HEIGHT, wt,na.rm = T))
+ddply(Malawi_WRA,~urbanity,summarise,mean=weighted.mean(HEIGHT, wt, na.rm = T))
 
-# Weight - ouliers (converting 999 to NA)
+## Weight ----
+# Checking outliers (missing values (999) to NA)
 hist(Malawi_WRA$WEIGHT)
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >200]
 Malawi_WRA$region[Malawi_WRA$WEIGHT >999] # Checking if this "missing values" are affecting more to a particular region
 Malawi_WRA$urbanity[Malawi_WRA$WEIGHT >999] # Same but for urbanity
 
-# REVIEW: Outliers 999 to NA
+# REVIEW: Missing values (999 to NA)
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >999] <- NA
 Malawi_WRA$WEIGHT[Malawi_WRA$WEIGHT >80] # Checking Weight >80kg
 Malawi_WRA$HEIGHT[Malawi_WRA$WEIGHT >80] # Checking height >80Kg
@@ -238,10 +260,11 @@ ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedi
 ddply(Malawi_WRA,.(urbanity), summarise,median=matrixStats::weightedMedian(WEIGHT, wt,na.rm = T))
 
 
-# Creating BMI variable
+## BMI --------
+#Creating BMI variable
 Malawi_WRA$BMI<- Malawi_WRA$WEIGHT/(Malawi_WRA$HEIGHT/100)^2
 
-#BMI - 
+# Checking variable
 hist(Malawi_WRA$BMI)
 summary(Malawi_WRA$BMI)
 summaplot(Malawi_WRA$BMI)
@@ -250,9 +273,27 @@ Malawi_WRA$BMI[which(Malawi_WRA$BMI>40)]
 sum(Malawi_WRA$BMI[Malawi_WRA$BMI>40])
 Malawi_WRA[298, "WEIGHT" ] #Weight & BMI outlier
 
-ddply(Malawi_WRA,.(region, urbanity), summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+# Generating BMI categories for visualisation & analysis 
 
-# Selenium
+Malawi_WRA <- Malawi_WRA%>% 
+  mutate(BMI_cat = as.factor(case_when(
+    BMI<18.5 ~ "low",
+    BMI>18.5 & BMI <24.5 ~ "normal",
+    BMI>24.5 ~ "high")),
+    BMI_cat = forcats::fct_relevel(BMI_cat, "low", "normal", "high"))
+
+ddply(Malawi_WRA, ~ BMI_cat, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+ddply(Malawi_WRA, ~ region, summarise, median=matrixStats::weightedMedian(BMI, wt,na.rm = T))
+
+#Which BMI
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(BMI ~ region, p.adjust.method = "bonferroni")
+
+Malawi_WRA%>%
+group_by(region) %>% 
+    rstatix::pairwise_t_test(BMI ~ urbanity, p.adjust.method = "bonferroni")
+
+## Selenium -----
 sum(is.na(Malawi_WRA$selenium)) # Checking NA
 
 ggplot(Malawi_WRA, aes(x = as.factor(region), y = selenium)) +   
@@ -269,13 +310,59 @@ x <- pull(Malawi_WRA[, var])
 
 hist(x, main = paste("Histogram of",  tolower(var)) , xlab = var)
 summary(x)
+
 # Skewness
 summa(x)
 summaplot(x)
 
 # Se Weighted mean/median by region/urbanity
 ddply(Malawi_WRA,~region, summarise,mean=weighted.mean(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,~region, summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
 ddply(Malawi_WRA,.(region, urbanity), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, Malaria_test_result), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+# Se & BMI
+ddply(Malawi_WRA, ~ BMI_cat, summarise, median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+ddply(Malawi_WRA,.(region, BMI_cat), summarise,median=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+Malawi_WRA$log_se <- log(Malawi_WRA$selenium)
+
+# Normality test
+Malawi_WRA %>%
+  group_by(urbanity, region) %>%
+  # group_by(Malaria_test_result, region) %>%
+  rstatix::shapiro_test(selenium)
+
+# Differences between residency
+# Region
+Malawi_WRA %>% 
+  rstatix::anova_test(log_se ~ region)
+
+#Which regions
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(log_se ~ region, p.adjust.method = "bonferroni")
+
+# Region + Residency
+Malawi_WRA %>% 
+  group_by(region) %>% 
+  rstatix::anova_test(log_se ~ urbanity)
+
+Malawi_WRA%>%
+  group_by(region) %>%
+  rstatix::pairwise_t_test(log_se ~ urbanity, p.adjust.method = "bonferroni")
+
+# Differences between BMI category
+Malawi_WRA %>% 
+  rstatix::anova_test(log_se ~ BMI_cat)
+
+#Which BMI
+Malawi_WRA%>%
+  rstatix::pairwise_t_test(log_se ~ BMI_cat, p.adjust.method = "bonferroni")
+# By region, urbanity
+Malawi_WRA%>%
+  group_by(urbanity) %>%
+  rstatix::pairwise_t_test(log_se ~ BMI_cat, p.adjust.method = "bonferroni")
+
 
 # Boxplot Se ~ U/R and Region
 boxplot(selenium ~ urbanity*region, data = Malawi_WRA,
@@ -306,10 +393,15 @@ plot(Malawi_WRA$selenium, Malawi_WRA$BMI,
 plot(log(Malawi_WRA$selenium) ~ log(Malawi_WRA$crp))
 plot(log(Malawi_WRA$selenium) ~ log(Malawi_WRA$agp))
 
+# Final check on the number of variables & entries.
+dim(Malawi_WRA)
 
-# Checking DHS survey data  ------
+# DHS survey data  ------
 # (Wealth index and other variables)
+
 dim(dhs.df)
+
+# Renaming and selecting variables of interest (reducing the number of variables)
 
 DHSDATA <- dhs.df %>% dplyr::rename( 
   survey_cluster1='v001',
@@ -322,13 +414,19 @@ DHSDATA <- dhs.df %>% dplyr::rename(
   # region = 'v024', 
   age_year = "v012", # for consistency 
   wealth_quintile= "v190",
+  wealth_idx= "v190a", # to check for wealth missing values
   Literacy= "v155",
   education_level= "v106", 
   source_water = "v113", # source of drinking water
   # person_id=WomenID,
   is_lactating= "v404", # breastfeeding yes=1, no=0
   is_smoker= "v463a" # Only cover cigarettes (other smoking variables)
-)
+) %>% dplyr::select(survey_cluster1, household_id1, LINENUMBER, survey_strata, PSU,
+             region, urbanity,  age_year, wealth_quintile, wealth_idx, Literacy,
+             education_level, source_water, is_lactating, is_smoker, sdist)
+
+
+dim(DHSDATA)
 
 # REVIEW: check "ultimate area unit" (v004)
 str(DHSDATA)
@@ -383,7 +481,8 @@ table(DHSDATA$is_lactating)
 haven::print_labels(DHSDATA$is_lactating) # 0=N, 1=Y
 DHSDATA$is_lactating  <- as.factor(DHSDATA$is_lactating)
 
-#Smoking 
+# Smoking 
+# TODO: Checking smoking incidence in WRA in Malawi
 class(DHSDATA$is_smoker)
 sum(is.na(DHSDATA$is_smoker))
 table(DHSDATA$is_smoker)
@@ -395,14 +494,17 @@ class(DHSDATA$sdist)
 sum(is.na(DHSDATA$sdist))
 table(DHSDATA$sdist)
 haven::print_labels(DHSDATA$sdist) 
-# New variable with district names
+
+## District: New variable with district names ----
 DHSDATA$dist_name <- haven::as_factor(DHSDATA$sdist) 
 DHSDATA$sdist  <- as.factor(DHSDATA$sdist)
 
 
 # Socio-economic data exploration:
+# TODO: Would differences in WQ by region & residency
+# impact our results? Probably yes. Check what that would mean for our analysis. 
 
-# Wealth quintile poorest-richest == 1-5
+# Wealth quintile 1-5 (lowest to highest)
 # Education 0-3 (low to high)
 hist(as.numeric(DHSDATA$wealth_quintile))
 summary(DHSDATA$wealth_quintile)
@@ -433,15 +535,38 @@ sum(as.numeric(DHSDATA$wealth_quintile) > 3 & DHSDATA$region == 1)/ sum(DHSDATA$
 
 DHSDATA %>% group_by (region) %>% dplyr::count(wealth_quintile)
 
-# Merging with DHS dataset ----
+# Merging DHS & MNS ----
 # Merging with DHS dataset to obtain Wealth index and other variables 
 
 EligibleDHS <- Malawi_WRA %>% 
  left_join(., DHSDATA %>% 
-          select(survey_cluster1, household_id1, LINENUMBER, 
-                 wealth_quintile, Literacy, education_level, 
-            source_water, is_lactating, is_smoker, sdist, 
+             dplyr::select(survey_cluster1, household_id1, LINENUMBER, 
+                 wealth_quintile, wealth_idx, Literacy, education_level, 
+            source_water, is_lactating, is_smoker, sdist, survey_strata,
             dist_name)) 
+
+# Strata -----
+EligibleDHS$survey_strata <-ifelse(
+                  EligibleDHS$survey_cluster1==114,8,
+           ifelse(EligibleDHS$survey_cluster1==140,1,
+           ifelse(EligibleDHS$survey_cluster1==190,40, 
+           ifelse(EligibleDHS$survey_cluster1==23,31, 
+           ifelse(EligibleDHS$survey_cluster1==294,23, 
+           ifelse(EligibleDHS$survey_cluster1==303,53,   
+           ifelse(EligibleDHS$survey_cluster1==309,4,                                                                                
+           ifelse(EligibleDHS$survey_cluster1==342,5,
+           ifelse(EligibleDHS$survey_cluster1==37,10, 
+           ifelse(EligibleDHS$survey_cluster1==377,29, 
+           ifelse(EligibleDHS$survey_cluster1==410,33,
+           ifelse(EligibleDHS$survey_cluster1==468,47,
+           ifelse(EligibleDHS$survey_cluster1==5,25,  
+           ifelse(EligibleDHS$survey_cluster1==511,27,
+           ifelse(EligibleDHS$survey_cluster1==566,33, 
+           ifelse(EligibleDHS$survey_cluster1==571,5,
+           ifelse(EligibleDHS$survey_cluster1==601,29,
+           ifelse(EligibleDHS$survey_cluster1==676,10, 
+           ifelse(EligibleDHS$survey_cluster1==720,41,
+                 EligibleDHS$survey_strata)))))))))))))))))))
 
 # dhs_varibles  <- c("household_id1", "LINENUMBER",
 # "region","wealth_quintile","Literacy","education_level", "is_lactating",
@@ -460,6 +585,7 @@ ddply(EligibleDHS, ~wealth_quintile, summarise,
       medianBMI=matrixStats::weightedMedian(BMI, wt,na.rm = T))
 
 
+# TODO: Sensitivity analysis for wealth and region, and for malaria prevalence.
 # Data checks (non-weigheted)
 
 #Cluster survey
@@ -472,16 +598,29 @@ unique(EligibleDHS$household_id1)
 sum(is.na(EligibleDHS$household_id1)) #All observations have HH ID
 sum(EligibleDHS$household_id1==0) #All observations have weight > 0
 
-#Wealth Quantile
+#Wealth Quantile vs Wealth idx (different for R/U)
 unique(EligibleDHS$wealth_quintile)
 sum(is.na(EligibleDHS$wealth_quintile)) # 29 observations are missing WQ
+sum(is.na(EligibleDHS$wealth_idx)) # 29 observations are missing WQ
 
+
+# Wealth Quintiles ----
 boxplot(selenium ~ wealth_quintile, data = EligibleDHS, 
      main="Plasma Selenium by Wealth Quintile",
      xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
 
+# Wealth Idx
+boxplot(selenium ~ wealth_idx, data = EligibleDHS, 
+        main="Plasma Selenium by Wealth Index",
+        xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19)
+
 boxplot(selenium ~ urbanity*wealth_quintile, data = EligibleDHS, 
-     main="Plasma Selenium by Wealth Quintile & residency",
+        main="Plasma Selenium by Wealth Quintile & residency",
+        xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19, 
+        col = c("white", "steelblue"), frame = FALSE)
+
+boxplot(selenium ~ urbanity*wealth_idx, data = EligibleDHS, 
+     main="Plasma Selenium by Wealth Index & residency",
      xlab="Wealth Quantile", ylab="plasma Se (ng/ml)", pch=19, 
      col = c("white", "steelblue"), frame = FALSE)
 
@@ -489,6 +628,11 @@ boxplot(BMI ~ urbanity*wealth_quintile, data = EligibleDHS,
      main="BMI by Wealth Quintile & residency",
      xlab="Wealth Quantile", ylab="BMI (kg/m^2)", pch=19, 
      col = c("white", "steelblue"), frame = FALSE)
+
+boxplot(BMI ~ urbanity*wealth_idx, data = EligibleDHS, 
+        main="BMI by Wealth Quintile & residency",
+        xlab="Wealth Quantile", ylab="BMI (kg/m^2)", pch=19, 
+        col = c("white", "steelblue"), frame = FALSE)
 
 boxplot(selenium ~ urbanity*region, data = EligibleDHS, 
         main="Plasma Selenium by region & residency",
@@ -531,10 +675,29 @@ boxplot(selenium ~ region , data = EligibleDHS,
         main="Plasma Selenium by Region",
         xlab="Region", ylab="plasma Se (ng/ml)", pch=19)
 
-# District
+## District --------
 unique(EligibleDHS$sdist)
 sum(is.na(EligibleDHS$sdist)) #29 observations are missing
 table(EligibleDHS$sdist)
+
+## Fixing the missing values using cluster (EA) info (see documentation)
+# Checking if we have same cluster with sdist for imputing.
+test <- unique(EligibleDHS$survey_cluster1[is.na(EligibleDHS$sdist)])
+
+EligibleDHS %>% filter(survey_cluster1 %in% test) %>% 
+  distinct(survey_cluster1, sdist)
+
+# Fixing the missing values
+for(i in 1:length(test)){
+  
+  x <- unique(na.omit(EligibleDHS$sdist[EligibleDHS$survey_cluster1 %in% test[i]]))
+  EligibleDHS$sdist[EligibleDHS$survey_cluster1 %in% test[i]] <- x
+  
+  x <- unique(na.omit(EligibleDHS$dist_name[EligibleDHS$survey_cluster1 %in% test[i]]))
+  EligibleDHS$dist_name[EligibleDHS$survey_cluster1 %in% test[i]] <- x
+}
+
+sum(is.na(EligibleDHS$sdist))
 
 boxplot(selenium ~ sdist , data = EligibleDHS, 
         main="Plasma Selenium by District",
@@ -548,10 +711,12 @@ boxplot(selenium ~ is_smoker , data = EligibleDHS,
         main="Plasma Selenium by Smoking status",
         xlab="Smoking", ylab="plasma Se (ng/ml)", pch=19)
 
+## Inputting NA for WQ info ----
+
 #Identifying HH ID & cluster of missing socio-eco info
 subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
        select = c("household_id1","survey_cluster1")) %>% left_join(.,DHSDATA) %>% 
-  group_by(survey_cluster1, household_id1) %>% dplyr::count(wealth_quintile) %>% 
+  group_by(survey_cluster1, household_id1) %>% dplyr::count(wealth_quintile, wealth_idx, urbanity) %>% 
   filter(!is.na(wealth_quintile)) %>% 
   View()
 
@@ -559,16 +724,20 @@ subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile),
 Wealth <- subset(EligibleDHS, is.na(EligibleDHS$wealth_quintile), 
        select = c("household_id1","survey_cluster1")) %>% 
    left_join(., DHSDATA %>% 
-             select(c("household_id1","survey_cluster1", "wealth_quintile"))) %>% 
+             dplyr::select(c("household_id1","survey_cluster1", "wealth_quintile", "wealth_idx"))) %>% 
   group_by(survey_cluster1, household_id1) %>%
   filter(!is.na(wealth_quintile)) %>% 
   distinct()
 
 #Checking rows with missing value for wealth Q
 n <- which(is.na(EligibleDHS$wealth_quintile))
+#Checking rows with missing value for wealth Indx
+m <- which(is.na(EligibleDHS$wealth_idx))
+# Checkin that are the same 
+table(n==m)
 
-#Checking line id (hh member id) with & w/o missing value for wealth Q w/ same 
-#H ID & cluster ID as in wealth df
+# Checking line id (hh member id) with & w/o missing value for wealth Q w/ same 
+# H ID & cluster ID as in wealth df
 EligibleDHS$LINENUMBER[#is.na(EligibleDHS$wealth_quintile) &
   EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[1] &
                               EligibleDHS$household_id1 %in% Wealth$household_id1[1]]
@@ -578,6 +747,9 @@ for(i in seq_along(Wealth$household_id1)){
   
 EligibleDHS$wealth_quintile[EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[i] &
                               EligibleDHS$household_id1 %in% Wealth$household_id1[i]] <- Wealth$wealth_quintile[i]
+
+EligibleDHS$wealth_idx[EligibleDHS$survey_cluster1 %in% Wealth$survey_cluster1[i] &
+                              EligibleDHS$household_id1 %in% Wealth$household_id1[i]] <- Wealth$wealth_idx[i]
 }
 
 #Checking results from the loop. 
@@ -619,29 +791,67 @@ boxplot(selenium ~ Malaria_test_result*wealth_quintile, data = EligibleDHS,
         xlab="Wealth Q", ylab="plasma Se (ng/ml)", pch=19, 
         col = c("white", "steelblue"), frame = FALSE)
 
+#Source of water ----
 
-# Defining Se deficiency
+# Checking median plasma Se by water source
+ddply(EligibleDHS, ~source_water, summarise, 
+      medianBMI=matrixStats::weightedMedian(selenium, wt,na.rm = T))
+
+# EligibleDHS$survey_cluster1[EligibleDHS$source_water == "96"]
+
+# Defining Se deficiency ----
 EligibleDHS$LOW_SEL_GPx3 <- ifelse(EligibleDHS$selenium<84.9,1,0)
 EligibleDHS$LOW_SEL_IDI <- ifelse(EligibleDHS$selenium<64.8,1,0)
 EligibleDHS$LOW_SEL_KD <- ifelse(EligibleDHS$selenium<30,1,0)
 
+# Checking the dimension of the dataset
+dim(EligibleDHS)
 
 # Saving Se dataset into R object
-saveRDS(EligibleDHS,  file=here::here("data", "inter-output","dhs_se.rds"))
+# saveRDS(EligibleDHS,  file=here::here("data", "inter-output","dhs_se.rds"))
 
 # EligibleDHS  <- readRDS(here::here("data","inter-output","dhs_se.rds")) 
 
-# add GPS values ----
+# GPS Location  ----
 # Loading the dataset
-GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) #GPS location DHS
+GPS <- st_read(here::here("data", "MWGE7AFL", "MWGE7AFL.shp")) # GPS location DHS
+names(GPS)
 
 # Renaming variables
-GPS <-dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM',
+GPS <- dplyr::rename(GPS, survey_cluster1='DHSCLUST', Latitude='LATNUM', 
                     Longitude='LONGNUM',  altitude_in_metres='ALT_GPS')
 dim(GPS)
 
+#  Generating the offset buffer
+
+for(i in 1:nrow(GPS)){
+
+# Assigning buffer size (in m) acc. to Urban (U) or Rural (R)
+offset.dist<-ifelse(GPS$URBAN_RURA[i]=="U", 2000, 5000)
+
+# Generating the buffers around the centroids
+GPS$buffer[i] <- st_buffer(GPS$geometry[i], dist = offset.dist)
+
+}
+
+# Transforming the list into spatial class
+GPS <- GPS %>% st_drop_geometry() 
+GPS$survey_cluster1 <- as.character(GPS$survey_cluster1)
+
+GPS <- GPS %>% left_join(., ea_admin %>% 
+                           select(survey_cluster1, ADM2_EN))
+
+GPS$buffer <- st_as_sfc(GPS$buffer)
+
+# Checking that the output
+plot(GPS$buffer) # Plotting the buffer
+plot(GPS$buffer[GPS$URBAN_RURA == "U"],col='red',add=TRUE) # colouring red those that are urban (smaller radius)
+
 # Merging with the dataset
-EligibleDHS <- merge(EligibleDHS, GPS, by='survey_cluster1')
+dim(EligibleDHS)
+dim(GPS)
+EligibleDHS <- left_join(EligibleDHS, GPS) 
+dim(EligibleDHS)
 
 # Only for Se in the dataset
 # GPS_Se <- merge(EligibleDHS[, c("unique_id", "survey_cluster1", "sdist",  "selenium", "wealth_quintile", "region")], GPS, by='survey_cluster1')
@@ -671,10 +881,21 @@ ggplot() +
 # Saving DHS + GPS dataset into R object
 saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))
 
+## Checking BMI per district ======
+EligibleDHS %>% ggplot(aes(reorder(dist_name, BMI, FUN = median), BMI)) +
+  geom_boxplot() + 
+  geom_hline(aes(yintercept = median(BMI, na.rm = TRUE)), colour = "blue") +
+  geom_hline(aes(yintercept = 18), colour = "red") +
+  facet_wrap(~region, scales = "free_x") 
+  
+
 # Survey analysis: Applying survey weight ----
 EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se_gps.rds"))
+#EligibleDHS  <- readRDS(file=here::here("data", "inter-output","dhs_se.rds"))
 sum(is.na(EligibleDHS$selenium))
+sum(is.na(EligibleDHS$WEIGHT))
 EligibleDHS  <- subset(EligibleDHS, !is.na(selenium))
+EligibleDHS  <- subset(EligibleDHS, !is.na(WEIGHT))
 
 class(EligibleDHS$urbanity)
 
@@ -715,4 +936,9 @@ svyboxplot(selenium~sdist,   DHSdesign)
 svyboxplot(selenium~region,   DHSdesign)
 
 
+=======
+dim(EligibleDHS)
+>>>>>>> 504882a58c86206e93b476f69f95a695e890ab42:code/00_cleaning-dhs.R
 
+# 3) Saving DHS + GPS dataset into R object ----
+# saveRDS(EligibleDHS, file=here::here("data", "inter-output","dhs_se_gps.rds"))

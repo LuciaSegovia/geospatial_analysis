@@ -9,24 +9,83 @@ library(dplyr) # data wrangling
 library(ggplot2) # visualisation
 library(sf) #spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
-source(here::here("CEPHaStat_3.R")) #stat functions
+source(here::here("functions", "CEPHaStat_3.R")) #stat functions
 library(geoR)  # geospatial modelling
+# library(raster) # (spatial) raster data manipulation
+
+## Loading data ----
+
+# Plasma Se conc. (cleaned from 00_cleaning-dhs.R)
+plasma.df  <- readRDS(here::here("data", "inter-output","dhs_se_gps.rds")) %>% # cleaned geo-loc plasma Se data
+  filter(!is.na(selenium))  %>% dplyr::select(1:51) # removing buffer and other spatial vars
+names(plasma.df)
+
+plasma.df$wealth_idx <- as.factor(plasma.df$wealth_idx)
 
 
+# Adding district variable to plasma 
 
-## Loading data
+cluster.df <- readRDS(here::here("data", "inter-output", 
+                   "aggregation", "master-cluster-admin-level.RDS"))
 
-maize.df <- readRDS(here::here("data", "inter-output", 
-                               "raw_maizeSe-mean-predicted.RDS"))
+
+plasma.df  <- plasma.df %>% left_join(., cluster.df %>% 
+                            dplyr::select(survey_cluster1, ADM2_PCODE, ADM2_EN, ADM1_EN) %>% 
+                          distinct()) 
+
+# Maize Se conc. (from 01_maize-aggregation.R)
+
+(file <- grep("pred-maize.*._v2", list.files(here::here("data", "inter-output", "aggregation")), 
+     value = TRUE))
+
+# Generating the file ----
+
+# Loop to generate a file with plasma data and maize with each aggregation unit
+
+
+# Run one for every file/aggegation
+for(i in 1:length(file)){
+  
+  # Load the maize Se conc. aggregated dataset
+  maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
+                                 file[i]))
+  
+  # Join (left) plasma and maize datasets
+  #based on common variable (eg cluster id)
+  data.df <- left_join(plasma.df, maize.df) 
+  
+  # Check if there are missing values for plasma Se conc.
+  if(sum(is.na(data.df$selenium))>0){
+    stop(paste0("Missing values in plamsa Se in ", file[i]))
+    
+  }
+  
+  # Check if there are missing values for maize Se conc.
+  if(sum(is.na(data.df$Se_mean))>0){
+    stop(paste0("Missing values in maize Se in ", file[i]))
+    
+  }
+  
+  # Save the output into the model folder
+  saveRDS(data.df, here::here("data", "inter-output",   "model",  
+                              paste0("plasma-", 
+                                     file[i])))
+  
+}
+
+
+# END -----
+
+# Checking missing values
+
+data.df %>% filter(is.na(Se_mean))
+
 
 data_id <- readRDS(here::here("data", "inter-output", 
                               "mwi-plasma-se_maize-admin.RDS")) %>% 
-  select(unique_id, survey_cluster1, EACODE, DISTRICT, meter)
+  dplyr::select(unique_id, survey_cluster1, EACODE, DISTRICT, meter)
 
-#  Getting the new dhs dataset with the location (Admin)
 
-plasma.df <- readRDS(here::here("data", "inter-output",
-                                "dhs_se_gps.rds"))
 
 names(plasma.df)
 names(maize.df)
@@ -92,5 +151,5 @@ boxplot(selenium ~ region, ea.df)
 names(ea.df)
 
 # Saving final EA dataset
-saveRDS(ea.df, here::here("data", "inter-output", "raw-maizeSe_plasma-se_ea.RDS"))
+#saveRDS(ea.df, here::here("data", "inter-output", "raw-maizeSe_plasma-se_ea.RDS"))
 

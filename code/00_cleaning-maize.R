@@ -10,12 +10,13 @@ library(sf) # for reading in and writting shapefiles
 library(raster) # raster manipulation
 library(tmap)  #spatial data manipulation and visualisation
 library(sfheaders) # 'deconstructing’ and ‘reconstructing’ sf objects
-source("CEPHaStat_3.R")
+source("functions/CEPHaStat_3.R")
 
 
 # Loading data (Kumssa - GeoNut) ----
 # data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Grain & soil chem data
 #  "MWI_CropSoilData_NA.csv"))
+# Se_grain,Selenium,mg kg-1 DM
 data.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Grain & soil chem data
  "MWI_CropSoilData_Raw.csv"))
 lod.df  <- read.csv(here::here("data", "maize", "MWI_CropSoilChemData_CSV", # Minerals LOD data
@@ -160,11 +161,24 @@ geodata.df  <- st_as_sf(data.df , coords =c("Longitude", "Latitude"),
  crs = "EPSG:4326")
 
  # Checking sample coverage location - Spatial pattern?
- plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "blue")
+ plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "blue",  
+      axes = TRUE)
  plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & is.na(geodata.df$Crop)], col = "green", add = TRUE)
  plot(geodata.df$geometry[is.na(geodata.df$Se_grain) & geodata.df$Crop == "Maize"], col = "red", add = TRUE)
- plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop != "Maize"], col = "yellow", add = TRUE)
+ plot(geodata.df$geometry[!is.na(geodata.df$Se_grain) & geodata.df$Crop != "Maize"], col = "yellow", add = TRUE )
 
+ locsv<-c(-16.2,-16.5,-16.8, -17.1)
+ locsv<-c(-9.5,-10,-10.5, -11)
+ cols <- c("blue","green","red","yellow")
+ points(35,locsv[1],pch=16, col=cols[1])
+ points(35,locsv[2],pch=16, col=cols[2])
+ points(35,locsv[3],pch=16, col=cols[3])
+ points(35,locsv[4],pch=16, col=cols[4])
+ 
+ text(35.2,locsv[1],"Maize grain (GeoNutrition)",pos=4)
+ text(35.2,locsv[2],"Maize grain (Chilimba)",pos=4)
+ text(35.2,locsv[3],"Maize grain (<LOD)",pos=4)
+ text(35.2,locsv[4],"Other grains",pos=4)
 
 # Adding covariate variable BIO1 (Mean Annual Temp - CHELSA dataset) ------
 
@@ -212,6 +226,7 @@ sum(is.na(data.df$BIO1)) # completed
 
 # Finalising the dataset
 # Adding Chilimba Se data to variables: _raw and _std & Crop info
+# REVIEW: Would it be adding more noise than helping the predictions?
 sum(is.na(data.df$Se_raw) & data.df$survey == "Chilimba")
 sum(is.na(data.df$Se_std) & data.df$survey == "Chilimba")
 data.df$Se_grain[data.df$survey == "Chilimba"] 
@@ -219,6 +234,10 @@ data.df$Se_raw[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey 
 data.df$Se_std[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey == "Chilimba"]
 data.df$Se_zero[data.df$survey == "Chilimba"] <- data.df$Se_grain[data.df$survey == "Chilimba"]
 data.df$Crop[data.df$survey == "Chilimba"] <-  "Maize"
+
+# Adding year of the sampling
+
+data.df$year <- ifelse(is.na(data.df$year), stringr::str_extract(data.df$SamplingEnd, "[:digit:]{4}$"), year)
 
 sum(is.na(data.df$Se_zero))
 
