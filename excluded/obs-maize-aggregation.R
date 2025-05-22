@@ -63,7 +63,7 @@ maize.df <- readRDS(here::here("data", "inter-output",
                              "mwi_maize-se-raw_admin.RDS"))
 
 maize.df$ID[maize.df$survey == "Chilimba"] <- paste0("MW_Ch", 1:86)
-maize.df$dist_in_m[maize.df$survey == "Chilimba"] <- paste0("MW_Ch", 1:86)
+#maize.df$dist_in_m[maize.df$survey == "Chilimba"] <- paste0("MW_Ch", 1:86)
 # Changing 0 to min value (for log transf.)
 maize.df$Se_raw[maize.df$Se_raw == 0] <- 0.00269
 names(maize.df)
@@ -262,7 +262,8 @@ plot(dist_maize$Se_mean, dist_maize2$Se_mean)
 
 ### Buffers  -----
 
-buff.dist <- na.omit(unique(str_extract(list.files(here::here("data", "inter-output", "boundaries")),
+buff.dist <- na.omit(unique(str_extract(list.files(here::here("data", 
+                      "inter-output", "boundaries", "buffer")),
             "[:digit:]{2}")))
 
 geodata.df <- geomaize.df
@@ -273,27 +274,42 @@ Se <- "Se_raw"
 for(i in 1:length(buff.dist)){
 
 buffer  <- st_read(here::here("data", "inter-output",
-                             "boundaries", 
-                    paste0("mwi_gps-buffer", buff.dist[i], ".shp"))) %>% 
+                             "boundaries", "buffer",
+                    paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
   rename(survey_cluster1 = "srvy_c1")
 
 maize_buff <- st_join(geodata.df, buffer) 
 
 #test %>% filter(!is.na(srvy_c1)) %>% count(srvy_c1)
 
-maize_buff %>% st_drop_geometry() %>% 
+maize_buff <- maize_buff %>% st_drop_geometry() %>% 
   group_by(survey_cluster1) %>% 
   summarise(Se_mean = mean(!!sym(Se)), 
             Se_sd = sd(!!sym(Se)), 
             Se_median = median(!!sym(Se)), 
             Se_iqr = IQR(!!sym(Se)), 
             Se_n = n()) %>% 
-  arrange(Se_n) %>% 
-  saveRDS(., here::here("data", "inter-output",   "aggregation",  
-                        paste0("obs-maize-buffer", 
-                        buff.dist[i], ".RDS")))
+  arrange(Se_n)
 
+if(sum(is.na(maize_buff$survey_cluster1))==0){
+ 
+  saveRDS(maize_buff, here::here("data", "inter-output",   "aggregation",  
+                                 paste0("obs-maize-buffer", 
+                                        buff.dist[i], ".RDS"))) 
+} else{
+  
+#  stop(paste("missing values in", buff.dist[i]))
+
+  }
 }
+
+unique(plasma.df$ADM2_EN[!plasma.df$survey_cluster1 %in% maize_buff$survey_cluster1])
+
+plasma.df %>% 
+  filter(!survey_cluster1 %in% unique(maize_buff$survey_cluster1)) %>% 
+  distinct( survey_cluster1, ADM2_EN)
+
+geomaize.df %>% filter(ADM2_EN == "Rumphi")
 
 
 data <- maize_buff %>% st_drop_geometry() %>% 
@@ -305,6 +321,8 @@ data <- maize_buff %>% st_drop_geometry() %>%
             Se_n = n())
 
 data$Se_mean[data$survey_cluster1 == "497"]
+
+data$Se_mean[data$ADM2_EN == "Rumphi"]
 
 ## Predicted Se conc.  ----
 

@@ -1008,3 +1008,94 @@ tm_shape(ea_admin %>% filter(region == "3")) +
   tm_shape(ea_admin %>% filter(ADM2_EN == "Mangochi" & !is.na(survey_cluster1) & is.na(ADM1_EN))) +
   tm_polygons(fill = "red")
 
+# SM - (old) Figure 5: Aggregations mean & sd ----
+# This may be a good "interactive project" for the docu.
+# For mapping
+source("viz_base-map.R")
+
+# Linking survey_cluster1 (cluster id) with corresponding admin units 
+master <- readRDS(here::here("data", "inter-output", "aggregation", 
+                             "master-cluster-admin-level.RDS")) 
+
+## Data ----
+(file <- grep("pred-maize.*._v2", list.files(here::here("data", "inter-output", "aggregation")), 
+              value = TRUE))
+
+mean <- list()
+sd <- list()
+
+# For storing into pdf
+
+pdf("visuals/aggregation-mean-and-sd.pdf", onefile = TRUE)
+
+i =1
+# Looping over all model resutls
+for(i in 1:10){
+  print(i)
+  # Getting the data, combining with boundaries
+  maize.df <- readRDS(here::here("data", "inter-output", "aggregation", 
+                                 file[i])) %>% left_join(., master)
+  
+  title <- gsub("_v2.0.0.RDS", " ", file[i])
+  
+  
+  if(i<9){
+    
+    (buff.dist <- na.omit(unique(stringr::str_extract(list.files(here::here("data", 
+                                                                            "inter-output", "boundaries", "buffer")),
+                                                      "[:digit:]{2}"))))
+    
+    buffer  <- st_read(here::here("data", "inter-output",
+                                  "boundaries", "buffer",
+                                  paste0("mwi_buffer", buff.dist[i], ".shp"))) %>% 
+      dplyr::rename(survey_cluster1 = "srvy_c1")
+    
+    graph.df <-   maize.df %>% 
+      left_join(., buffer) %>% distinct() %>%  # Boundaries for the admin
+      st_sf(., crs = "EPSG:4326")  # Boundaries for the admin
+    
+  } else{
+    
+    if(i==9){
+      
+      graph.df <-  maize.df %>% 
+        left_join(., ea_bnd %>% dplyr::select(EACODE, geometry)) %>%  # Boundaries for the admin
+        st_sf(., crs = "EPSG:4326")  # Boundaries for the admin
+      
+    }else{
+      
+      graph.df <-    maize.df %>% 
+        left_join(., dist_bnd %>% dplyr::select(ADM2_PCODE, geometry)) %>%  # Boundaries for the admin
+        st_sf(., crs = "EPSG:4326")  # Boundaries for the admin
+    }
+    
+  }
+  
+  # Mean & SD maize Se conc. 
+  i =1
+  
+  mean[[i]] <- base_map +
+    tm_shape(graph.df) +
+    tm_polygons(fill = "Se_mean", 
+                fill.scale = tm_scale_continuous(values="brewer.yl_or_br"), 
+                col = "grey", col_alpha = 0.2)  +
+    tm_title_out(title)
+  
+  sd[[i]] <- base_map +
+    tm_shape(graph.df) +
+    tm_polygons(fill = "Se_sd", 
+                fill.scale = tm_scale_continuous(values="brewer.yl_or_br"), 
+                col = "grey", col_alpha = 0.2) +
+    tm_title_out(" ")
+  
+  # Arrange plots
+  (tm <- tmap_arrange(mean[[i]], sd[[i]]))
+  
+  tmap_save(tm, paste0("visuals/", title[i], "maps.png"),
+            width = 1000, height = 750, dpi = 300)
+  
+}
+
+
+dev.off()
+
