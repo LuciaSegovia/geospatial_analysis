@@ -42,6 +42,7 @@ sum(data.df$Se_raw == min(data.df$Se_raw[data.df$Se_raw>0]))
 # data.df$Se_raw[data.df$Se_raw == 0] <- min(data.df$Se_raw[data.df$Se_raw>0])
 # Removing zeros
 data.df <- subset(data.df, Se_raw >0) # Excluding zeros
+table(data.df$survey)/nrow(data.df)*100
 
 
 # Now create plot name with Se (element of interest)

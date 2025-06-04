@@ -8,12 +8,8 @@
 #   
 ###########
 
-<<<<<<< HEAD
-# Libraries  -------
-
-=======
+# Set up -------
 # Loading libraries
->>>>>>> 504882a58c86206e93b476f69f95a695e890ab42
 library(ggplot2)
 library(ggridges)
 library(dplyr)
@@ -23,15 +19,12 @@ library(sf) # spatial data manipulation
 library(tmap)  #spatial data manipulation and visualisation
 library(survey) # survey design
 library(srvyr) # survey design 2
-<<<<<<< HEAD
-source("code/04_loading-spatial-data.R") # Loading all base shape files needed for viz.
-=======
-
->>>>>>> 504882a58c86206e93b476f69f95a695e890ab42
 #library(summarytools) # didn't work
 
+# Loading base spatial data for maps
+source("code/04_loading-spatial-data.R") # Loading all base shape files needed for viz.
 
-# Data -------
+## Data -------
 
 ## Maize aggregations -----
 # Maize Se conc. (from 01_maize-aggregation.R)
@@ -540,16 +533,25 @@ map_lilongwe <-
               fill.legend = tm_legend(show = FALSE)) +
   # Adding the buffer used to choose the EAs included
   tm_shape(GPS %>% filter(grepl("Lilongwe", ADM2_EN))) +
-  tm_borders(col = "URBAN_RURA", 
-             #  col.scale = tm_scale_categorical(values = c("#FCB97D", "#FE88B1" )),
-             #     col.scale = tm_scale_categorical(values = c("#FCB97D", "#8BE0A4" )),
-             col.scale = tm_scale_categorical(values = c("#FCB97D", "#f39eb9" )),
+  tm_borders(col = "URBAN_RURA", lty = "URBAN_RURA", 
+          #   col.scale = tm_scale_categorical(values = c("#FCB97D", "#FE88B1" )),
+           #  col.scale = tm_scale_categorical(values = c("#FCB97D","#8BE0A4"  )),
+            # col.scale = tm_scale_categorical(values = c("#FCB97D", "#f39eb9" )),
+          #   col.scale = tm_scale_categorical(values = c("#8BE0A4", "#FFFDD0" )),
+         #    col.scale = tm_scale_categorical(values = c("#8BE0A4", "#AF1B3F" )),
+          #   col.scale = tm_scale_categorical(values = c("#E3B5A4", "#773344" )),
+             col.scale = tm_scale_categorical(values = c("#473144", "#AF1B3F" )),
              lwd =2.8, 
              col.legend = tm_legend(title = "",   orientation = "landscape",
                                     position = tm_pos_in("right", "bottom"), 
                                     item.height = 1, item.width = 3,
-                                    lwd = 2)) +
+                                    lwd = 2), 
+        #  lty.scale = tm_scale_categorical(values = c("twodash", "solid")),    
+          lty.scale = tm_scale_categorical(values = c("dotted", "solid")),    
+         lty.legend = tm_legend_combine("col")) +
   tm_scalebar(position = c("left", "bottom"))
+
+
 
 ## Fig 2: Print ----
 
